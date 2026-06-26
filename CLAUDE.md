@@ -1,7 +1,14 @@
-# Admin Boilerplate
+# 초이스 행정사 관리자 (choice-admin)
 
-랜딩페이지 외주용 관리자 페이지 보일러플레이트.
-Supabase contacts 테이블의 문의 목록을 조회하고 엑셀로 내보낼 수 있다.
+초이스 행정사 사무소 운영 관리자(Vite SPA). 홈페이지(`choice-homepage`)와 **같은 Supabase 프로젝트**를 공유한다.
+상담 문의 관리 + 후기/블로그 관리(작성 중). 토프 브라운 DS(홈페이지와 동일).
+
+## ⚠️ 작업 전 `docs/` 먼저 읽기 (실제 설계 우선)
+이 저장소는 admin-boilerplate에서 출발했지만 **구조가 달라졌다**(예: `_app` pathless 레이아웃, `ds.tsx` DS 컴포넌트, contacts memo/RLS). 아래 "Project Structure"보다 **`docs/`를 우선**한다:
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — 실제 구조·라우팅/인증·Supabase 스키마/RLS·검증/배포
+- **[docs/PATTERNS.md](docs/PATTERNS.md)** — 구현 Cookbook(DS 컴포넌트·화면 추가·Supabase 조회/수정·모달·커밋)
+
+코드 변경으로 문서 사실이 달라지면 함께 갱신한다.
 
 ## Tech Stack
 - **Framework**: Vite + React 19 + TypeScript
@@ -15,20 +22,14 @@ Supabase contacts 테이블의 문의 목록을 조회하고 엑셀로 내보낼
 - **Package Manager**: pnpm
 - **Deploy**: Vercel (정적 배포)
 
-## Project Structure
+## Project Structure (요약 — 상세·최신은 docs/ARCHITECTURE.md)
 ```
-src/
-  routes/
-    __root.tsx       # 루트 레이아웃
-    index.tsx        # / → 로그인 상태에 따라 분기
-    login.tsx        # 로그인 페이지
-    dashboard.tsx    # 문의 목록 + 엑셀 다운로드
-  lib/
-    supabase.ts      # Supabase 클라이언트 (싱글톤)
-    utils.ts         # cn()
-  types/
-    database.ts      # Supabase 테이블 타입 — ★ contacts 컬럼 변경 시 여기 수정
-  routeTree.gen.ts   # 자동 생성 (수정 금지)
+src/routes/
+  __root · index · login         # index: 세션 분기 / login: 아이디(별칭→이메일) 로그인
+  _app.tsx                        # 인증 영역 레이아웃(가드+사이드바+상단바)
+  _app/{dashboard,inquiries,reviews,blog,settings}.tsx
+src/components/{admin, ui/ds.tsx} · src/lib/{supabase,contacts,format,utils}
+src/hooks/use-contacts.ts · src/types/database.ts · src/index.css(토큰+.ds-*)
 ```
 
 ## Commands
@@ -39,8 +40,8 @@ src/
 
 ## 새 프로젝트 적용 시 (★ 필수)
 1. `.env.local` 생성 — `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` 입력
-2. `src/types/database.ts` — contacts 테이블 컬럼 확인 및 수정
-3. `src/routes/dashboard.tsx` 상단 `columns` 배열 — 표시할 컬럼 조정
+2. `src/types/database.ts` — Supabase 테이블 타입 확인 및 수정
+3. `src/components/admin/app-sidebar.tsx`의 `NAV_ITEMS` — 메뉴 구성 조정
 4. Supabase Dashboard → contacts 테이블 RLS:
    - `authenticated` 역할에 SELECT 정책 추가
 5. Supabase Auth → 관리자 계정 생성 (이메일/비번)
@@ -138,6 +139,10 @@ Confidence: high | medium | low
 Scope-risk: narrow | moderate | broad
 ```
 
-### 핵심 수정 파일 (새 클라이언트 적용 시)
-- `src/config/contact-fields.ts` — 컬럼 구성·순서·너비 (가장 먼저 수정)
-- `src/types/database.ts` — Supabase 테이블 타입
+### 핵심 파일
+- `src/index.css` — DS 토큰(토프 브라운) + `.ds-*` 컴포넌트 클래스
+- `src/components/ui/ds.tsx` — DS 컴포넌트(Button/Card/Badge/Input/Label/Textarea)
+- `src/types/database.ts` — Supabase 테이블 타입(실스키마)
+- `src/components/admin/app-sidebar.tsx` — `NAV_ITEMS`(사이드바 메뉴 단일 출처)
+- `src/lib/supabase.ts` · `src/lib/contacts.ts`(상태·라벨)
+> 상세 구현 패턴은 docs/PATTERNS.md.
