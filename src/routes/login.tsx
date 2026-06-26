@@ -3,6 +3,13 @@ import { type FormEvent, useState } from "react";
 import { Button, Card, Input, Label } from "@/components/ui/ds";
 import { isMockMode, supabase } from "@/lib/supabase";
 
+// 관리자 아이디 → Supabase 로그인 이메일 매핑(한글 아이디 지원).
+// Supabase Auth는 이메일 기반이라, 표시용 아이디를 실제 계정 이메일로 변환한다.
+const ADMIN_ALIASES: Record<string, string> = {
+	최서연: "seoyeon@kvisa1345.com",
+};
+const resolveLoginEmail = (id: string): string => ADMIN_ALIASES[id.trim()] ?? id.trim();
+
 export const Route = createFileRoute("/login")({
 	beforeLoad: async () => {
 		if (isMockMode) return;
@@ -16,7 +23,7 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
 	const navigate = useNavigate();
-	const [email, setEmail] = useState("");
+	const [userId, setUserId] = useState("");
 	const [pw, setPw] = useState("");
 	const [error, setError] = useState<string | null>(null);
 	const [pending, setPending] = useState(false);
@@ -24,8 +31,8 @@ function LoginPage() {
 	const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 		setError(null);
-		if (!email || !pw) {
-			setError("이메일과 비밀번호를 입력해 주세요.");
+		if (!userId || !pw) {
+			setError("아이디와 비밀번호를 입력해 주세요.");
 			return;
 		}
 		if (isMockMode) {
@@ -33,10 +40,13 @@ function LoginPage() {
 			return;
 		}
 		setPending(true);
-		const { error: authError } = await supabase.auth.signInWithPassword({ email, password: pw });
+		const { error: authError } = await supabase.auth.signInWithPassword({
+			email: resolveLoginEmail(userId),
+			password: pw,
+		});
 		setPending(false);
 		if (authError) {
-			setError("이메일 또는 비밀번호가 올바르지 않습니다.");
+			setError("아이디 또는 비밀번호가 올바르지 않습니다.");
 			return;
 		}
 		navigate({ to: "/dashboard" });
@@ -103,13 +113,13 @@ function LoginPage() {
 
 					<form onSubmit={handleSubmit}>
 						<div style={{ marginBottom: 18 }}>
-							<Label htmlFor="email">이메일</Label>
+							<Label htmlFor="userId">아이디</Label>
 							<Input
-								id="email"
-								type="email"
-								value={email}
-								onChange={(e) => setEmail(e.target.value)}
-								placeholder="admin@kvisa1345.com"
+								id="userId"
+								type="text"
+								value={userId}
+								onChange={(e) => setUserId(e.target.value)}
+								placeholder="최서연"
 								autoComplete="username"
 							/>
 						</div>
