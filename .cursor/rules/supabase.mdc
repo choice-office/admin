@@ -1,0 +1,98 @@
+---
+description: Supabase 설정 — RLS 정책, Auth, 환경변수, contacts 테이블 스키마
+globs:
+  - src/lib/supabase.ts
+  - src/routes/**
+alwaysApply: false
+---
+
+# Supabase 컨벤션 (Admin)
+
+## 클라이언트 설정
+
+어드민은 `anon key` + RLS 조합. 서버리스 Server Action 없음.
+
+```ts
+// src/lib/supabase.ts — 싱글톤, 이 파일에서만 클라이언트 생성
+import { createClient } from "@supabase/supabase-js";
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export { supabase };
+```
+
+컴포넌트에서 직접 import: `import { supabase } from "@/lib/supabase"`
+
+## 환경변수
+
+```env
+# .env.local (gitignore 대상)
+VITE_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJxxxxxxxxxxxx
+```
+
+`VITE_` prefix 필수 — Vite 클라이언트 노출 규칙.
+`.env.example`에 키 목록 유지 (값은 비워둠).
+
+## contacts 테이블 표준 스키마
+
+```sql
+create table contacts (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  email text not null,
+  phone text,
+  message text not null,
+  is_read boolean not null default false,
+  created_at timestamptz default now()
+);
+
+alter table contacts enable row level security;
+```
+
+## RLS 정책 (필수)
+
+```sql
+-- 로그인한 관리자만 조회 가능
+create policy "authenticated can select"
+  on contacts for select
+  to authenticated
+  using (true);
+
+-- 읽음 처리 (is_read 업데이트)
+create policy "authenticated can update is_read"
+  on contacts for update
+  to authenticated
+  using (true)
+  with check (true);
+```
+
+랜딩페이지(landing-boilerplate)에서 INSERT한 rows를 어드민에서 SELECT·UPDATE만 한다.
+INSERT 정책은 어드민 contacts 테이블에 불필요.
+
+## Auth 패턴
+
+```ts
+// 인증 체크 — 라우트 beforeLoad에서
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) throw redirect({ to: "/login" });
+
+// 로그인
+const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+// 로그아웃
+await supabase.auth.signOut();
+```
+
+새 protected 라우트 추가 시 `beforeLoad` 반드시 포함.
+
+## Vercel 배포 시 추가 설정
+
+Supabase Dashboard → Authentication → URL Configuration:
+- **Site URL**: `https://admin.클라이언트도메인.com`
+- **Redirect URLs**: `https://admin.클라이언트도메인.com/**`
+
+미설정 시 로그인 후 리다이렉트 실패.
+
+## Mock 모드
+
+`VITE_SUPABASE_URL` 없으면 Mock 모드 자동 활성화 (더미 데이터 표시).
+실제 연동 시 `.env.local` 필수.

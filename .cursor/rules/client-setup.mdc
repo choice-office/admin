@@ -1,0 +1,62 @@
+---
+description: 새 클라이언트 프로젝트 세팅, 외주 어드민 적용, admin-kickoff, 새 프로젝트 시작
+globs:
+alwaysApply: false
+---
+
+# 외주 어드민 적용 가이드
+
+## 킥오프 정보 수집 템플릿
+
+클라이언트 정보를 아래 형식으로 받아 처리:
+
+```
+[클라이언트명] 어드민 세팅해줘.
+
+Supabase URL: https://xxxx.supabase.co
+Supabase ANON KEY: eyJxxxx
+
+contacts 컬럼:
+- 이름 (필수)
+- 이메일 (필수)
+- 연락처 (선택)
+- 회사명 (선택)  ← 커스텀 추가
+- 문의 내용 (필수, 긴 텍스트)
+
+관리자 계정: admin@example.com
+도메인: admin.example.com
+```
+
+## 작업 순서
+
+1. **`.env.local`** — VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
+2. **`src/types/database.ts`** — contacts Row·Insert·Update 타입 수정
+3. **`src/config/contact-fields.ts`** — CONTACT_FIELDS 배열 수정
+4. **Supabase SQL Editor** — 테이블 생성 + RLS 정책 적용
+5. **Supabase Auth** — 관리자 계정 생성
+6. **빌드 검증** — `pnpm lint` + `pnpm build`
+7. **Vercel 배포** — 환경변수 + 커스텀 도메인 + Auth URL 설정
+
+## 최종 체크리스트
+
+- [ ] `.env.local` 생성 완료
+- [ ] `pnpm build` 성공
+- [ ] `pnpm lint` 에러 없음
+- [ ] 로그인/로그아웃 정상 동작
+- [ ] contacts 데이터 테이블에 정상 표시
+- [ ] 읽음/안읽음 처리 동작
+- [ ] 엑셀 다운로드 정상 동작
+- [ ] 검색·날짜 필터 동작
+- [ ] Vercel 환경변수 설정
+- [ ] Supabase Auth Site URL 설정
+- [ ] 관리자 계정 생성 및 전달
+
+## 핵심 수정 파일 요약
+
+| 파일 | 역할 | 수정 빈도 |
+|------|------|----------|
+| `src/config/contact-fields.ts` | 컬럼 구성·순서·너비 | 클라이언트마다 |
+| `src/types/database.ts` | Supabase 타입 정의 | 컬럼 변경 시 |
+| `.env.local` | 환경변수 | 클라이언트마다 |
+
+나머지 파일(라우터, 훅, UI)은 대부분 수정 불필요.

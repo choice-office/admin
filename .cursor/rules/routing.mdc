@@ -1,0 +1,30 @@
+---
+description: TanStack Router 라우팅 컨벤션
+globs: src/routes/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# TanStack Router 컨벤션
+
+## 파일 구조
+- `src/routes/` 하위 파일이 자동으로 라우트가 됨
+- `routeTree.gen.ts`는 자동 생성 — 절대 수정 금지
+
+## Protected Route 패턴
+모든 인증이 필요한 라우트에 반드시 포함:
+
+```ts
+export const Route = createFileRoute("/dashboard")({
+  beforeLoad: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw redirect({ to: "/login" });
+  },
+  component: DashboardPage,
+});
+```
+
+## 새 페이지 추가 시
+1. `src/routes/` 에 파일 생성
+2. `createFileRoute("/경로")` 로 Route export
+3. 인증 필요 시 `beforeLoad` 에서 세션 체크
+4. `pnpm dev` 실행 → `routeTree.gen.ts` 자동 업데이트
