@@ -44,6 +44,43 @@ export type Database = {
 				};
 				Relationships: [];
 			};
+			reviews: {
+				Row: {
+					id: string;
+					created_at: string;
+					updated_at: string;
+					tag: string;
+					country: string;
+					initial: string;
+					flag: string;
+					title: string;
+					body: string;
+					is_published: boolean;
+					sort_order: number;
+				};
+				Insert: {
+					id?: string;
+					tag?: string;
+					country?: string;
+					initial?: string;
+					flag?: string;
+					title: string;
+					body: string;
+					is_published?: boolean;
+					sort_order?: number;
+				};
+				Update: {
+					tag?: string;
+					country?: string;
+					initial?: string;
+					flag?: string;
+					title?: string;
+					body?: string;
+					is_published?: boolean;
+					sort_order?: number;
+				};
+				Relationships: [];
+			};
 		};
 		Views: Record<string, never>;
 		Functions: Record<string, never>;
@@ -53,3 +90,6 @@ export type Database = {
 };
 
 export type Contact = Database["public"]["Tables"]["contacts"]["Row"];
+export type Review = Database["public"]["Tables"]["reviews"]["Row"];
+export type ReviewInsert = Database["public"]["Tables"]["reviews"]["Insert"];
+export type ReviewUpdate = Database["public"]["Tables"]["reviews"]["Update"];
