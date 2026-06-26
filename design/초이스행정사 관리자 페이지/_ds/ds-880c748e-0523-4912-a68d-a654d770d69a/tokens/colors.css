@@ -1,0 +1,50 @@
+/* 초이스 행정사 — Color tokens
+ * 무드: 따뜻하지만 묵직한 토프 브라운, 흰 배경 + 브라운 포인트.
+ * 규칙: primary·accent 면 위 텍스트는 흰색(on-primary/on-accent),
+ *       밝은 면 위 텍스트는 ink(제목) / body(본문).
+ * 라이트 전용. */
+:root {
+	/* ── Brand: toffee brown ── */
+	--color-primary: #6c5d4c; /* 주조색 */
+	--color-primary-dark: #524636; /* 푸터·hover */
+	--color-primary-light: #8c7d6a;
+	--color-accent: #7c6346; /* 포인트 */
+	--color-accent-soft: #e1d7c6; /* 배지·강조 배경 */
+
+	/* ── Surfaces ── */
+	--color-background: #ffffff;
+	--color-surface: #f5f3ef;
+	--color-surface-alt: #ece7df;
+	--color-border: #e2ddd3;
+
+	/* ── Text ── */
+	--color-ink: #222222; /* 제목 */
+	--color-body: #3f3a34; /* 본문 */
+	--color-muted: #888888; /* 보조 */
+	--color-on-primary: #ffffff;
+	--color-on-accent: #ffffff;
+
+	/* ── Semantic aliases (consume these in UI) ── */
+	--text-heading: var(--color-ink);
+	--text-body: var(--color-body);
+	--text-muted: var(--color-muted);
+	--text-on-brand: var(--color-on-primary);
+
+	--surface-page: var(--color-background);
+	--surface-card: var(--color-background);
+	--surface-subtle: var(--color-surface);
+	--surface-sunken: var(--color-surface-alt);
+	--surface-footer: var(--color-primary-dark);
+
+	--border-default: var(--color-border);
+	--border-strong: var(--color-primary-light);
+
+	--action-primary: var(--color-primary);
+	--action-primary-hover: var(--color-primary-dark);
+	--action-accent: var(--color-accent);
+
+	--badge-bg: var(--color-accent-soft);
+	--badge-fg: var(--color-primary-dark);
+
+	--focus-ring: var(--color-primary);
+}

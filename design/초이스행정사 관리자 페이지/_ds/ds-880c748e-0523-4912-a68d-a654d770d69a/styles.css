@@ -1,0 +1,7 @@
+/* 초이스 행정사 사무소 — Design System global entry.
+ * 이 파일만 link 하면 토큰·글꼴·기본 리셋이 모두 적용됩니다. */
+@import "./tokens/fonts.css";
+@import "./tokens/colors.css";
+@import "./tokens/typography.css";
+@import "./tokens/spacing.css";
+@import "./tokens/base.css";

@@ -1,0 +1,42 @@
+/* 초이스 행정사 — Base reset + element defaults.
+ * 한국어 우선: keep-all 줄바꿈, 큰 본문, 강한 대비. */
+:root {
+	color-scheme: light;
+}
+
+body {
+	margin: 0;
+	font-family: var(--font-sans);
+	font-weight: var(--weight-regular);
+	font-size: var(--text-base);
+	line-height: var(--leading-relaxed);
+	color: var(--text-body);
+	background: var(--surface-page);
+	word-break: keep-all;
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4 {
+	color: var(--text-heading);
+	font-weight: var(--weight-bold);
+	line-height: var(--leading-tight);
+	letter-spacing: var(--tracking-tight);
+	text-wrap: balance;
+	margin: 0;
+}
+
+p {
+	text-wrap: pretty;
+	margin: 0;
+}
+
+a {
+	color: var(--action-primary);
+	text-underline-offset: 3px;
+}
+
+*:focus-visible {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 2px;
+}

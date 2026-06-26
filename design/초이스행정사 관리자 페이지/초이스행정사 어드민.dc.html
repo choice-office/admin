@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/ds-880c748e-0523-4912-a68d-a654d770d69a/tokens/fonts.css">
+  <link rel="stylesheet" href="_ds/ds-880c748e-0523-4912-a68d-a654d770d69a/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/ds-880c748e-0523-4912-a68d-a654d770d69a/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/ds-880c748e-0523-4912-a68d-a654d770d69a/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/ds-880c748e-0523-4912-a68d-a654d770d69a/tokens/base.css">
+  <link rel="stylesheet" href="_ds/ds-880c748e-0523-4912-a68d-a654d770d69a/styles.css">
+  <script src="_ds/ds-880c748e-0523-4912-a68d-a654d770d69a/_ds_bundle.js"></script>
+  <style>
+    html,body{margin:0;padding:0;}
+    *{box-sizing:border-box;}
+    ::-webkit-scrollbar{width:10px;height:10px;}
+    ::-webkit-scrollbar-thumb{background:#d8d1c4;border-radius:8px;border:2px solid transparent;background-clip:content-box;}
+  </style>
+</helmet>
+
+<div style="font-family:var(--font-sans);color:var(--text-body);word-break:keep-all;-webkit-font-smoothing:antialiased;">
+
+<!-- ========================= LOGIN ========================= -->
+<sc-if value="{{ showLogin }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--surface-subtle);padding:24px;">
+  <div style="width:100%;max-width:430px;">
+    <div style="text-align:center;margin-bottom:26px;">
+      <div style="font-size:12px;letter-spacing:0.22em;color:var(--color-accent);font-weight:500;margin-bottom:12px;">ADMIN CONSOLE</div>
+      <div style="font-size:25px;font-weight:700;letter-spacing:-0.02em;color:var(--text-heading);">초이스 행정사 사무소</div>
+    </div>
+    <x-import component-from-global-scope="DesignSystem_880c74.Card" hover="{{ false }}" hint-size="100%,auto">
+      <h1 style="font-size:21px;font-weight:700;color:var(--text-heading);margin:0 0 6px;letter-spacing:-0.02em;">관리자 로그인</h1>
+      <p style="font-size:15px;color:var(--text-muted);margin:0 0 26px;line-height:1.6;">사무소 관리자 계정으로 로그인해 주세요.</p>
+
+      <div style="margin-bottom:18px;">
+        <x-import component-from-global-scope="DesignSystem_880c74.Label" hint-size="100%,auto">아이디</x-import>
+        <x-import component-from-global-scope="DesignSystem_880c74.Input" value="{{ userId }}" onChange="{{ setUserId }}" placeholder="아이디를 입력하세요" hint-size="100%,48px"></x-import>
+      </div>
+      <div style="margin-bottom:14px;">
+        <x-import component-from-global-scope="DesignSystem_880c74.Label" hint-size="100%,auto">비밀번호</x-import>
+        <x-import component-from-global-scope="DesignSystem_880c74.Input" type="password" value="{{ pw }}" onChange="{{ setPw }}" placeholder="비밀번호를 입력하세요" hint-size="100%,48px"></x-import>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:6px 0 22px;">
+        <label style="display:flex;align-items:center;gap:9px;font-size:14px;color:var(--text-body);cursor:pointer;">
+          <input type="checkbox" checked="{{ remember }}" onChange="{{ toggleRemember }}" style="width:17px;height:17px;accent-color:var(--color-primary);cursor:pointer;">
+          로그인 유지
+        </label>
+        <a onClick="{{ noop }}" style="font-size:14px;color:var(--color-primary);text-decoration:none;cursor:pointer;font-weight:500;">비밀번호 찾기</a>
+      </div>
+
+      <sc-if value="{{ loginError }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size:14px;color:#b4452f;margin-bottom:14px;">아이디를 입력해 주세요.</div>
+      </sc-if>
+
+      <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="primary" size="lg" dc-props="{{ loginBtnProps }}" hint-size="100%,52px">로그인</x-import>
+    </x-import>
+    <p style="text-align:center;font-size:13px;color:var(--text-muted);margin:22px 0 0;line-height:1.7;">초이스 행정사 사무소 · 행정사 등록번호 0000-0000<br>관리자 외 접근이 제한된 페이지입니다.</p>
+  </div>
+</div>
+</sc-if>
+
+<!-- ========================= APP SHELL ========================= -->
+<sc-if value="{{ showApp }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;min-height:100vh;height:100vh;overflow:hidden;">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside style="{{ sidebarStyle }}">
+    <div style="height:64px;display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid var(--border-default);flex-shrink:0;">
+      <div style="{{ brandStyle }}">초이스 행정사</div>
+      <button onClick="{{ toggleCollapsed }}" title="메뉴 접기/펼치기" style="margin-left:auto;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;border-radius:var(--radius);cursor:pointer;color:var(--text-muted);" style-hover="{{ ghostHover }}">{{ panelIcon }}</button>
+    </div>
+    <nav style="flex:1;overflow-y:auto;padding:12px 12px;display:flex;flex-direction:column;gap:3px;">
+      <sc-for list="{{ menuItems }}" as="m" hint-placeholder-count="9">
+        <button onClick="{{ m.onClick }}" title="{{ m.label }}" style="{{ m.style }}" style-hover="{{ m.hoverStyle }}">
+          <span style="{{ m.iconWrapStyle }}">{{ m.iconEl }}</span>
+          <span style="{{ m.labelStyle }}">{{ m.label }}</span>
+        </button>
+      </sc-for>
+    </nav>
+    <div style="{{ sideFootStyle }}">초이스 행정사 어드민 v1.0</div>
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <div style="flex:1;display:flex;flex-direction:column;min-width:0;background:var(--surface-subtle);">
+
+    <!-- TOPBAR -->
+    <header style="height:64px;background:var(--surface-card);border-bottom:1px solid var(--border-default);display:flex;align-items:center;gap:20px;padding:0 26px;flex-shrink:0;z-index:5;">
+      <div style="font-size:18px;font-weight:700;color:var(--text-heading);letter-spacing:-0.02em;white-space:nowrap;">{{ routeTitle }}</div>
+      <div style="flex:1;"></div>
+      <div style="position:relative;width:280px;max-width:34vw;">
+        <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;display:flex;">{{ searchIcon }}</span>
+        <x-import component-from-global-scope="DesignSystem_880c74.Input" dc-props="{{ topSearchProps }}" hint-size="100%,42px"></x-import>
+      </div>
+      <button onClick="{{ noop }}" title="알림" style="position:relative;width:42px;height:42px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-default);background:var(--surface-card);border-radius:var(--radius);cursor:pointer;color:var(--text-body);" style-hover="{{ outlineHover }}">
+        {{ bellIcon }}
+        <span style="position:absolute;top:8px;right:9px;width:8px;height:8px;border-radius:50%;background:var(--color-accent);border:2px solid var(--surface-card);"></span>
+      </button>
+      <div style="width:1px;height:30px;background:var(--border-default);"></div>
+      <div style="position:relative;">
+        <button onClick="{{ toggleUserMenu }}" style="display:flex;align-items:center;gap:10px;border:none;background:transparent;cursor:pointer;padding:5px 6px;border-radius:var(--radius);" style-hover="{{ ghostHover }}">
+          <span style="width:36px;height:36px;border-radius:50%;background:var(--color-accent-soft);color:var(--color-primary-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;">관</span>
+          <span style="font-size:14px;font-weight:500;color:var(--text-heading);white-space:nowrap;">관리자 ○○○</span>
+          <span style="color:var(--text-muted);display:flex;">{{ chevronDownIcon }}</span>
+        </button>
+        <sc-if value="{{ userMenuOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;top:54px;right:0;width:200px;background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius);box-shadow:var(--shadow-md);padding:6px;z-index:20;">
+            <div style="padding:10px 12px 12px;border-bottom:1px solid var(--border-default);margin-bottom:6px;">
+              <div style="font-size:14px;font-weight:600;color:var(--text-heading);">관리자 ○○○</div>
+              <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">admin@kvisa1345.com</div>
+            </div>
+            <button onClick="{{ goSettings }}" style="{{ menuRowStyle }}" style-hover="{{ ghostHover }}">설정</button>
+            <button onClick="{{ logout }}" style="{{ menuRowStyle }}" style-hover="{{ ghostHover }}"><span style="display:flex;color:var(--text-muted);">{{ logoutIcon }}</span>로그아웃</button>
+          </div>
+        </sc-if>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <div style="flex:1;overflow-y:auto;padding:28px 32px 48px;">
+
+    <!-- ===== DASHBOARD ===== -->
+    <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ true }}">
+    <div data-screen-label="대시보드" style="max-width:1180px;">
+      <div style="margin-bottom:22px;">
+        <h2 style="font-size:24px;font-weight:700;color:var(--text-heading);margin:0 0 6px;letter-spacing:-0.02em;">안녕하세요, 관리자님</h2>
+        <p style="font-size:15px;color:var(--text-muted);margin:0;">{{ todayLabel }} · 사무소 운영 현황을 한눈에 확인하세요.</p>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:22px;">
+        <sc-for list="{{ statCards }}" as="c" hint-placeholder-count="4">
+          <x-import component-from-global-scope="DesignSystem_880c74.Card" hint-size="100%,128px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+              <div>
+                <div style="font-size:14px;color:var(--text-muted);margin-bottom:10px;">{{ c.label }}</div>
+                <div style="font-size:30px;font-weight:700;color:var(--text-heading);letter-spacing:-0.02em;line-height:1;">{{ c.value }}</div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:9px;">{{ c.sub }}</div>
+              </div>
+              <div style="width:44px;height:44px;border-radius:var(--radius);background:var(--color-accent-soft);color:var(--color-primary-dark);display:flex;align-items:center;justify-content:center;flex-shrink:0;">{{ c.iconEl }}</div>
+            </div>
+          </x-import>
+        </sc-for>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 320px;gap:18px;align-items:start;">
+        <!-- recent inquiries -->
+        <div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius);overflow:hidden;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--border-default);">
+            <h3 style="font-size:17px;font-weight:700;color:var(--text-heading);margin:0;">최근 상담 문의</h3>
+            <a onClick="{{ goInquiries }}" style="font-size:14px;color:var(--color-primary);cursor:pointer;font-weight:500;text-decoration:none;">전체 보기</a>
+          </div>
+          <div style="display:grid;grid-template-columns:1.3fr 1.5fr 0.9fr 1fr;gap:12px;padding:12px 20px;background:var(--surface-subtle);border-bottom:1px solid var(--border-default);font-size:13px;font-weight:600;color:var(--text-muted);">
+            <div>의뢰인</div><div>업무분야</div><div>상태</div><div>접수일</div>
+          </div>
+          <sc-for list="{{ recentRows }}" as="q" hint-placeholder-count="5">
+            <div onClick="{{ q.open }}" style="{{ q.rowStyle }}" style-hover="{{ rowHover }}">
+              <div style="font-weight:500;color:var(--text-heading);">{{ q.name }}</div>
+              <div style="color:var(--text-body);">{{ q.field }}</div>
+              <div><x-import component-from-global-scope="DesignSystem_880c74.Badge" variant="{{ q.badgeVariant }}" hint-size="auto,26px">{{ q.status }}</x-import></div>
+              <div style="color:var(--text-muted);font-size:14px;">{{ q.date }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <!-- quick actions -->
+        <x-import component-from-global-scope="DesignSystem_880c74.Card" hover="{{ false }}" hint-size="100%,auto">
+          <h3 style="font-size:17px;font-weight:700;color:var(--text-heading);margin:0 0 16px;">빠른 작업</h3>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="primary" iconStart="{{ plusIcon }}" dc-props="{{ qaPostProps }}" hint-size="100%,44px">새 공지 작성</x-import>
+            <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="outline" iconStart="{{ msgIcon }}" dc-props="{{ qaInqProps }}" hint-size="100%,44px">상담 문의 보기</x-import>
+            <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="outline" iconStart="{{ starIcon }}" dc-props="{{ qaRevProps }}" hint-size="100%,44px">후기 관리</x-import>
+          </div>
+          <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border-default);">
+            <div style="font-size:13px;color:var(--text-muted);line-height:1.7;">처리 대기 중인 상담이 <strong style="color:var(--color-primary);font-weight:700;">{{ pendingCount }}건</strong> 있습니다. 빠른 회신이 신뢰로 이어집니다.</div>
+          </div>
+        </x-import>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===== INQUIRIES ===== -->
+    <sc-if value="{{ isInquiries }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="상담 문의 관리" style="max-width:1280px;">
+      <div style="margin-bottom:20px;">
+        <h2 style="font-size:24px;font-weight:700;color:var(--text-heading);margin:0 0 6px;letter-spacing:-0.02em;">상담 문의 관리</h2>
+        <p style="font-size:15px;color:var(--text-muted);margin:0;">홈페이지로 접수된 상담 문의를 확인하고 처리 상태를 관리합니다.</p>
+      </div>
+
+      <!-- filter bar -->
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+        <div style="display:flex;gap:6px;">
+          <sc-for list="{{ statusTabs }}" as="t" hint-placeholder-count="5">
+            <button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
+          </sc-for>
+        </div>
+        <div style="flex:1;"></div>
+        <div style="width:180px;">
+          <x-import component-from-global-scope="DesignSystem_880c74.Select" value="{{ iqPeriod }}" onChange="{{ setIqPeriod }}" dc-props="{{ periodSelectProps }}" hint-size="180px,44px">
+            <option>전체 기간</option><option>오늘</option><option>최근 7일</option><option>최근 30일</option>
+          </x-import>
+        </div>
+        <div style="position:relative;width:240px;">
+          <span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;display:flex;">{{ searchIcon }}</span>
+          <x-import component-from-global-scope="DesignSystem_880c74.Input" dc-props="{{ iqSearchProps }}" hint-size="240px,44px"></x-import>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:20px;align-items:start;">
+        <!-- table -->
+        <div style="flex:1;min-width:0;">
+          <div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius);overflow:hidden;">
+            <div style="display:grid;grid-template-columns:1.2fr 1.4fr 1.4fr 0.9fr 1fr;gap:12px;padding:13px 18px;background:var(--surface-subtle);border-bottom:1px solid var(--border-default);font-size:13px;font-weight:600;color:var(--text-muted);">
+              <div>의뢰인</div><div>연락처</div><div>업무분야</div><div>상태</div><div>접수일</div>
+            </div>
+            <sc-for list="{{ iqRows }}" as="q" hint-placeholder-count="6">
+              <div onClick="{{ q.open }}" style="{{ q.rowStyle }}" style-hover="{{ rowHover }}">
+                <div style="font-weight:500;color:var(--text-heading);">{{ q.name }}</div>
+                <div style="color:var(--text-body);">{{ q.phone }}</div>
+                <div style="color:var(--text-body);">{{ q.field }}</div>
+                <div><x-import component-from-global-scope="DesignSystem_880c74.Badge" variant="{{ q.badgeVariant }}" hint-size="auto,26px">{{ q.status }}</x-import></div>
+                <div style="color:var(--text-muted);font-size:14px;">{{ q.date }}</div>
+              </div>
+            </sc-for>
+            <sc-if value="{{ iqEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="text-align:center;padding:56px 24px;">
+                <div style="color:var(--text-muted);display:flex;justify-content:center;margin-bottom:14px;">{{ inboxIcon }}</div>
+                <div style="font-size:16px;font-weight:600;color:var(--text-heading);margin-bottom:6px;">조건에 맞는 문의가 없습니다</div>
+                <p style="font-size:14px;color:var(--text-muted);margin:0;">필터나 검색어를 바꿔 다시 시도해 보세요.</p>
+              </div>
+            </sc-if>
+          </div>
+
+          <sc-if value="{{ showPager }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;">
+            <div style="font-size:13px;color:var(--text-muted);">{{ rangeText }}</div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <button onClick="{{ prevPage }}" style="{{ pagerArrowStyle }}" style-hover="{{ outlineHover }}">{{ chevronLeftIcon }}</button>
+              <sc-for list="{{ pageNumbers }}" as="p" hint-placeholder-count="3">
+                <button onClick="{{ p.onClick }}" style="{{ p.style }}">{{ p.n }}</button>
+              </sc-for>
+              <button onClick="{{ nextPage }}" style="{{ pagerArrowStyle }}" style-hover="{{ outlineHover }}">{{ chevronRightIcon }}</button>
+            </div>
+          </div>
+          </sc-if>
+        </div>
+
+        <!-- detail panel -->
+        <sc-if value="{{ hasSelection }}" hint-placeholder-val="{{ false }}">
+        <div style="width:400px;flex-shrink:0;">
+          <x-import component-from-global-scope="DesignSystem_880c74.Card" hover="{{ false }}" hint-size="400px,auto">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px;">
+              <div>
+                <div style="font-size:13px;color:var(--color-accent);font-weight:500;margin-bottom:4px;">상담 상세</div>
+                <h3 style="font-size:20px;font-weight:700;color:var(--text-heading);margin:0;letter-spacing:-0.02em;">{{ sel.name }}</h3>
+              </div>
+              <button onClick="{{ closeDetail }}" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;border-radius:var(--radius);cursor:pointer;color:var(--text-muted);flex-shrink:0;" style-hover="{{ ghostHover }}">{{ closeIcon }}</button>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:11px;padding:16px;background:var(--surface-subtle);border-radius:var(--radius);margin-bottom:18px;">
+              <div style="display:flex;align-items:center;gap:10px;font-size:14px;"><span style="color:var(--text-muted);display:flex;">{{ phoneIcon }}</span><span style="color:var(--text-body);">{{ sel.phone }}</span></div>
+              <div style="display:flex;align-items:center;gap:10px;font-size:14px;"><span style="color:var(--text-muted);display:flex;">{{ layersIcon }}</span><span style="color:var(--text-body);">{{ sel.field }}</span></div>
+              <div style="display:flex;align-items:center;gap:10px;font-size:14px;"><span style="color:var(--text-muted);display:flex;">{{ calendarIcon }}</span><span style="color:var(--text-body);">접수일 {{ sel.date }}</span></div>
+            </div>
+
+            <div style="margin-bottom:18px;">
+              <div style="font-size:14px;font-weight:600;color:var(--text-heading);margin-bottom:8px;">문의 내용</div>
+              <p style="font-size:15px;line-height:1.75;color:var(--text-body);margin:0;word-break:keep-all;">{{ sel.content }}</p>
+            </div>
+
+            <div style="margin-bottom:16px;">
+              <x-import component-from-global-scope="DesignSystem_880c74.Label" hint-size="100%,auto">처리 상태</x-import>
+              <x-import component-from-global-scope="DesignSystem_880c74.Select" value="{{ dStatus }}" onChange="{{ setDStatus }}" hint-size="100%,48px">
+                <option>신규</option><option>처리중</option><option>완료</option><option>보류</option>
+              </x-import>
+            </div>
+            <div style="margin-bottom:18px;">
+              <x-import component-from-global-scope="DesignSystem_880c74.Label" hint-size="100%,auto">처리 메모</x-import>
+              <x-import component-from-global-scope="DesignSystem_880c74.Textarea" value="{{ dMemo }}" onChange="{{ setDMemo }}" rows="{{ 4 }}" placeholder="내부 처리 메모를 남겨주세요" hint-size="100%,110px"></x-import>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="primary" dc-props="{{ saveDetailProps }}" hint-size="auto,44px">변경사항 저장</x-import>
+              <sc-if value="{{ savedFlash }}" hint-placeholder-val="{{ false }}">
+                <span style="font-size:14px;color:var(--color-primary);font-weight:500;display:flex;align-items:center;gap:5px;">{{ checkIcon }} 저장되었습니다</span>
+              </sc-if>
+            </div>
+          </x-import>
+        </div>
+        </sc-if>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===== REVIEWS ===== -->
+    <sc-if value="{{ isReviews }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="의뢰인 후기 관리" style="max-width:1000px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px;">
+        <div>
+          <h2 style="font-size:24px;font-weight:700;color:var(--text-heading);margin:0 0 6px;letter-spacing:-0.02em;">의뢰인 후기 관리</h2>
+          <p style="font-size:15px;color:var(--text-muted);margin:0;">후기를 직접 등록하고 홈페이지 노출 여부를 관리합니다.</p>
+        </div>
+        <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="primary" iconStart="{{ plusIcon }}" onClick="{{ toggleReviewForm }}" hint-size="auto,44px">후기 직접 작성</x-import>
+      </div>
+
+      <sc-if value="{{ showReviewForm }}" hint-placeholder-val="{{ false }}">
+      <x-import component-from-global-scope="DesignSystem_880c74.Card" hover="{{ false }}" hint-size="100%,auto">
+        <h3 style="font-size:17px;font-weight:700;color:var(--text-heading);margin:0 0 18px;">새 후기 작성</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;">
+          <div><x-import component-from-global-scope="DesignSystem_880c74.Label" hint-size="100%,auto">작성자 (표시명)</x-import><x-import component-from-global-scope="DesignSystem_880c74.Input" value="{{ rvForm.author }}" onChange="{{ setRvAuthor }}" placeholder="예) 김O준" hint-size="100%,48px"></x-import></div>
+          <div><x-import component-from-global-scope="DesignSystem_880c74.Label" hint-size="100%,auto">업무분야</x-import><x-import component-from-global-scope="DesignSystem_880c74.Select" value="{{ rvForm.field }}" onChange="{{ setRvField }}" hint-size="100%,48px"><option>거소증(F-4)</option><option>영주권(F-5)</option><option>결혼비자(F-6)</option><option>국적회복</option><option>단기초청(C-3)</option><option>주재원(D-7)</option><option>전문직(E-7)</option><option>재외동포(F-4)</option></x-import></div>
+          <div><x-import component-from-global-scope="DesignSystem_880c74.Label" hint-size="100%,auto">평점</x-import><x-import component-from-global-scope="DesignSystem_880c74.Select" value="{{ rvForm.rating }}" onChange="{{ setRvRating }}" hint-size="100%,48px"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></x-import></div>
+        </div>
+        <div style="margin-bottom:16px;"><x-import component-from-global-scope="DesignSystem_880c74.Label" hint-size="100%,auto">후기 내용</x-import><x-import component-from-global-scope="DesignSystem_880c74.Textarea" value="{{ rvForm.content }}" onChange="{{ setRvContent }}" rows="{{ 4 }}" placeholder="의뢰인 후기 내용을 입력하세요" hint-size="100%,110px"></x-import></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <label style="display:flex;align-items:center;gap:9px;font-size:14px;color:var(--text-body);cursor:pointer;"><input type="checkbox" checked="{{ rvPublishNow }}" onChange="{{ setRvPublish }}" style="width:17px;height:17px;accent-color:var(--color-primary);cursor:pointer;">작성 즉시 홈페이지에 노출</label>
+          <div style="display:flex;gap:10px;">
+            <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="ghost" onClick="{{ toggleReviewForm }}" hint-size="auto,44px">취소</x-import>
+            <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="primary" onClick="{{ saveReview }}" hint-size="auto,44px">후기 등록</x-import>
+          </div>
+        </div>
+      </x-import>
+      <div style="height:18px;"></div>
+      </sc-if>
+
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <sc-for list="{{ reviewItems }}" as="r" hint-placeholder-count="4">
+          <x-import component-from-global-scope="DesignSystem_880c74.Card" hover="{{ false }}" hint-size="100%,auto">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:9px;flex-wrap:wrap;">
+                  <span style="font-size:16px;font-weight:700;color:var(--text-heading);">{{ r.author }}</span>
+                  <span style="font-size:13px;color:var(--text-muted);">{{ r.field }}</span>
+                  {{ r.starsEl }}
+                  <x-import component-from-global-scope="DesignSystem_880c74.Badge" variant="{{ r.badgeVariant }}" hint-size="auto,26px">{{ r.statusLabel }}</x-import>
+                </div>
+                <p style="font-size:15px;line-height:1.75;color:var(--text-body);margin:0 0 6px;word-break:keep-all;">{{ r.content }}</p>
+                <div style="font-size:13px;color:var(--text-muted);">{{ r.date }}</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;width:108px;">
+                <sc-if value="{{ r.isPending }}" hint-placeholder-val="{{ false }}">
+                  <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="primary" size="sm" onClick="{{ r.onApprove }}" dc-props="{{ fullBtn }}" hint-size="100%,36px">승인</x-import>
+                </sc-if>
+                <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="outline" size="sm" onClick="{{ r.onToggle }}" dc-props="{{ fullBtn }}" hint-size="100%,36px">{{ r.toggleLabel }}</x-import>
+                <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="ghost" size="sm" onClick="{{ r.onDelete }}" dc-props="{{ fullBtn }}" hint-size="100%,36px">삭제</x-import>
+              </div>
+            </div>
+          </x-import>
+        </sc-for>
+        <sc-if value="{{ reviewsEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="text-align:center;padding:64px 24px;background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius);">
+            <div style="color:var(--text-muted);display:flex;justify-content:center;margin-bottom:14px;">{{ starBigIcon }}</div>
+            <div style="font-size:16px;font-weight:600;color:var(--text-heading);margin-bottom:6px;">등록된 후기가 없습니다</div>
+            <p style="font-size:14px;color:var(--text-muted);margin:0;">‘후기 직접 작성’으로 첫 후기를 등록해 보세요.</p>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===== BLOG ===== -->
+    <sc-if value="{{ isBlog }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="블로그/공지 관리" style="max-width:1100px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px;">
+        <div>
+          <h2 style="font-size:24px;font-weight:700;color:var(--text-heading);margin:0 0 6px;letter-spacing:-0.02em;">블로그/공지 관리</h2>
+          <p style="font-size:15px;color:var(--text-muted);margin:0;">블로그 글과 공지사항을 작성하고 발행 상태를 관리합니다.</p>
+        </div>
+        <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="primary" iconStart="{{ plusIcon }}" onClick="{{ togglePostForm }}" hint-size="auto,44px">새 글 작성</x-import>
+      </div>
+
+      <sc-if value="{{ showPostForm }}" hint-placeholder-val="{{ false }}">
+      <x-import component-from-global-scope="DesignSystem_880c74.Card" hover="{{ false }}" hint-size="100%,auto">
+        <h3 style="font-size:17px;font-weight:700;color:var(--text-heading);margin:0 0 18px;">{{ postFormTitle }}</h3>
+        <div style="margin-bottom:14px;"><x-import component-from-global-scope="DesignSystem_880c74.Label" hint-size="100%,auto">제목</x-import><x-import component-from-global-scope="DesignSystem_880c74.Input" value="{{ psForm.title }}" onChange="{{ setPsTitle }}" placeholder="글 제목을 입력하세요" hint-size="100%,48px"></x-import></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+          <div><x-import component-from-global-scope="DesignSystem_880c74.Label" hint-size="100%,auto">카테고리</x-import><x-import component-from-global-scope="DesignSystem_880c74.Select" value="{{ psForm.category }}" onChange="{{ setPsCategory }}" hint-size="100%,48px"><option>블로그</option><option>공지</option><option>뉴스</option></x-import></div>
+          <div><x-import component-from-global-scope="DesignSystem_880c74.Label" hint-size="100%,auto">발행 상태</x-import><x-import component-from-global-scope="DesignSystem_880c74.Select" value="{{ psForm.status }}" onChange="{{ setPsStatus }}" hint-size="100%,48px"><option>임시저장</option><option>발행</option></x-import></div>
+        </div>
+        <div style="margin-bottom:16px;"><x-import component-from-global-scope="DesignSystem_880c74.Label" hint-size="100%,auto">본문</x-import><x-import component-from-global-scope="DesignSystem_880c74.Textarea" value="{{ psForm.body }}" onChange="{{ setPsBody }}" rows="{{ 7 }}" placeholder="본문 내용을 입력하세요" hint-size="100%,180px"></x-import></div>
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;">
+          <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="ghost" onClick="{{ togglePostForm }}" hint-size="auto,44px">취소</x-import>
+          <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="outline" onClick="{{ savePostDraft }}" hint-size="auto,44px">임시저장</x-import>
+          <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="primary" onClick="{{ savePostPublish }}" hint-size="auto,44px">발행하기</x-import>
+        </div>
+      </x-import>
+      <div style="height:18px;"></div>
+      </sc-if>
+
+      <div style="background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius);overflow:hidden;">
+        <div style="display:grid;grid-template-columns:3fr 0.9fr 0.9fr 1.1fr 0.8fr 0.9fr;gap:12px;padding:13px 18px;background:var(--surface-subtle);border-bottom:1px solid var(--border-default);font-size:13px;font-weight:600;color:var(--text-muted);">
+          <div>제목</div><div>카테고리</div><div>상태</div><div>발행일</div><div style="text-align:right;">조회</div><div style="text-align:right;">관리</div>
+        </div>
+        <sc-for list="{{ postRows }}" as="p" hint-placeholder-count="7">
+          <div style="display:grid;grid-template-columns:3fr 0.9fr 0.9fr 1.1fr 0.8fr 0.9fr;gap:12px;padding:15px 18px;align-items:center;border-bottom:1px solid var(--border-default);font-size:15px;">
+            <div onClick="{{ p.onEdit }}" style="font-weight:500;color:var(--text-heading);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ p.title }}">{{ p.title }}</div>
+            <div><x-import component-from-global-scope="DesignSystem_880c74.Badge" variant="{{ p.catVariant }}" hint-size="auto,26px">{{ p.category }}</x-import></div>
+            <div><x-import component-from-global-scope="DesignSystem_880c74.Badge" variant="{{ p.statusVariant }}" hint-size="auto,26px">{{ p.status }}</x-import></div>
+            <div style="color:var(--text-muted);font-size:14px;">{{ p.date }}</div>
+            <div style="text-align:right;color:var(--text-body);font-size:14px;">{{ p.viewsLabel }}</div>
+            <div style="display:flex;gap:4px;justify-content:flex-end;">
+              <button onClick="{{ p.onEdit }}" title="수정" style="{{ iconBtnStyle }}" style-hover="{{ ghostHover }}">{{ pencilIcon }}</button>
+              <button onClick="{{ p.onDelete }}" title="삭제" style="{{ iconBtnStyle }}" style-hover="{{ ghostHover }}">{{ trashIcon }}</button>
+            </div>
+          </div>
+        </sc-for>
+        <sc-if value="{{ postsEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="text-align:center;padding:56px 24px;">
+            <div style="font-size:16px;font-weight:600;color:var(--text-heading);margin-bottom:6px;">등록된 글이 없습니다</div>
+            <p style="font-size:14px;color:var(--text-muted);margin:0;">‘새 글 작성’으로 첫 글을 등록해 보세요.</p>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===== FAQ ===== -->
+    <sc-if value="{{ isFaq }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="자주 묻는 질문(FAQ) 관리" style="max-width:1000px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px;">
+        <div>
+          <h2 style="font-size:24px;font-weight:700;color:var(--text-heading);margin:0 0 6px;letter-spacing:-0.02em;">자주 묻는 질문(FAQ) 관리</h2>
+          <p style="font-size:15px;color:var(--text-muted);margin:0;">홈페이지에 노출되는 자주 묻는 질문과 답변을 관리합니다.</p>
+        </div>
+        <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="primary" iconStart="{{ plusIcon }}" onClick="{{ toggleFaqForm }}" hint-size="auto,44px">새 질문 추가</x-import>
+      </div>
+
+      <sc-if value="{{ showFaqForm }}" hint-placeholder-val="{{ false }}">
+      <x-import component-from-global-scope="DesignSystem_880c74.Card" hover="{{ false }}" hint-size="100%,auto">
+        <h3 style="font-size:17px;font-weight:700;color:var(--text-heading);margin:0 0 18px;">{{ faqFormTitle }}</h3>
+        <div style="margin-bottom:14px;width:240px;"><x-import component-from-global-scope="DesignSystem_880c74.Label" hint-size="100%,auto">카테고리</x-import><x-import component-from-global-scope="DesignSystem_880c74.Select" value="{{ faqForm.category }}" onChange="{{ setFaqCat }}" hint-size="100%,48px"><option>거소증·영주권</option><option>결혼·국적</option><option>비용·절차</option><option>기타</option></x-import></div>
+        <div style="margin-bottom:14px;"><x-import component-from-global-scope="DesignSystem_880c74.Label" hint-size="100%,auto">질문</x-import><x-import component-from-global-scope="DesignSystem_880c74.Input" value="{{ faqForm.question }}" onChange="{{ setFaqQuestion }}" placeholder="자주 묻는 질문을 입력하세요" hint-size="100%,48px"></x-import></div>
+        <div style="margin-bottom:16px;"><x-import component-from-global-scope="DesignSystem_880c74.Label" hint-size="100%,auto">답변</x-import><x-import component-from-global-scope="DesignSystem_880c74.Textarea" value="{{ faqForm.answer }}" onChange="{{ setFaqAnswer }}" rows="{{ 4 }}" placeholder="답변 내용을 입력하세요" hint-size="100%,110px"></x-import></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <label style="display:flex;align-items:center;gap:9px;font-size:14px;color:var(--text-body);cursor:pointer;"><input type="checkbox" checked="{{ faqPublishNow }}" onChange="{{ setFaqPublish }}" style="width:17px;height:17px;accent-color:var(--color-primary);cursor:pointer;">홈페이지에 노출</label>
+          <div style="display:flex;gap:10px;">
+            <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="ghost" onClick="{{ toggleFaqForm }}" hint-size="auto,44px">취소</x-import>
+            <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="primary" onClick="{{ saveFaq }}" hint-size="auto,44px">저장</x-import>
+          </div>
+        </div>
+      </x-import>
+      <div style="height:18px;"></div>
+      </sc-if>
+
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <sc-for list="{{ faqItems }}" as="f" hint-placeholder-count="6">
+          <x-import component-from-global-scope="DesignSystem_880c74.Card" hover="{{ false }}" hint-size="100%,auto">
+            <div onClick="{{ f.onToggleExpand }}" style="display:flex;align-items:center;gap:13px;cursor:pointer;">
+              <span style="color:var(--text-muted);display:flex;">{{ f.chev }}</span>
+              <x-import component-from-global-scope="DesignSystem_880c74.Badge" variant="outline" hint-size="auto,26px">{{ f.category }}</x-import>
+              <div style="flex:1;font-size:16px;font-weight:600;color:var(--text-heading);min-width:0;">{{ f.question }}</div>
+              <x-import component-from-global-scope="DesignSystem_880c74.Badge" variant="{{ f.visBadgeVariant }}" hint-size="auto,26px">{{ f.visLabel }}</x-import>
+            </div>
+            <sc-if value="{{ f.expanded }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:14px;padding-top:16px;border-top:1px solid var(--border-default);">
+                <p style="font-size:15px;line-height:1.75;color:var(--text-body);margin:0 0 16px;word-break:keep-all;">{{ f.answer }}</p>
+                <div style="display:flex;gap:8px;">
+                  <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="outline" size="sm" onClick="{{ f.onToggleVis }}" hint-size="auto,36px">{{ f.toggleVisLabel }}</x-import>
+                  <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="ghost" size="sm" onClick="{{ f.onEdit }}" hint-size="auto,36px">수정</x-import>
+                  <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="ghost" size="sm" onClick="{{ f.onDelete }}" hint-size="auto,36px">삭제</x-import>
+                </div>
+              </div>
+            </sc-if>
+          </x-import>
+        </sc-for>
+        <sc-if value="{{ faqEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="text-align:center;padding:64px 24px;background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius);">
+            <div style="font-size:16px;font-weight:600;color:var(--text-heading);margin-bottom:6px;">등록된 질문이 없습니다</div>
+            <p style="font-size:14px;color:var(--text-muted);margin:0;">‘새 질문 추가’로 첫 FAQ를 등록해 보세요.</p>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===== MEMBERS ===== -->
+    <sc-if value="{{ isMembers }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="구성원 관리" style="max-width:1080px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px;">
+        <div>
+          <h2 style="font-size:24px;font-weight:700;color:var(--text-heading);margin:0 0 6px;letter-spacing:-0.02em;">구성원 관리</h2>
+          <p style="font-size:15px;color:var(--text-muted);margin:0;">사무소 구성원 정보와 홈페이지 노출 상태를 관리합니다.</p>
+        </div>
+        <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="primary" iconStart="{{ plusIcon }}" onClick="{{ toggleMemberForm }}" hint-size="auto,44px">구성원 추가</x-import>
+      </div>
+
+      <sc-if value="{{ showMemberForm }}" hint-placeholder-val="{{ false }}">
+      <x-import component-from-global-scope="DesignSystem_880c74.Card" hover="{{ false }}" hint-size="100%,auto">
+        <h3 style="font-size:17px;font-weight:700;color:var(--text-heading);margin:0 0 18px;">{{ memberFormTitle }}</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+          <div><x-import component-from-global-scope="DesignSystem_880c74.Label" hint-size="100%,auto">이름</x-import><x-import component-from-global-scope="DesignSystem_880c74.Input" value="{{ memForm.name }}" onChange="{{ setMemName }}" placeholder="구성원 이름" hint-size="100%,48px"></x-import></div>
+          <div><x-import component-from-global-scope="DesignSystem_880c74.Label" hint-size="100%,auto">직함</x-import><x-import component-from-global-scope="DesignSystem_880c74.Select" value="{{ memForm.role }}" onChange="{{ setMemRole }}" hint-size="100%,48px"><option>대표 행정사</option><option>행정사</option><option>사무직원</option></x-import></div>
+        </div>
+        <div style="margin-bottom:14px;"><x-import component-from-global-scope="DesignSystem_880c74.Label" hint-size="100%,auto">담당 업무</x-import><x-import component-from-global-scope="DesignSystem_880c74.Input" value="{{ memForm.field }}" onChange="{{ setMemField }}" placeholder="예) 결혼비자·국적 업무" hint-size="100%,48px"></x-import></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 200px;gap:14px;margin-bottom:18px;">
+          <div><x-import component-from-global-scope="DesignSystem_880c74.Label" hint-size="100%,auto">연락처</x-import><x-import component-from-global-scope="DesignSystem_880c74.Input" value="{{ memForm.phone }}" onChange="{{ setMemPhone }}" placeholder="02-000-0000" hint-size="100%,48px"></x-import></div>
+          <div><x-import component-from-global-scope="DesignSystem_880c74.Label" hint-size="100%,auto">이메일</x-import><x-import component-from-global-scope="DesignSystem_880c74.Input" value="{{ memForm.email }}" onChange="{{ setMemEmail }}" placeholder="name@kvisa1345.com" hint-size="100%,48px"></x-import></div>
+          <div><x-import component-from-global-scope="DesignSystem_880c74.Label" hint-size="100%,auto">상태</x-import><x-import component-from-global-scope="DesignSystem_880c74.Select" value="{{ memForm.status }}" onChange="{{ setMemStatus }}" hint-size="100%,48px"><option>활성</option><option>비활성</option></x-import></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;">
+          <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="ghost" onClick="{{ toggleMemberForm }}" hint-size="auto,44px">취소</x-import>
+          <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="primary" onClick="{{ saveMember }}" hint-size="auto,44px">저장</x-import>
+        </div>
+      </x-import>
+      <div style="height:18px;"></div>
+      </sc-if>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <sc-for list="{{ memberItems }}" as="m" hint-placeholder-count="4">
+          <x-import component-from-global-scope="DesignSystem_880c74.Card" hover="{{ false }}" hint-size="100%,auto">
+            <div style="{{ m.innerStyle }}">
+              <div style="display:flex;gap:15px;">
+                <div style="width:56px;height:56px;border-radius:50%;background:var(--color-accent-soft);color:var(--color-primary-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:21px;flex-shrink:0;">{{ m.initial }}</div>
+                <div style="flex:1;min-width:0;">
+                  <div style="display:flex;align-items:center;gap:9px;margin-bottom:5px;flex-wrap:wrap;">
+                    <span style="font-size:17px;font-weight:700;color:var(--text-heading);">{{ m.name }}</span>
+                    <x-import component-from-global-scope="DesignSystem_880c74.Badge" variant="secondary" hint-size="auto,24px">{{ m.role }}</x-import>
+                    <x-import component-from-global-scope="DesignSystem_880c74.Badge" variant="{{ m.statusBadgeVariant }}" hint-size="auto,24px">{{ m.statusLabel }}</x-import>
+                  </div>
+                  <div style="font-size:14px;color:var(--text-body);margin-bottom:10px;">{{ m.field }}</div>
+                  <div style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--text-muted);">
+                    <div>{{ m.phone }}</div>
+                    <div>{{ m.email }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border-default);">
+              <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="outline" size="sm" onClick="{{ m.onToggleStatus }}" hint-size="auto,36px">{{ m.toggleStatusLabel }}</x-import>
+              <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="ghost" size="sm" onClick="{{ m.onEdit }}" hint-size="auto,36px">수정</x-import>
+              <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="ghost" size="sm" onClick="{{ m.onDelete }}" hint-size="auto,36px">삭제</x-import>
+            </div>
+          </x-import>
+        </sc-for>
+      </div>
+      <sc-if value="{{ membersEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="text-align:center;padding:64px 24px;background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius);">
+          <div style="color:var(--text-muted);display:flex;justify-content:center;margin-bottom:14px;">{{ usersBigIcon }}</div>
+          <div style="font-size:16px;font-weight:600;color:var(--text-heading);margin-bottom:6px;">등록된 구성원이 없습니다</div>
+          <p style="font-size:14px;color:var(--text-muted);margin:0;">‘구성원 추가’로 사무소 구성원을 등록해 보세요.</p>
+        </div>
+      </sc-if>
+    </div>
+    </sc-if>
+
+    <!-- ===== PLACEHOLDER SCREENS ===== -->
+    <sc-if value="{{ isPlaceholder }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="{{ routeTitle }}" style="max-width:900px;">
+      <div style="margin-bottom:20px;">
+        <h2 style="font-size:24px;font-weight:700;color:var(--text-heading);margin:0 0 6px;letter-spacing:-0.02em;">{{ routeTitle }}</h2>
+        <p style="font-size:15px;color:var(--text-muted);margin:0;">{{ routeDesc }}</p>
+      </div>
+      <div style="text-align:center;padding:72px 24px;background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius);">
+        <div style="width:72px;height:72px;border-radius:50%;background:var(--color-accent-soft);color:var(--color-primary-dark);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">{{ placeholderIcon }}</div>
+        <div style="font-size:19px;font-weight:700;color:var(--text-heading);margin-bottom:8px;">화면을 준비하고 있습니다</div>
+        <p style="font-size:15px;color:var(--text-muted);max-width:440px;margin:0 auto 22px;line-height:1.7;word-break:keep-all;">{{ routeDesc }} 이 메뉴는 곧 제공될 예정입니다.</p>
+        <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="outline" size="sm" onClick="{{ goDashboard }}" hint-size="auto,36px">대시보드로 돌아가기</x-import>
+      </div>
+    </div>
+    </sc-if>
+
+    </div>
+  </div>
+
+  <!-- ===== CONFIRM MODAL ===== -->
+  <sc-if value="{{ hasConfirm }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:24px;">
+    <div onClick="{{ closeConfirm }}" style="position:absolute;inset:0;background:rgba(36,30,22,0.42);"></div>
+    <div style="position:relative;width:100%;max-width:440px;background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius);box-shadow:0 20px 60px rgba(36,30,22,0.32);padding:28px;">
+      <div style="display:flex;gap:16px;align-items:flex-start;margin-bottom:22px;">
+        <div style="{{ confirmIconWrapStyle }}">{{ confirmIconEl }}</div>
+        <div style="flex:1;min-width:0;">
+          <h3 style="font-size:19px;font-weight:700;color:var(--text-heading);margin:0 0 8px;letter-spacing:-0.02em;">{{ confirm.title }}</h3>
+          <p style="font-size:15px;line-height:1.7;color:var(--text-body);margin:0;word-break:keep-all;">{{ confirm.message }}</p>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;">
+        <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="ghost" onClick="{{ closeConfirm }}" hint-size="auto,44px">취소</x-import>
+        <x-import component-from-global-scope="DesignSystem_880c74.Button" variant="primary" dc-props="{{ confirmBtnProps }}" hint-size="auto,44px">{{ confirm.confirmLabel }}</x-import>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  icons = {
+    'layout-dashboard':'<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
+    'message-square':'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+    'star':'<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+    'newspaper':'<path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/><path d="M4 22h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/>',
+    'layers':'<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
+    'circle-help':'<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+    'users':'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    'bar-chart':'<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
+    'settings':'<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+    'search':'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+    'bell':'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+    'chevron-down':'<path d="m6 9 6 6 6-6"/>',
+    'chevron-left':'<path d="m15 18-6-6 6-6"/>',
+    'chevron-right':'<path d="m9 18 6-6-6-6"/>',
+    'log-out':'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>',
+    'plus':'<path d="M5 12h14"/><path d="M12 5v14"/>',
+    'panel-left':'<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>',
+    'inbox':'<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
+    'x':'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    'phone':'<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>',
+    'calendar':'<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>',
+    'pencil':'<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+    'trash':'<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>',
+    'check':'<path d="M20 6 9 17l-5-5"/>'
+  };
+
+  state = {
+    loggedIn:false, route:'dashboard', collapsed:false,
+    confirm:null,
+    userId:'admin', pw:'', remember:true, loginError:false, userMenuOpen:false,
+    iqStatus:'전체', iqPeriod:'전체 기간', iqQuery:'', iqPage:1,
+    selectedId:null, dStatus:'', dMemo:'', savedFlash:false,
+    showReviewForm:false, rvPublishNow:false,
+    rvForm:{author:'', field:'거소증(F-4)', rating:5, content:'', status:'승인대기'},
+    showPostForm:false, editingPostId:null,
+    psForm:{title:'', category:'블로그', body:'', status:'임시저장'},
+    today:'2026-06-26',
+    expandedFaqId:null, showFaqForm:false, editingFaqId:null, faqPublishNow:true,
+    faqForm:{category:'비용·절차', question:'', answer:''},
+    showMemberForm:false, editingMemberId:null,
+    memForm:{name:'', role:'행정사', field:'', phone:'', email:'', status:'활성'},
+    faqs:[
+      {id:'fq1',category:'비용·절차',question:'상담은 어떻게 신청하나요?',answer:'홈페이지 상담 문의 또는 전화로 신청하시면, 행정사가 직접 연락드려 일정과 준비 서류를 안내합니다.',visible:true},
+      {id:'fq2',category:'비용·절차',question:'상담 비용은 얼마인가요?',answer:'사안에 따라 다르며, 첫 상담에서 예상 비용과 진행 방향을 투명하게 안내드립니다. 결과를 보장하는 표현은 사용하지 않습니다.',visible:true},
+      {id:'fq3',category:'거소증·영주권',question:'거소증(F-4) 연장은 언제 신청해야 하나요?',answer:'만료일 4개월 전부터 신청 가능하며, 늦지 않게 미리 준비하시는 것을 권장합니다.',visible:true},
+      {id:'fq4',category:'거소증·영주권',question:'영주권(F-5) 점수제 요건이 궁금합니다.',answer:'소득·학력·한국어능력 등 항목별 점수를 합산합니다. 보유 자격을 알려주시면 예상 점수를 함께 계산해 드립니다.',visible:true},
+      {id:'fq5',category:'결혼·국적',question:'결혼비자(F-6) 심사에서 가장 중요한 점은 무엇인가요?',answer:'혼인의 진정성과 초청인의 소득 요건이 핵심입니다. 서류 준비 단계부터 꼼꼼히 점검합니다.',visible:false},
+      {id:'fq6',category:'결혼·국적',question:'국적회복 절차는 얼마나 걸리나요?',answer:'사안에 따라 다르지만 통상 수개월이 소요되며, 진행 상황을 단계마다 안내드립니다.',visible:true}
+    ],
+    members:[
+      {id:'mb1',name:'○○○',role:'대표 행정사',field:'출입국·체류 전반 총괄',phone:'02-000-0000',email:'choice@kvisa1345.com',status:'활성',initial:'대'},
+      {id:'mb2',name:'○○○',role:'행정사',field:'결혼비자·국적 업무',phone:'02-000-0001',email:'visa2@kvisa1345.com',status:'활성',initial:'행'},
+      {id:'mb3',name:'○○○',role:'사무직원',field:'서류 접수·고객 응대',phone:'02-000-0002',email:'office@kvisa1345.com',status:'활성',initial:'사'},
+      {id:'mb4',name:'○○○',role:'행정사',field:'영주권·전문직 업무',phone:'02-000-0003',email:'visa3@kvisa1345.com',status:'비활성',initial:'행'}
+    ],
+    inquiries:[
+      {id:1,name:'김민준',phone:'010-2841-7762',field:'거소증(F-4)',status:'신규',date:'2026-06-25',content:'재외동포 거소증(F-4) 연장 시기가 다가오는데 체류 기간이 곧 만료됩니다. 필요한 서류와 진행 절차를 상담받고 싶습니다.',memo:''},
+      {id:2,name:'응웬 티 흐엉',phone:'010-5023-1184',field:'결혼비자(F-6)',status:'처리중',date:'2026-06-24',content:'한국인 배우자와 혼인신고를 마쳤고 F-6 비자 신청을 준비 중입니다. 초청 서류 작성에 도움이 필요합니다.',memo:'혼인관계증명서 수령 대기 중. 6/27 추가 서류 안내 예정.'},
+      {id:3,name:'박서연',phone:'010-7781-9920',field:'영주권(F-5)',status:'신규',date:'2026-06-24',content:'F-2 거주 비자로 5년 이상 체류했습니다. 영주권(F-5) 전환 요건이 되는지 검토를 부탁드립니다.',memo:''},
+      {id:4,name:'왕레이',phone:'010-3392-0571',field:'전문직(E-7)',status:'완료',date:'2026-06-23',content:'IT 회사 취업이 확정되어 E-7 비자 변경을 진행하고자 합니다.',memo:'서류 접수 완료, 결과 통보됨.'},
+      {id:5,name:'이도현',phone:'010-9913-2208',field:'국적회복',status:'처리중',date:'2026-06-23',content:'과거 국적을 상실했는데 국적회복 절차를 알아보고 있습니다. 가능 여부와 기간이 궁금합니다.',memo:'범죄경력 조회 회신 대기.'},
+      {id:6,name:'최지우',phone:'010-4471-8830',field:'거소증(F-4)',status:'보류',date:'2026-06-22',content:'거소증 분실 후 재발급 관련 문의입니다.',memo:'의뢰인 연락 두절, 재연락 필요.'},
+      {id:7,name:'사토 유키',phone:'010-2098-5512',field:'단기초청(C-3)',status:'신규',date:'2026-06-22',content:'일본에 계신 부모님을 단기 초청하고 싶습니다. C-3 초청 절차를 안내받고 싶습니다.',memo:''},
+      {id:8,name:'정하윤',phone:'010-8830-1147',field:'결혼비자(F-6)',status:'완료',date:'2026-06-21',content:'F-6 비자 연장 상담을 받고 싶습니다.',memo:'연장 신청 완료.'},
+      {id:9,name:'첸 웨이',phone:'010-3361-7789',field:'주재원(D-7)',status:'처리중',date:'2026-06-20',content:'본사에서 한국 지사로 발령받아 주재원(D-7) 비자가 필요합니다.',memo:'재직증명·파견명령서 검토 중.'},
+      {id:10,name:'강태오',phone:'010-7740-2231',field:'영주권(F-5)',status:'신규',date:'2026-06-20',content:'점수제 영주권 신청 자격이 되는지 점수 계산을 도와주실 수 있나요?',memo:''},
+      {id:11,name:'오로라',phone:'010-5512-8841',field:'재외동포(F-4)',status:'완료',date:'2026-06-19',content:'재외동포 자격으로 F-4 비자 신규 발급을 원합니다.',memo:'발급 완료.'},
+      {id:12,name:'한소희',phone:'010-2230-9981',field:'국적회복',status:'보류',date:'2026-06-18',content:'국적회복 후 가족관계등록 절차가 궁금합니다.',memo:'추가 자료 요청함.'},
+      {id:13,name:'무함마드 알리',phone:'010-9081-3327',field:'전문직(E-7)',status:'처리중',date:'2026-06-17',content:'E-7 비자 연장 및 근무처 변경 상담을 원합니다.',memo:'근무처 변경 신고 진행.'},
+      {id:14,name:'윤서준',phone:'010-4410-7752',field:'거소증(F-4)',status:'완료',date:'2026-06-16',content:'거소증 주소 변경 신고 방법을 문의드립니다.',memo:'안내 완료.'}
+    ],
+    reviews:[
+      {id:'r1',author:'김O준',field:'거소증(F-4)',rating:5,content:'거소증 연장 절차를 처음부터 끝까지 꼼꼼히 챙겨주셨습니다. 어려운 부분도 쉽게 설명해 주셔서 안심하고 맡길 수 있었습니다.',status:'노출',date:'2026-06-20'},
+      {id:'r2',author:'응웬',field:'결혼비자(F-6)',rating:5,content:'결혼비자 서류가 정말 복잡했는데 하나하나 직접 챙겨주셔서 무사히 비자를 받았습니다. 감사합니다.',status:'승인대기',date:'2026-06-23'},
+      {id:'r3',author:'박O연',field:'영주권(F-5)',rating:4,content:'영주권 신청 방향을 과장 없이 솔직하게 안내해 주셔서 신뢰가 갔습니다.',status:'노출',date:'2026-06-18'},
+      {id:'r4',author:'이O현',field:'국적회복',rating:5,content:'국적회복까지 시간이 걸렸지만 진행 상황을 계속 알려주셔서 답답하지 않았습니다.',status:'승인대기',date:'2026-06-24'},
+      {id:'r5',author:'왕O',field:'전문직(E-7)',rating:5,content:'E-7 변경 상담이 명확하고 빨랐습니다.',status:'숨김',date:'2026-06-12'},
+      {id:'r6',author:'최O우',field:'거소증(F-4)',rating:4,content:'처음 방문했을 때부터 친절하게 응대해 주셔서 좋았습니다.',status:'노출',date:'2026-06-10'}
+    ],
+    posts:[
+      {id:'p1',title:'F-4 재외동포 거소증 연장, 이것만은 챙기세요',category:'블로그',status:'발행',date:'2026-06-22',views:412,body:''},
+      {id:'p2',title:'[공지] 6월 상담 예약 안내 및 휴무일 변경',category:'공지',status:'발행',date:'2026-06-20',views:188,body:''},
+      {id:'p3',title:'결혼비자(F-6) 심사 강화, 2026년 달라진 점',category:'블로그',status:'발행',date:'2026-06-15',views:905,body:''},
+      {id:'p4',title:'국적회복 절차 한눈에 보기',category:'블로그',status:'임시저장',date:'2026-06-14',views:0,body:''},
+      {id:'p5',title:'[공지] 사무소 이전 안내',category:'공지',status:'발행',date:'2026-05-30',views:533,body:''},
+      {id:'p6',title:'E-7 전문직 비자 자주 묻는 질문 정리',category:'블로그',status:'발행',date:'2026-05-22',views:671,body:''},
+      {id:'p7',title:'영주권(F-5) 점수제, 내 점수 계산하는 법',category:'블로그',status:'임시저장',date:'2026-05-18',views:0,body:''}
+    ]
+  };
+
+  icon(name, size=20, sw=1.75){
+    return React.createElement('svg',{width:size,height:size,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:sw,strokeLinecap:'round',strokeLinejoin:'round',style:{display:'block',flexShrink:0},dangerouslySetInnerHTML:{__html:this.icons[name]||''}});
+  }
+  stars(n){
+    const a=[];
+    for(let i=0;i<5;i++){a.push(React.createElement('svg',{key:i,width:15,height:15,viewBox:'0 0 24 24',fill:i<n?'var(--color-accent)':'none',stroke:'var(--color-accent)',strokeWidth:1.5,strokeLinecap:'round',strokeLinejoin:'round',style:{display:'block'},dangerouslySetInnerHTML:{__html:this.icons['star']}}));}
+    return React.createElement('span',{style:{display:'inline-flex',gap:'2px'}},a);
+  }
+  iqVariant(s){ return s==='신규'?'primary':(s==='처리중'?'default':'outline'); }
+
+  // ---- auth ----
+  setUserId=e=>this.setState({userId:e.target.value,loginError:false});
+  setPw=e=>this.setState({pw:e.target.value});
+  toggleRemember=e=>this.setState({remember:e.target.checked});
+  login=()=>{ if(String(this.state.userId).trim()){ this.setState({loggedIn:true,route:'dashboard'}); } else { this.setState({loginError:true}); } };
+  logout=()=>this.setState({loggedIn:false,userMenuOpen:false,pw:''});
+  noop=()=>{};
+  toggleCollapsed=()=>this.setState(s=>({collapsed:!s.collapsed}));
+  // ---- confirm modal ----
+  askConfirm=(cfg,run)=>this.setState({confirm:{...cfg,run}});
+  closeConfirm=()=>this.setState({confirm:null});
+  runConfirm=()=>{ const c=this.state.confirm; if(c&&c.run)c.run(); this.setState({confirm:null}); };
+  toggleUserMenu=()=>this.setState(s=>({userMenuOpen:!s.userMenuOpen}));
+  go=key=>this.setState({route:key,selectedId:null,userMenuOpen:false,showPostForm:false,showReviewForm:false});
+  goDashboard=()=>this.go('dashboard');
+  goInquiries=()=>this.go('inquiries');
+  goReviews=()=>this.go('reviews');
+  goSettings=()=>this.go('settings');
+  goNewPost=()=>this.setState({route:'blog',showPostForm:true,editingPostId:null,psForm:{title:'',category:'공지',body:'',status:'임시저장'},selectedId:null,userMenuOpen:false});
+
+  // ---- inquiries ----
+  setIqStatus=v=>this.setState({iqStatus:v,iqPage:1,selectedId:null});
+  setIqPeriod=e=>this.setState({iqPeriod:e.target.value,iqPage:1});
+  setIqQuery=e=>this.setState({iqQuery:e.target.value,iqPage:1});
+  setTopSearch=e=>this.setState({iqQuery:e.target.value,route:'inquiries',iqPage:1,selectedId:null});
+  openInquiry=id=>{ const q=this.state.inquiries.find(x=>x.id===id); this.setState({selectedId:id,dStatus:q.status,dMemo:q.memo||'',savedFlash:false}); };
+  openFromDashboard=id=>{ const q=this.state.inquiries.find(x=>x.id===id); this.setState({route:'inquiries',selectedId:id,dStatus:q.status,dMemo:q.memo||'',savedFlash:false,showPostForm:false,showReviewForm:false}); };
+  closeDetail=()=>this.setState({selectedId:null});
+  setDStatus=e=>this.setState({dStatus:e.target.value});
+  setDMemo=e=>this.setState({dMemo:e.target.value});
+  saveDetail=()=>{ this.setState(s=>({inquiries:s.inquiries.map(q=>q.id===s.selectedId?{...q,status:s.dStatus,memo:s.dMemo}:q),savedFlash:true})); clearTimeout(this._t); this._t=setTimeout(()=>this.setState({savedFlash:false}),2200); };
+  setPage=n=>this.setState({iqPage:n});
+  prevPage=()=>this.setState(s=>({iqPage:Math.max(1,s.iqPage-1)}));
+  nextPage=()=>{ const tp=this._totalPages||1; this.setState(s=>({iqPage:Math.min(tp,s.iqPage+1)})); };
+
+  // ---- reviews ----
+  toggleReviewForm=()=>this.setState(s=>({showReviewForm:!s.showReviewForm,rvPublishNow:false,rvForm:{author:'',field:'거소증(F-4)',rating:5,content:'',status:'승인대기'}}));
+  setRvAuthor=e=>this.setState(s=>({rvForm:{...s.rvForm,author:e.target.value}}));
+  setRvField=e=>this.setState(s=>({rvForm:{...s.rvForm,field:e.target.value}}));
+  setRvRating=e=>this.setState(s=>({rvForm:{...s.rvForm,rating:Number(e.target.value)}}));
+  setRvContent=e=>this.setState(s=>({rvForm:{...s.rvForm,content:e.target.value}}));
+  setRvPublish=e=>this.setState({rvPublishNow:e.target.checked});
+  saveReview=()=>{ const f=this.state.rvForm; if(!String(f.author).trim()||!String(f.content).trim())return; const id='r'+Date.now(); const status=this.state.rvPublishNow?'노출':'승인대기'; this.setState(s=>({reviews:[{id,author:f.author,field:f.field,rating:Number(f.rating),content:f.content,status,date:s.today},...s.reviews],showReviewForm:false,rvPublishNow:false,rvForm:{author:'',field:'거소증(F-4)',rating:5,content:'',status:'승인대기'}})); };
+  approveReview=id=>{ const r=this.state.reviews.find(x=>x.id===id); this.askConfirm({tone:'primary',title:'후기를 승인할까요?',message:'승인하면 ‘'+r.author+'’님의 후기가 홈페이지에 노출됩니다.',confirmLabel:'승인'},()=>this.setState(s=>({reviews:s.reviews.map(v=>v.id===id?{...v,status:'노출'}:v)}))); };
+  toggleReviewVis=id=>{ const r=this.state.reviews.find(x=>x.id===id); const hide=r.status!=='숨김'; this.askConfirm({tone:'primary',title:hide?'후기를 숨길까요?':'후기를 노출할까요?',message:hide?'‘'+r.author+'’님의 후기가 홈페이지에서 보이지 않게 됩니다.':'‘'+r.author+'’님의 후기가 홈페이지에 다시 노출됩니다.',confirmLabel:hide?'숨기기':'노출하기'},()=>this.setState(s=>({reviews:s.reviews.map(v=>v.id===id?{...v,status:v.status==='숨김'?'노출':'숨김'}:v)}))); };
+  deleteReview=id=>{ const r=this.state.reviews.find(x=>x.id===id); this.askConfirm({tone:'danger',title:'후기를 삭제할까요?',message:'‘'+r.author+'’님의 후기가 영구히 삭제됩니다. 이 작업은 되돌릴 수 없습니다.',confirmLabel:'삭제'},()=>this.setState(s=>({reviews:s.reviews.filter(v=>v.id!==id)}))); };
+
+  // ---- posts ----
+  togglePostForm=()=>this.setState(s=>({showPostForm:!s.showPostForm,editingPostId:null,psForm:{title:'',category:'블로그',body:'',status:'임시저장'}}));
+  setPsTitle=e=>this.setState(s=>({psForm:{...s.psForm,title:e.target.value}}));
+  setPsCategory=e=>this.setState(s=>({psForm:{...s.psForm,category:e.target.value}}));
+  setPsBody=e=>this.setState(s=>({psForm:{...s.psForm,body:e.target.value}}));
+  setPsStatus=e=>this.setState(s=>({psForm:{...s.psForm,status:e.target.value}}));
+  savePost=publish=>{ const f=this.state.psForm; if(!String(f.title).trim())return; const status=publish?'발행':(f.status||'임시저장'); this.setState(s=>{ if(s.editingPostId){ return {posts:s.posts.map(p=>p.id===s.editingPostId?{...p,title:f.title,category:f.category,body:f.body,status}:p),showPostForm:false,editingPostId:null,psForm:{title:'',category:'블로그',body:'',status:'임시저장'}}; } const id='p'+Date.now(); return {posts:[{id,title:f.title,category:f.category,body:f.body,status,date:s.today,views:0},...s.posts],showPostForm:false,psForm:{title:'',category:'블로그',body:'',status:'임시저장'}}; }); };
+  savePostDraft=()=>this.savePost(false);
+  savePostPublish=()=>this.savePost(true);
+  editPost=id=>{ const p=this.state.posts.find(x=>x.id===id); this.setState({showPostForm:true,editingPostId:id,psForm:{title:p.title,category:p.category,body:p.body||'',status:p.status}}); };
+  deletePost=id=>{ const p=this.state.posts.find(x=>x.id===id); this.askConfirm({tone:'danger',title:'글을 삭제할까요?',message:'‘'+p.title+'’ 글이 영구히 삭제됩니다. 이 작업은 되돌릴 수 없습니다.',confirmLabel:'삭제'},()=>this.setState(s=>({posts:s.posts.filter(v=>v.id!==id)}))); };
+
+  // ---- faq ----
+  toggleFaqForm=()=>this.setState(s=>({showFaqForm:!s.showFaqForm,editingFaqId:null,faqPublishNow:true,faqForm:{category:'비용·절차',question:'',answer:''}}));
+  setFaqCat=e=>this.setState(s=>({faqForm:{...s.faqForm,category:e.target.value}}));
+  setFaqQuestion=e=>this.setState(s=>({faqForm:{...s.faqForm,question:e.target.value}}));
+  setFaqAnswer=e=>this.setState(s=>({faqForm:{...s.faqForm,answer:e.target.value}}));
+  setFaqPublish=e=>this.setState({faqPublishNow:e.target.checked});
+  saveFaq=()=>{ const f=this.state.faqForm; if(!String(f.question).trim()||!String(f.answer).trim())return; this.setState(s=>{ if(s.editingFaqId){ return {faqs:s.faqs.map(x=>x.id===s.editingFaqId?{...x,category:f.category,question:f.question,answer:f.answer,visible:s.faqPublishNow}:x),showFaqForm:false,editingFaqId:null,faqForm:{category:'비용·절차',question:'',answer:''}}; } const id='f'+Date.now(); return {faqs:[...s.faqs,{id,category:f.category,question:f.question,answer:f.answer,visible:s.faqPublishNow}],showFaqForm:false,faqForm:{category:'비용·절차',question:'',answer:''}}; }); };
+  editFaq=id=>{ const x=this.state.faqs.find(v=>v.id===id); this.setState({showFaqForm:true,editingFaqId:id,faqPublishNow:x.visible,faqForm:{category:x.category,question:x.question,answer:x.answer}}); };
+  deleteFaq=id=>{ const x=this.state.faqs.find(v=>v.id===id); this.askConfirm({tone:'danger',title:'질문을 삭제할까요?',message:'‘'+x.question+'’ 항목이 영구히 삭제됩니다. 이 작업은 되돌릴 수 없습니다.',confirmLabel:'삭제'},()=>this.setState(s=>({faqs:s.faqs.filter(v=>v.id!==id)}))); };
+  toggleFaqVisible=id=>this.setState(s=>({faqs:s.faqs.map(x=>x.id===id?{...x,visible:!x.visible}:x)}));
+  toggleFaqExpand=id=>this.setState(s=>({expandedFaqId:s.expandedFaqId===id?null:id}));
+
+  // ---- members ----
+  toggleMemberForm=()=>this.setState(s=>({showMemberForm:!s.showMemberForm,editingMemberId:null,memForm:{name:'',role:'행정사',field:'',phone:'',email:'',status:'활성'}}));
+  setMemName=e=>this.setState(s=>({memForm:{...s.memForm,name:e.target.value}}));
+  setMemRole=e=>this.setState(s=>({memForm:{...s.memForm,role:e.target.value}}));
+  setMemField=e=>this.setState(s=>({memForm:{...s.memForm,field:e.target.value}}));
+  setMemPhone=e=>this.setState(s=>({memForm:{...s.memForm,phone:e.target.value}}));
+  setMemEmail=e=>this.setState(s=>({memForm:{...s.memForm,email:e.target.value}}));
+  setMemStatus=e=>this.setState(s=>({memForm:{...s.memForm,status:e.target.value}}));
+  saveMember=()=>{ const f=this.state.memForm; if(!String(f.name).trim())return; this.setState(s=>{ if(s.editingMemberId){ return {members:s.members.map(x=>x.id===s.editingMemberId?{...x,...f,initial:f.name.trim().charAt(0)}:x),showMemberForm:false,editingMemberId:null,memForm:{name:'',role:'행정사',field:'',phone:'',email:'',status:'활성'}}; } const id='mb'+Date.now(); return {members:[...s.members,{id,...f,initial:(f.name.trim().charAt(0)||'구')}],showMemberForm:false,memForm:{name:'',role:'행정사',field:'',phone:'',email:'',status:'활성'}}; }); };
+  editMember=id=>{ const x=this.state.members.find(v=>v.id===id); this.setState({showMemberForm:true,editingMemberId:id,memForm:{name:x.name,role:x.role,field:x.field,phone:x.phone,email:x.email,status:x.status}}); };
+  deleteMember=id=>{ const x=this.state.members.find(v=>v.id===id); this.askConfirm({tone:'danger',title:'구성원을 삭제할까요?',message:'‘'+x.name+'’('+x.role+') 정보가 영구히 삭제됩니다. 이 작업은 되돌릴 수 없습니다.',confirmLabel:'삭제'},()=>this.setState(s=>({members:s.members.filter(v=>v.id!==id)}))); };
+  toggleMemberStatus=id=>{ const x=this.state.members.find(v=>v.id===id); const off=x.status==='활성'; this.askConfirm({tone:'primary',title:off?'구성원을 비활성화할까요?':'구성원을 활성화할까요?',message:off?'‘'+x.name+'’님이 홈페이지 구성원 소개에서 숨겨집니다.':'‘'+x.name+'’님이 홈페이지 구성원 소개에 다시 노출됩니다.',confirmLabel:off?'비활성화':'활성화'},()=>this.setState(s=>({members:s.members.map(v=>v.id===id?{...v,status:v.status==='활성'?'비활성':'활성'}:v)}))); };
+
+  renderVals(){
+    const S=this.state;
+    const route=S.route;
+    const meta={
+      dashboard:{title:'대시보드',desc:'사무소 운영 현황을 한눈에 확인합니다.'},
+      inquiries:{title:'상담 문의 관리',desc:'홈페이지로 접수된 상담 문의를 관리합니다.'},
+      reviews:{title:'의뢰인 후기 관리',desc:'의뢰인 후기를 등록하고 노출을 관리합니다.'},
+      blog:{title:'블로그/공지 관리',desc:'블로그 글과 공지사항을 관리합니다.'},
+      faq:{title:'자주 묻는 질문(FAQ) 관리',desc:'자주 묻는 질문과 답변을 관리합니다.',icon:'circle-help'},
+      members:{title:'구성원 관리',desc:'사무소 구성원 정보를 관리합니다.',icon:'users'},
+      stats:{title:'통계',desc:'방문자·문의·전환 통계를 확인합니다.',icon:'bar-chart'},
+      settings:{title:'설정',desc:'사무소 정보와 계정 설정을 관리합니다.',icon:'settings'}
+    };
+    const cur=meta[route]||meta.dashboard;
+
+    // ---- menu ----
+    const menuBase={display:'flex',alignItems:'center',gap:'12px',width:'100%',height:'46px',padding:S.collapsed?'0':'0 14px',justifyContent:S.collapsed?'center':'flex-start',border:'none',background:'transparent',borderRadius:'var(--radius)',cursor:'pointer',color:'var(--text-body)',textAlign:'left',transition:'background .15s ease'};
+    const menuActive={background:'var(--color-accent-soft)',color:'var(--color-primary-dark)',boxShadow:'inset 3px 0 0 var(--color-primary)'};
+    const menuDef=[
+      {key:'dashboard',label:'대시보드',icon:'layout-dashboard'},
+      {key:'inquiries',label:'상담 문의 관리',icon:'message-square'},
+      {key:'reviews',label:'의뢰인 후기 관리',icon:'star'},
+      {key:'blog',label:'블로그/공지 관리',icon:'newspaper'},
+      {key:'faq',label:'자주 묻는 질문(FAQ) 관리',icon:'circle-help'},
+      {key:'members',label:'구성원 관리',icon:'users'},
+      {key:'stats',label:'통계',icon:'bar-chart'},
+      {key:'settings',label:'설정',icon:'settings'}
+    ];
+    const menuItems=menuDef.map(m=>{
+      const active=route===m.key;
+      return {
+        key:m.key,label:m.label,iconEl:this.icon(m.icon,20),
+        onClick:()=>this.go(m.key),
+        style:active?{...menuBase,...menuActive}:menuBase,
+        hoverStyle:active?{}:{background:'var(--surface-subtle)'},
+        iconWrapStyle:{display:'flex',color:active?'var(--color-primary)':'var(--color-primary-light)'},
+        labelStyle:{fontSize:'15px',fontWeight:active?700:500,whiteSpace:'nowrap',display:S.collapsed?'none':'block'}
+      };
+    });
+
+    // ---- inquiries filtering ----
+    const cutoff={'전체 기간':'0000-00-00','오늘':S.today,'최근 7일':'2026-06-19','최근 30일':'2026-05-27'}[S.iqPeriod]||'0000-00-00';
+    const q=(S.iqQuery||'').trim();
+    let filtered=S.inquiries.filter(it=>
+      (S.iqStatus==='전체'||it.status===S.iqStatus)&&
+      (S.iqPeriod==='전체 기간'||(S.iqPeriod==='오늘'?it.date===S.today:it.date>=cutoff))&&
+      (!q||it.name.includes(q)||it.phone.includes(q)||it.field.includes(q))
+    );
+    const pageSize=6;
+    const totalPages=Math.max(1,Math.ceil(filtered.length/pageSize));
+    this._totalPages=totalPages;
+    const page=Math.min(S.iqPage,totalPages);
+    const start=(page-1)*pageSize;
+    const paged=filtered.slice(start,start+pageSize);
+    const gridCols='1.2fr 1.4fr 1.4fr 0.9fr 1fr';
+    const rowBase={display:'grid',gridTemplateColumns:gridCols,gap:'12px',padding:'15px 18px',alignItems:'center',borderBottom:'1px solid var(--border-default)',cursor:'pointer',fontSize:'15px',transition:'background .12s ease'};
+    const iqRows=paged.map(it=>({...it,badgeVariant:this.iqVariant(it.status),open:()=>this.openInquiry(it.id),rowStyle:it.id===S.selectedId?{...rowBase,background:'var(--color-accent-soft)'}:rowBase}));
+
+    const rcGrid='1.3fr 1.5fr 0.9fr 1fr';
+    const rcBase={display:'grid',gridTemplateColumns:rcGrid,gap:'12px',padding:'14px 20px',alignItems:'center',borderBottom:'1px solid var(--border-default)',cursor:'pointer',fontSize:'15px',transition:'background .12s ease'};
+    const recentRows=S.inquiries.slice(0,5).map(it=>({...it,badgeVariant:this.iqVariant(it.status),open:()=>this.openFromDashboard(it.id),rowStyle:rcBase}));
+
+    // ---- status tabs ----
+    const counts={'전체':S.inquiries.length};
+    ['신규','처리중','완료','보류'].forEach(s=>{counts[s]=S.inquiries.filter(x=>x.status===s).length;});
+    const tabBase={padding:'0 16px',height:'40px',fontSize:'14px',fontWeight:500,fontFamily:'var(--font-sans)',borderRadius:'var(--radius)',cursor:'pointer',transition:'all .15s ease'};
+    const statusTabs=['전체','신규','처리중','완료','보류'].map(lab=>{
+      const active=S.iqStatus===lab;
+      return {label:lab+' '+counts[lab],onClick:()=>this.setIqStatus(lab),
+        style:active?{...tabBase,background:'var(--color-primary)',color:'#fff',border:'1px solid var(--color-primary)'}:{...tabBase,background:'var(--surface-card)',color:'var(--text-body)',border:'1px solid var(--border-default)'}};
+    });
+
+    // ---- pager ----
+    const pagerBtn={width:'34px',height:'34px',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:'14px',fontFamily:'var(--font-sans)',borderRadius:'var(--radius)',cursor:'pointer'};
+    const pageNumbers=[];
+    for(let i=1;i<=totalPages;i++){
+      const active=i===page;
+      pageNumbers.push({n:String(i),onClick:()=>this.setPage(i),
+        style:active?{...pagerBtn,background:'var(--color-primary)',color:'#fff',border:'1px solid var(--color-primary)',fontWeight:700}:{...pagerBtn,background:'var(--surface-card)',color:'var(--text-body)',border:'1px solid var(--border-default)'}});
+    }
+    const rangeText=filtered.length===0?'결과 없음':('총 '+filtered.length+'건 중 '+(start+1)+'–'+Math.min(start+pageSize,filtered.length)+'건');
+
+    // ---- selected ----
+    const sel=S.inquiries.find(x=>x.id===S.selectedId)||null;
+
+    // ---- reviews ----
+    const reviewItems=S.reviews.map(r=>({
+      ...r,starsEl:this.stars(r.rating),
+      statusLabel:r.status,
+      badgeVariant:r.status==='승인대기'?'primary':(r.status==='노출'?'default':'outline'),
+      isPending:r.status==='승인대기',
+      toggleLabel:r.status==='숨김'?'노출':'숨김 처리',
+      onApprove:()=>this.approveReview(r.id),
+      onToggle:()=>this.toggleReviewVis(r.id),
+      onDelete:()=>this.deleteReview(r.id)
+    }));
+
+    // ---- posts ----
+    const postRows=S.posts.map(p=>({
+      ...p,viewsLabel:p.views.toLocaleString(),
+      catVariant:p.category==='공지'?'primary':(p.category==='블로그'?'default':'outline'),
+      statusVariant:p.status==='발행'?'default':'outline',
+      onEdit:()=>this.editPost(p.id),
+      onDelete:()=>this.deletePost(p.id)
+    }));
+
+    // ---- shared styles ----
+    const ghostHover={background:'var(--surface-subtle)'};
+    const outlineHover={background:'var(--surface-subtle)'};
+    const iconBtnStyle={width:'32px',height:'32px',display:'flex',alignItems:'center',justifyContent:'center',border:'none',background:'transparent',borderRadius:'var(--radius)',cursor:'pointer',color:'var(--text-muted)'};
+    const menuRowStyle={display:'flex',alignItems:'center',gap:'9px',width:'100%',padding:'9px 12px',border:'none',background:'transparent',borderRadius:'var(--radius)',cursor:'pointer',fontSize:'14px',color:'var(--text-body)',textAlign:'left',fontFamily:'var(--font-sans)'};
+
+    const pendingCount=S.inquiries.filter(x=>x.status!=='완료').length;
+    const newCount=S.inquiries.filter(x=>x.status==='신규').length;
+    const reviewPending=S.reviews.filter(x=>x.status==='승인대기').length;
+    const statCards=[
+      {label:'신규 상담 문의',value:newCount+'건',sub:'아직 확인 전',icon:'message-square'},
+      {label:'미처리 문의',value:pendingCount+'건',sub:'완료 처리 대기',icon:'inbox'},
+      {label:'이번 달 방문자',value:'1,284',sub:'홈페이지 기준 +8.2%',icon:'bar-chart'},
+      {label:'후기 승인 대기',value:reviewPending+'건',sub:'노출 검토 필요',icon:'star'}
+    ].map(c=>({...c,iconEl:this.icon(c.icon,22)}));
+
+    return {
+      showLogin:!S.loggedIn, showApp:S.loggedIn,
+      userId:S.userId, pw:S.pw, remember:S.remember, loginError:S.loginError,
+      setUserId:this.setUserId, setPw:this.setPw, toggleRemember:this.toggleRemember,
+      login:this.login, noop:this.noop, loginBtnProps:{onClick:this.login,style:{width:'100%'}},
+
+      sidebarStyle:{width:S.collapsed?'76px':'248px',flexShrink:0,background:'var(--surface-card)',borderRight:'1px solid var(--border-default)',display:'flex',flexDirection:'column',transition:'width .2s ease'},
+      brandStyle:{fontSize:'17px',fontWeight:700,letterSpacing:'-0.02em',color:'var(--text-heading)',whiteSpace:'nowrap',display:S.collapsed?'none':'block'},
+      sideFootStyle:{padding:'14px 18px',borderTop:'1px solid var(--border-default)',fontSize:'12px',color:'var(--text-muted)',whiteSpace:'nowrap',display:S.collapsed?'none':'block'},
+      menuItems, toggleCollapsed:this.toggleCollapsed,
+      panelIcon:this.icon('panel-left',18), ghostHover, outlineHover,
+
+      routeTitle:cur.title, routeDesc:cur.desc,
+      searchIcon:this.icon('search',18), bellIcon:this.icon('bell',20),
+      chevronDownIcon:this.icon('chevron-down',16), logoutIcon:this.icon('log-out',16),
+      userMenuOpen:S.userMenuOpen, toggleUserMenu:this.toggleUserMenu, logout:this.logout,
+      goSettings:this.goSettings, menuRowStyle,
+      topSearchProps:{placeholder:'의뢰인·연락처 검색',value:S.iqQuery,onChange:this.setTopSearch,style:{height:'42px',paddingLeft:'42px'}},
+
+      isDashboard:route==='dashboard', isInquiries:route==='inquiries', isReviews:route==='reviews', isBlog:route==='blog',
+      isPlaceholder:['stats','settings'].includes(route),
+      placeholderIcon:this.icon(cur.icon||'settings',30,1.5),
+      goDashboard:this.goDashboard,
+
+      todayLabel:'2026년 6월 26일 금요일',
+      statCards, recentRows, rowHover:{background:'var(--surface-subtle)'},
+      goInquiries:this.goInquiries, goReviews:this.goReviews,
+      plusIcon:this.icon('plus',18), msgIcon:this.icon('message-square',18), starIcon:this.icon('star',18),
+      qaPostProps:{onClick:this.goNewPost,style:{width:'100%',justifyContent:'flex-start'}},
+      qaInqProps:{onClick:this.goInquiries,style:{width:'100%',justifyContent:'flex-start'}},
+      qaRevProps:{onClick:this.goReviews,style:{width:'100%',justifyContent:'flex-start'}},
+      pendingCount,
+
+      statusTabs, iqPeriod:S.iqPeriod, setIqPeriod:this.setIqPeriod,
+      periodSelectProps:{style:{height:'44px'}},
+      iqSearchProps:{placeholder:'이름·연락처 검색',value:S.iqQuery,onChange:this.setIqQuery,style:{height:'44px',paddingLeft:'40px'}},
+      iqRows, iqEmpty:filtered.length===0,
+      showPager:filtered.length>pageSize, pageNumbers, rangeText,
+      prevPage:this.prevPage, nextPage:this.nextPage,
+      pagerArrowStyle:{width:'34px',height:'34px',display:'inline-flex',alignItems:'center',justifyContent:'center',background:'var(--surface-card)',color:'var(--text-body)',border:'1px solid var(--border-default)',borderRadius:'var(--radius)',cursor:'pointer'},
+      chevronLeftIcon:this.icon('chevron-left',16), chevronRightIcon:this.icon('chevron-right',16),
+
+      hasSelection:!!sel, sel:sel||{}, closeDetail:this.closeDetail, closeIcon:this.icon('x',18),
+      phoneIcon:this.icon('phone',16), layersIcon:this.icon('layers',16), calendarIcon:this.icon('calendar',16),
+      dStatus:S.dStatus, setDStatus:this.setDStatus, dMemo:S.dMemo, setDMemo:this.setDMemo,
+      saveDetailProps:{onClick:this.saveDetail}, savedFlash:S.savedFlash, checkIcon:this.icon('check',16),
+      inboxIcon:this.icon('inbox',40,1.4),
+
+      showReviewForm:S.showReviewForm, toggleReviewForm:this.toggleReviewForm,
+      rvForm:S.rvForm, rvPublishNow:S.rvPublishNow, setRvPublish:this.setRvPublish,
+      setRvAuthor:this.setRvAuthor, setRvField:this.setRvField, setRvRating:this.setRvRating, setRvContent:this.setRvContent,
+      saveReview:this.saveReview, reviewItems, reviewsEmpty:S.reviews.length===0,
+      fullBtn:{style:{width:'100%'}}, starBigIcon:this.icon('star',40,1.4),
+
+      showPostForm:S.showPostForm, togglePostForm:this.togglePostForm,
+      postFormTitle:S.editingPostId?'글 수정':'새 글 작성',
+      psForm:S.psForm, setPsTitle:this.setPsTitle, setPsCategory:this.setPsCategory, setPsBody:this.setPsBody, setPsStatus:this.setPsStatus,
+      savePostDraft:this.savePostDraft, savePostPublish:this.savePostPublish,
+      postRows, postsEmpty:S.posts.length===0,
+      iconBtnStyle, pencilIcon:this.icon('pencil',17), trashIcon:this.icon('trash',17),
+
+      isFaq:route==='faq', isMembers:route==='members',
+      showFaqForm:S.showFaqForm, toggleFaqForm:this.toggleFaqForm, faqFormTitle:S.editingFaqId?'질문 수정':'새 질문 추가',
+      faqForm:S.faqForm, setFaqCat:this.setFaqCat, setFaqQuestion:this.setFaqQuestion, setFaqAnswer:this.setFaqAnswer,
+      faqPublishNow:S.faqPublishNow, setFaqPublish:this.setFaqPublish, saveFaq:this.saveFaq,
+      faqItems:S.faqs.map(x=>({...x,expanded:S.expandedFaqId===x.id,onToggleExpand:()=>this.toggleFaqExpand(x.id),onToggleVis:()=>this.toggleFaqVisible(x.id),onEdit:()=>this.editFaq(x.id),onDelete:()=>this.deleteFaq(x.id),visLabel:x.visible?'노출 중':'숨김',visBadgeVariant:x.visible?'default':'outline',toggleVisLabel:x.visible?'숨기기':'노출하기',chev:this.icon(S.expandedFaqId===x.id?'chevron-down':'chevron-right',18)})),
+      faqEmpty:S.faqs.length===0,
+
+      showMemberForm:S.showMemberForm, toggleMemberForm:this.toggleMemberForm, memberFormTitle:S.editingMemberId?'구성원 수정':'구성원 추가',
+      memForm:S.memForm, setMemName:this.setMemName, setMemRole:this.setMemRole, setMemField:this.setMemField, setMemPhone:this.setMemPhone, setMemEmail:this.setMemEmail, setMemStatus:this.setMemStatus,
+      saveMember:this.saveMember,
+      memberItems:S.members.map(x=>({...x,statusLabel:x.status,statusBadgeVariant:x.status==='활성'?'default':'outline',onEdit:()=>this.editMember(x.id),onDelete:()=>this.deleteMember(x.id),onToggleStatus:()=>this.toggleMemberStatus(x.id),toggleStatusLabel:x.status==='활성'?'비활성화':'활성화',innerStyle:{opacity:x.status==='활성'?1:0.55}})),
+      membersEmpty:S.members.length===0, usersBigIcon:this.icon('users',40,1.4),
+
+      hasConfirm:!!S.confirm, confirm:S.confirm||{},
+      confirmIsDanger:!!S.confirm&&S.confirm.tone==='danger',
+      confirmBtnVariant:(S.confirm&&S.confirm.tone==='danger')?'primary':'primary',
+      confirmBtnProps:{onClick:this.runConfirm,style:(S.confirm&&S.confirm.tone==='danger')?{background:'#b4452f',borderColor:'#b4452f'}:{}},
+      confirmIconWrapStyle:{width:'46px',height:'46px',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,background:(S.confirm&&S.confirm.tone==='danger')?'#f4e3de':'var(--color-accent-soft)',color:(S.confirm&&S.confirm.tone==='danger')?'#b4452f':'var(--color-primary-dark)'},
+      confirmIconEl:(S.confirm&&S.confirm.tone==='danger')?this.icon('trash',22):this.icon('check',22),
+      closeConfirm:this.closeConfirm, runConfirm:this.runConfirm
+    };
+  }
+}
+</script>
+</body>
+</html>

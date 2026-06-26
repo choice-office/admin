@@ -1,0 +1,27 @@
+/* 초이스 행정사 — Typography tokens
+ * Noto Sans KR 400/500/700. 한글 가독성 우선(고령 의뢰인 포함) — 큰 본문, 강한 대비.
+ * 한글 줄바꿈은 word-break: keep-all (어절 단위). */
+:root {
+	--font-sans: "Noto Sans KR", system-ui, "Apple SD Gothic Neo", sans-serif;
+
+	--weight-regular: 400;
+	--weight-medium: 500;
+	--weight-bold: 700;
+
+	/* Type scale (px) — H1 48–60, H2 30–36, H3 18–20, Body 16–18, Small 14, Caption 12–13 */
+	--text-h1: 56px;
+	--text-h1-min: 48px;
+	--text-h2: 34px;
+	--text-h3: 20px;
+	--text-body-lg: 18px;
+	--text-base: 16px;
+	--text-small: 14px;
+	--text-caption: 13px;
+
+	--leading-tight: 1.2; /* 제목 */
+	--leading-snug: 1.4;
+	--leading-relaxed: 1.7; /* 본문 */
+
+	--tracking-tight: -0.02em; /* 제목 */
+	--tracking-normal: 0;
+}
