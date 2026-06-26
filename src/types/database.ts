@@ -2,6 +2,10 @@
 // 실제 스키마(homepage) 기준. 컬럼 변경 시 여기와 Supabase 마이그레이션을 함께 수정.
 
 export type ContactStatus = "new" | "in_progress" | "done" | "hold";
+export type PostStatus = "draft" | "published" | "archived";
+
+export type BlogFaq = { q: string; a: string };
+export type BlogSource = { label: string; href: string };
 
 export type Database = {
 	public: {
@@ -81,6 +85,80 @@ export type Database = {
 				};
 				Relationships: [];
 			};
+			blog_posts: {
+				Row: {
+					id: string;
+					created_at: string;
+					updated_at: string;
+					slug: string;
+					title: string;
+					excerpt: string;
+					content: string;
+					cover_url: string | null;
+					cover_alt: string | null;
+					tldr: string | null;
+					faq: BlogFaq[];
+					sources: BlogSource[];
+					category_id: string | null;
+					author_id: string | null;
+					status: PostStatus;
+					published_at: string | null;
+					meta_title: string | null;
+					meta_description: string | null;
+					canonical_url: string | null;
+				};
+				Insert: {
+					id?: string;
+					slug: string;
+					title: string;
+					excerpt: string;
+					content: string;
+					cover_url?: string | null;
+					cover_alt?: string | null;
+					tldr?: string | null;
+					faq?: BlogFaq[];
+					sources?: BlogSource[];
+					category_id?: string | null;
+					author_id?: string | null;
+					status?: PostStatus;
+					published_at?: string | null;
+					meta_title?: string | null;
+					meta_description?: string | null;
+					canonical_url?: string | null;
+				};
+				Update: {
+					slug?: string;
+					title?: string;
+					excerpt?: string;
+					content?: string;
+					cover_url?: string | null;
+					cover_alt?: string | null;
+					tldr?: string | null;
+					faq?: BlogFaq[];
+					sources?: BlogSource[];
+					category_id?: string | null;
+					author_id?: string | null;
+					status?: PostStatus;
+					published_at?: string | null;
+					meta_title?: string | null;
+					meta_description?: string | null;
+					canonical_url?: string | null;
+					updated_at?: string;
+				};
+				Relationships: [];
+			};
+			blog_categories: {
+				Row: { id: string; name: string };
+				Insert: { id?: string; name: string };
+				Update: { name?: string };
+				Relationships: [];
+			};
+			blog_authors: {
+				Row: { id: string; name: string };
+				Insert: { id?: string; name: string };
+				Update: { name?: string };
+				Relationships: [];
+			};
 		};
 		Views: Record<string, never>;
 		Functions: Record<string, never>;
@@ -93,3 +171,8 @@ export type Contact = Database["public"]["Tables"]["contacts"]["Row"];
 export type Review = Database["public"]["Tables"]["reviews"]["Row"];
 export type ReviewInsert = Database["public"]["Tables"]["reviews"]["Insert"];
 export type ReviewUpdate = Database["public"]["Tables"]["reviews"]["Update"];
+export type BlogPost = Database["public"]["Tables"]["blog_posts"]["Row"];
+export type BlogPostInsert = Database["public"]["Tables"]["blog_posts"]["Insert"];
+export type BlogPostUpdate = Database["public"]["Tables"]["blog_posts"]["Update"];
+export type BlogCategory = Database["public"]["Tables"]["blog_categories"]["Row"];
+export type BlogAuthor = Database["public"]["Tables"]["blog_authors"]["Row"];

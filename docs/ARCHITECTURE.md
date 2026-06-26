@@ -25,8 +25,8 @@ src/
     _app.tsx                   # ★ pathless 레이아웃: 인증가드(beforeLoad) + 사이드바 + 상단바 + Outlet
     _app/dashboard.tsx         # 대시보드
     _app/inquiries.tsx         # 상담 문의 관리(필터·테이블·페이지네이션·상세모달)
-    _app/reviews.tsx           # 후기 관리 [구현 예정]
-    _app/blog.tsx              # 블로그·공지 작성 [구현 예정]
+    _app/reviews.tsx           # 후기 관리(CRUD·노출 토글)
+    _app/blog.tsx              # 블로그·공지 목록 + 작성기(인페이지 에디터 토글)
     _app/settings.tsx          # 설정 [구현 예정]
   components/
     admin/                     # 화면 전용 컴포넌트
@@ -62,9 +62,9 @@ design/                        # Claude Design 산출물(토큰 CSS + 어드민 
 - 클라이언트: **anon 키**(`VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`). 로그인하면 세션이 붙어 **authenticated** 권한으로 동작 → RLS가 접근을 통제.
 - 테이블(관리자 관점):
   - **contacts**(홈 문의폼 적재) — 컬럼: name·phone·email·nationality·current_visa·consult_field·message·privacy_consent·source·status·memo·created_at·updated_at. `status ∈ (new,in_progress,done,hold)`. RLS: **authenticated SELECT/UPDATE 허용**, INSERT는 홈페이지가 service_role로. 관리자는 상태·메모만 수정.
-  - **blog_posts / blog_categories / blog_authors**(홈페이지 블로그) — 발행 시 관리자가 작성. RLS: 공개 SELECT는 published만, 쓰기는 현재 service_role → *관리자 작성 도입 시 authenticated 쓰기 정책 추가 필요*.
-  - **reviews** — *구현 예정(Phase 4에서 생성)*.
-  - **storage bucket `blog`**(공개 읽기) — 본문·커버 이미지.
+  - **blog_posts / blog_categories / blog_authors**(홈페이지 블로그) — 관리자가 Tiptap 에디터로 작성·발행. RLS: 공개 SELECT는 published만, **authenticated는 전체 SELECT(초안 포함)+INSERT/UPDATE/DELETE**. status ∈ (draft, published, archived).
+  - **reviews** — 후기(tag·country·initial·flag·title·body·is_published·sort_order). RLS: anon은 is_published만 SELECT, authenticated CRUD. 홈페이지가 노출 후기를 ISR로 읽음.
+  - **storage bucket `blog`**(공개 읽기) — 본문·커버 이미지. 업로드/수정/삭제는 authenticated(`uploads/` 경로).
   - **auth.users** — 관리자 계정(예: seoyeon@kvisa1345.com).
 - 스키마 변경은 Supabase Management API/SQL로 하고 `types/database.ts`를 함께 갱신.
 
