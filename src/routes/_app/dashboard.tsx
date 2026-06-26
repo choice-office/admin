@@ -1,21 +1,73 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import dayjs from "dayjs";
 import { FileText, MessageSquare, Star, TrendingUp } from "lucide-react";
+import { useEffect, useState } from "react";
+import { StatusBadge } from "@/components/admin/status-badge";
 import { Button, Card } from "@/components/ui/ds";
+import { consultLabel } from "@/lib/contacts";
+import { formatDateCompact } from "@/lib/format";
+import { supabase } from "@/lib/supabase";
+import type { Contact } from "@/types/database";
 
 export const Route = createFileRoute("/_app/dashboard")({
 	component: DashboardPage,
 });
 
-const STAT_CARDS = [
-	{ label: "이번 달 문의", value: "—", sub: "상담 문의 접수", icon: MessageSquare },
-	{ label: "처리 대기", value: "—", sub: "회신이 필요한 건", icon: TrendingUp },
-	{ label: "게시 글", value: "—", sub: "블로그 · 공지", icon: FileText },
-	{ label: "노출 후기", value: "—", sub: "홈페이지 노출 중", icon: Star },
-];
+type Stats = {
+	monthInquiries: number;
+	pending: number;
+	posts: number;
+	reviews: number;
+};
 
 function DashboardPage() {
 	const navigate = useNavigate();
+	const [stats, setStats] = useState<Stats | null>(null);
+	const [recent, setRecent] = useState<Contact[]>([]);
+
+	useEffect(() => {
+		(async () => {
+			const monthStart = dayjs().startOf("month").toISOString();
+			const [contactsRes, monthRes, pendingRes, postsRes, reviewsRes] = await Promise.all([
+				supabase.from("contacts").select("*").order("created_at", { ascending: false }).limit(5),
+				supabase
+					.from("contacts")
+					.select("id", { count: "exact", head: true })
+					.gte("created_at", monthStart),
+				supabase
+					.from("contacts")
+					.select("id", { count: "exact", head: true })
+					.in("status", ["new", "in_progress"]),
+				supabase
+					.from("blog_posts")
+					.select("id", { count: "exact", head: true })
+					.eq("status", "published"),
+				supabase
+					.from("reviews")
+					.select("id", { count: "exact", head: true })
+					.eq("is_published", true),
+			]);
+			setRecent((contactsRes.data ?? []) as Contact[]);
+			setStats({
+				monthInquiries: monthRes.count ?? 0,
+				pending: pendingRes.count ?? 0,
+				posts: postsRes.count ?? 0,
+				reviews: reviewsRes.count ?? 0,
+			});
+		})();
+	}, []);
+
+	const cards = [
+		{
+			label: "이번 달 문의",
+			value: stats?.monthInquiries,
+			sub: "상담 문의 접수",
+			icon: MessageSquare,
+		},
+		{ label: "처리 대기", value: stats?.pending, sub: "회신이 필요한 건", icon: TrendingUp },
+		{ label: "게시 글", value: stats?.posts, sub: "블로그 · 공지", icon: FileText },
+		{ label: "노출 후기", value: stats?.reviews, sub: "홈페이지 노출 중", icon: Star },
+	];
 
 	return (
 		<div className="max-w-[1180px]">
@@ -29,7 +81,7 @@ function DashboardPage() {
 			</div>
 
 			<div className="mb-[22px] grid grid-cols-4 gap-[18px]">
-				{STAT_CARDS.map((c) => {
+				{cards.map((c) => {
 					const Icon = c.icon;
 					return (
 						<Card key={c.label}>
@@ -37,7 +89,7 @@ function DashboardPage() {
 								<div>
 									<div className="mb-2.5 text-muted-foreground text-sm">{c.label}</div>
 									<div className="font-bold text-3xl text-foreground leading-none tracking-[-0.02em]">
-										{c.value}
+										{c.value ?? "—"}
 									</div>
 									<div className="mt-[9px] text-[13px] text-muted-foreground">{c.sub}</div>
 								</div>
@@ -62,9 +114,31 @@ function DashboardPage() {
 							전체 보기
 						</button>
 					</div>
-					<div className="px-5 py-12 text-center text-muted-foreground text-sm">
-						상담 문의 관리에서 접수 내역을 확인하세요.
-					</div>
+					{recent.length === 0 ? (
+						<div className="px-5 py-12 text-center text-muted-foreground text-sm">
+							접수된 상담 문의가 없습니다.
+						</div>
+					) : (
+						recent.map((c) => (
+							<button
+								type="button"
+								key={c.id}
+								onClick={() => navigate({ to: "/inquiries" })}
+								className="flex w-full items-center gap-3 border-border border-b px-5 py-3.5 text-left transition-colors last:border-b-0 hover:bg-muted"
+							>
+								<div className="min-w-0 flex-1">
+									<div className="font-medium text-foreground">{c.name}</div>
+									<div className="mt-0.5 truncate text-[13px] text-muted-foreground">
+										{consultLabel(c.consult_field)} · {c.phone}
+									</div>
+								</div>
+								<StatusBadge status={c.status} />
+								<span className="w-[68px] text-right text-[13px] text-muted-foreground">
+									{formatDateCompact(c.created_at)}
+								</span>
+							</button>
+						))
+					)}
 				</div>
 
 				<Card>
