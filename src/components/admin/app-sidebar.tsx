@@ -8,7 +8,7 @@ import {
 	Settings,
 	Star,
 } from "lucide-react";
-import type { CSSProperties } from "react";
+import { cn } from "@/lib/utils";
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
 
@@ -25,40 +25,16 @@ type AppSidebarProps = { collapsed: boolean; onToggle: () => void };
 export const AppSidebar = ({ collapsed, onToggle }: AppSidebarProps) => {
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-	const asideStyle: CSSProperties = {
-		width: collapsed ? 74 : 240,
-		flexShrink: 0,
-		display: "flex",
-		flexDirection: "column",
-		background: "var(--surface-card)",
-		borderRight: "1px solid var(--border-default)",
-		transition: "width 0.2s ease",
-	};
-
 	return (
-		<aside style={asideStyle}>
-			<div
-				style={{
-					height: 64,
-					display: "flex",
-					alignItems: "center",
-					gap: 10,
-					padding: "0 16px",
-					borderBottom: "1px solid var(--border-default)",
-					flexShrink: 0,
-				}}
-			>
+		<aside
+			className={cn(
+				"flex flex-shrink-0 flex-col border-border border-r bg-card transition-[width] duration-200",
+				collapsed ? "w-[74px]" : "w-60",
+			)}
+		>
+			<div className="flex h-16 flex-shrink-0 items-center gap-2.5 border-border border-b px-4">
 				{!collapsed && (
-					<span
-						style={{
-							fontSize: 16,
-							fontWeight: 700,
-							letterSpacing: "-0.02em",
-							color: "var(--text-heading)",
-							whiteSpace: "nowrap",
-							overflow: "hidden",
-						}}
-					>
+					<span className="overflow-hidden whitespace-nowrap font-bold text-base text-foreground tracking-[-0.02em]">
 						초이스 행정사
 					</span>
 				)}
@@ -66,34 +42,16 @@ export const AppSidebar = ({ collapsed, onToggle }: AppSidebarProps) => {
 					type="button"
 					onClick={onToggle}
 					title="메뉴 접기/펼치기"
-					style={{
-						marginLeft: collapsed ? 0 : "auto",
-						width: 34,
-						height: 34,
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-						border: "none",
-						background: "transparent",
-						borderRadius: "var(--radius)",
-						cursor: "pointer",
-						color: "var(--text-muted)",
-					}}
+					className={cn(
+						"flex h-[34px] w-[34px] items-center justify-center rounded-md text-muted-foreground hover:bg-muted",
+						collapsed ? "mx-auto" : "ml-auto",
+					)}
 				>
 					{collapsed ? <PanelLeft size={18} /> : <PanelLeftClose size={18} />}
 				</button>
 			</div>
 
-			<nav
-				style={{
-					flex: 1,
-					overflowY: "auto",
-					padding: 12,
-					display: "flex",
-					flexDirection: "column",
-					gap: 3,
-				}}
-			>
+			<nav className="flex flex-1 flex-col gap-[3px] overflow-y-auto p-3">
 				{NAV_ITEMS.map((item) => {
 					const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
 					const Icon = item.icon;
@@ -102,24 +60,15 @@ export const AppSidebar = ({ collapsed, onToggle }: AppSidebarProps) => {
 							key={item.to}
 							to={item.to}
 							title={item.label}
-							style={{
-								display: "flex",
-								alignItems: "center",
-								gap: 12,
-								height: 44,
-								padding: collapsed ? 0 : "0 14px",
-								justifyContent: collapsed ? "center" : "flex-start",
-								borderRadius: "var(--radius)",
-								fontSize: 15,
-								fontWeight: active ? 700 : 500,
-								color: active ? "var(--color-primary-dark)" : "var(--text-body)",
-								background: active ? "var(--color-accent-soft)" : "transparent",
-								textDecoration: "none",
-								whiteSpace: "nowrap",
-								transition: "background 0.15s ease, color 0.15s ease",
-							}}
+							className={cn(
+								"flex h-11 items-center gap-3 whitespace-nowrap rounded-md text-[15px] transition-colors",
+								collapsed ? "justify-center px-0" : "justify-start px-3.5",
+								active
+									? "bg-accent font-bold text-accent-foreground"
+									: "font-medium text-[var(--text-body)] hover:bg-muted",
+							)}
 						>
-							<Icon size={20} strokeWidth={1.75} style={{ flexShrink: 0 }} />
+							<Icon size={20} strokeWidth={1.75} className="flex-shrink-0" />
 							{!collapsed && <span>{item.label}</span>}
 						</Link>
 					);
@@ -127,15 +76,7 @@ export const AppSidebar = ({ collapsed, onToggle }: AppSidebarProps) => {
 			</nav>
 
 			{!collapsed && (
-				<div
-					style={{
-						padding: "14px 18px",
-						borderTop: "1px solid var(--border-default)",
-						fontSize: 12,
-						color: "var(--text-muted)",
-						whiteSpace: "nowrap",
-					}}
-				>
+				<div className="whitespace-nowrap border-border border-t px-[18px] py-3.5 text-muted-foreground text-xs">
 					초이스 행정사 어드민 v1.0
 				</div>
 			)}

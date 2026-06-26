@@ -1,19 +1,11 @@
 import type { ContactStatus } from "@/types/database";
 
-// 상태 메타(라벨·배지 색). 토프 브라운 톤 내에서 명도로 구분.
-export const STATUS_META: Record<
-	ContactStatus,
-	{ label: string; bg: string; fg: string; border?: string }
-> = {
-	new: { label: "신규", bg: "var(--color-primary)", fg: "#fff" },
-	in_progress: { label: "처리중", bg: "var(--color-accent-soft)", fg: "var(--color-primary-dark)" },
-	done: { label: "완료", bg: "var(--surface-sunken)", fg: "var(--text-muted)" },
-	hold: {
-		label: "보류",
-		bg: "transparent",
-		fg: "var(--text-muted)",
-		border: "var(--border-default)",
-	},
+// 상태 메타(라벨·배지 Tailwind 클래스). 토프 브라운 톤 내에서 명도로 구분.
+export const STATUS_META: Record<ContactStatus, { label: string; badge: string }> = {
+	new: { label: "신규", badge: "bg-primary text-primary-foreground" },
+	in_progress: { label: "처리중", badge: "bg-accent text-accent-foreground" },
+	done: { label: "완료", badge: "bg-[var(--surface-sunken)] text-muted-foreground" },
+	hold: { label: "보류", badge: "border border-border text-muted-foreground" },
 };
 
 export const STATUS_ORDER: ContactStatus[] = ["new", "in_progress", "done", "hold"];

@@ -29,7 +29,7 @@ src/routes/
   _app.tsx                        # 인증 영역 레이아웃(가드+사이드바+상단바)
   _app/{dashboard,inquiries,reviews,blog,settings}.tsx
 src/components/{admin, ui/ds.tsx} · src/lib/{supabase,contacts,format,utils}
-src/hooks/use-contacts.ts · src/types/database.ts · src/index.css(토큰+.ds-*)
+src/hooks/use-contacts.ts · src/types/database.ts · src/index.css(토큰+shadcn 매핑)
 ```
 
 ## Commands
@@ -140,7 +140,7 @@ Scope-risk: narrow | moderate | broad
 ```
 
 ### 핵심 파일
-- `src/index.css` — DS 토큰(토프 브라운) + `.ds-*` 컴포넌트 클래스
+- `src/index.css` — DS 토큰(토프 브라운) + shadcn 시맨틱 매핑 (컴포넌트는 ds.tsx/Tailwind)
 - `src/components/ui/ds.tsx` — DS 컴포넌트(Button/Card/Badge/Input/Label/Textarea)
 - `src/types/database.ts` — Supabase 테이블 타입(실스키마)
 - `src/components/admin/app-sidebar.tsx` — `NAV_ITEMS`(사이드바 메뉴 단일 출처)

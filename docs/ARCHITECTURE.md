@@ -12,7 +12,7 @@
 - **Vite + React 19 + TypeScript** (Next.js 아님 — SSR/Server Action/next-image 없음)
 - **TanStack Router**(파일 기반, `src/routes/`) + TanStack Table
 - **Supabase**(`@supabase/supabase-js`) — Auth(이메일/비번) + DB(anon 키 + RLS)
-- 스타일: **토프 브라운 DS**(홈페이지와 동일 토큰) — `src/index.css` + 인라인 스타일 + `ds.tsx`
+- 스타일: **토프 브라운 DS**(홈페이지와 동일 토큰) — `src/index.css`(토큰) + **Tailwind className** + `ds.tsx`(cva). 인라인 `style` 금지.
 - Lucide 아이콘 · Biome + husky + lint-staged · pnpm · Vercel(정적 배포)
 
 ## 디렉터리 (실제)
@@ -46,7 +46,7 @@ src/
   hooks/
     use-contacts.ts            # 상담문의 조회 + 상태/메모 수정(낙관적)
   types/database.ts            # ★ Supabase 테이블 타입(실스키마). Contact, ContactStatus
-  index.css                    # ★ 토큰(토프 브라운) + DS 컴포넌트 클래스(.ds-*) + Noto Sans KR
+  index.css                    # ★ 토큰(토프 브라운) + shadcn 매핑 + Noto Sans KR (DS는 ds.tsx/Tailwind로 표현)
   main.tsx                     # RouterProvider 진입점
 design/                        # Claude Design 산출물(토큰 CSS + 어드민 목업). biome 제외, 참고용
 ```

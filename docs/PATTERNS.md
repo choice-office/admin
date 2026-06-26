@@ -9,18 +9,23 @@
 - 비동기 `async/await`, null 체크 `??`, 주석 한국어.
 - 동적 className은 `cn(...)`(`@/lib/utils`).
 
+## 스타일링 — Tailwind className 우선 (인라인 style 금지)
+admin은 **Tailwind className으로 표준화**한다. `style={{}}` 인라인 스타일은 쓰지 않는다(동적 값도 arbitrary value로 표현). 동적 분기는 `cn(...)`.
+- 시맨틱 색은 Tailwind 매핑 클래스: `text-foreground`(=heading), `text-muted-foreground`, `bg-card`, `bg-muted`(=surface-subtle), `bg-accent`/`text-accent-foreground`, `bg-primary`/`text-primary-foreground`, `border-border`, `text-destructive`.
+- 매핑 안 된 브랜드 토큰은 arbitrary value: `text-[var(--text-body)]`, `bg-[var(--surface-sunken)]`, `shadow-[var(--shadow-md)]` 등. 하드코딩 hex 금지(상태색 등 불가피한 경우만).
+- 아이콘: `lucide-react`, `size={18~22} strokeWidth={1.75}`.
+
 ## DS 컴포넌트 사용 — `@/components/ui/ds`
-사이트 UI는 `ds.tsx`(홈페이지와 동일)를 우선 사용. shadcn `ui/*`는 보조.
+공통 UI는 `ds.tsx`(Tailwind/cva 기반)를 우선. shadcn `ui/*`는 보조.
 ```tsx
 import { Button, Card, CardTitle, CardBody, Badge, Input, Label, Textarea } from "@/components/ui/ds";
 
 <Button variant="primary|outline|secondary|ghost" size="sm|md|lg" onClick={...} disabled={...}>저장</Button>
-<Card padding="24px" hover>...</Card>
-<Input value={v} onChange={e=>setV(e.target.value)} />   // focus 링 = CSS(.ds-field)
+<Card hover className="p-8">...</Card>   // 패딩은 className(기본 p-6)
+<Input value={v} onChange={e=>setV(e.target.value)} invalid={hasError} />
 ```
-- hover/focus는 **CSS(`.ds-btn-*:hover`, `.ds-field:focus`)** — JS 상태로 만들지 말 것.
-- 색·간격은 **토큰 변수**: `var(--text-heading)`, `var(--text-body)`, `var(--text-muted)`, `var(--surface-card/subtle/sunken)`, `var(--border-default)`, `var(--color-primary/-dark/-light)`, `var(--color-accent-soft)`, `var(--radius)`, `var(--radius-pill)`, `var(--shadow-md)`. 하드코딩 hex 금지(상태색 등 불가피한 경우만).
-- 아이콘: `lucide-react`, `size={18~22} strokeWidth={1.75}`.
+- hover/focus는 **cva variant + Tailwind hover:/focus-visible:** 로 처리(JS 상태 금지).
+- `Card`에 `padding` prop 없음 — `className="p-8"` 등으로 조절(기본 `p-6`).
 
 ## 화면(라우트) 추가
 1. `src/routes/_app/<name>.tsx`:

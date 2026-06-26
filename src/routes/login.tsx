@@ -53,66 +53,27 @@ function LoginPage() {
 	};
 
 	return (
-		<div
-			style={{
-				minHeight: "100vh",
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				background: "var(--surface-subtle)",
-				padding: 24,
-			}}
-		>
-			<div style={{ width: "100%", maxWidth: 430 }}>
-				<div style={{ textAlign: "center", marginBottom: 26 }}>
-					<div
-						style={{
-							fontSize: 12,
-							letterSpacing: "0.22em",
-							color: "var(--color-accent)",
-							fontWeight: 500,
-							marginBottom: 12,
-						}}
-					>
+		<div className="flex min-h-screen items-center justify-center bg-muted p-6">
+			<div className="w-full max-w-[430px]">
+				<div className="mb-[26px] text-center">
+					<div className="mb-3 font-medium text-[var(--color-accent)] text-xs tracking-[0.22em]">
 						ADMIN CONSOLE
 					</div>
-					<div
-						style={{
-							fontSize: 25,
-							fontWeight: 700,
-							letterSpacing: "-0.02em",
-							color: "var(--text-heading)",
-						}}
-					>
+					<div className="font-bold text-[25px] text-foreground tracking-[-0.02em]">
 						초이스 행정사 사무소
 					</div>
 				</div>
 
-				<Card padding="32px">
-					<h1
-						style={{
-							fontSize: 21,
-							fontWeight: 700,
-							color: "var(--text-heading)",
-							margin: "0 0 6px",
-							letterSpacing: "-0.02em",
-						}}
-					>
+				<Card className="p-8">
+					<h1 className="m-0 mb-1.5 font-bold text-[21px] text-foreground tracking-[-0.02em]">
 						관리자 로그인
 					</h1>
-					<p
-						style={{
-							fontSize: 15,
-							color: "var(--text-muted)",
-							margin: "0 0 26px",
-							lineHeight: 1.6,
-						}}
-					>
+					<p className="m-0 mb-[26px] text-[15px] text-muted-foreground leading-relaxed">
 						사무소 관리자 계정으로 로그인해 주세요.
 					</p>
 
 					<form onSubmit={handleSubmit}>
-						<div style={{ marginBottom: 18 }}>
+						<div className="mb-[18px]">
 							<Label htmlFor="userId">아이디</Label>
 							<Input
 								id="userId"
@@ -123,7 +84,7 @@ function LoginPage() {
 								autoComplete="username"
 							/>
 						</div>
-						<div style={{ marginBottom: 18 }}>
+						<div className="mb-[18px]">
 							<Label htmlFor="pw">비밀번호</Label>
 							<Input
 								id="pw"
@@ -135,31 +96,15 @@ function LoginPage() {
 							/>
 						</div>
 
-						{error && (
-							<div style={{ fontSize: 14, color: "#b4452f", marginBottom: 14 }}>{error}</div>
-						)}
+						{error && <div className="mb-3.5 text-destructive text-sm">{error}</div>}
 
-						<Button
-							type="submit"
-							variant="primary"
-							size="lg"
-							disabled={pending}
-							style={{ width: "100%" }}
-						>
+						<Button type="submit" variant="primary" size="lg" disabled={pending} className="w-full">
 							{pending ? "로그인 중…" : "로그인"}
 						</Button>
 					</form>
 				</Card>
 
-				<p
-					style={{
-						textAlign: "center",
-						fontSize: 13,
-						color: "var(--text-muted)",
-						margin: "22px 0 0",
-						lineHeight: 1.7,
-					}}
-				>
+				<p className="mt-[22px] text-center text-[13px] text-muted-foreground leading-relaxed">
 					초이스 행정사 사무소
 					<br />
 					관리자 외 접근이 제한된 페이지입니다.

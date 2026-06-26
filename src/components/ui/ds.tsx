@@ -1,201 +1,160 @@
-import type { CSSProperties, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import type {
+	ButtonHTMLAttributes,
+	HTMLAttributes,
+	InputHTMLAttributes,
+	ReactNode,
+	TextareaHTMLAttributes,
+} from "react";
 import { cn } from "@/lib/utils";
 
-// 초이스 DS 컴포넌트 — 홈페이지 ds.tsx와 동일. hover/focus는 globals(index.css)의 .ds-* 클래스로.
-type Sx = CSSProperties;
+// 초이스 DS 컴포넌트 — Tailwind(브랜드 토큰 매핑) 기반. 홈페이지와 동일 시각, admin은 Tailwind로 표현.
 
-/* ── Badge ── */
-const badgeVariants: Record<string, Sx> = {
-	default: { background: "var(--badge-bg)", color: "var(--badge-fg)" },
-	primary: { background: "var(--color-primary)", color: "var(--text-on-brand)" },
-	outline: {
-		background: "transparent",
-		color: "var(--text-body)",
-		boxShadow: "inset 0 0 0 1px var(--border-default)",
+/* ── Button ── */
+const buttonVariants = cva(
+	"inline-flex cursor-pointer select-none items-center justify-center gap-2 whitespace-nowrap rounded-md border border-transparent font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+	{
+		variants: {
+			variant: {
+				primary: "bg-primary text-primary-foreground hover:bg-[var(--color-primary-dark)]",
+				outline: "border-border bg-card text-foreground hover:bg-muted",
+				secondary: "bg-accent text-accent-foreground hover:bg-[#d6c9b3]",
+				ghost: "bg-transparent text-foreground hover:bg-muted",
+			},
+			size: {
+				sm: "h-9 px-3.5 text-sm",
+				md: "h-11 px-5 text-base",
+				lg: "h-[52px] px-7 text-[17px]",
+			},
+		},
+		defaultVariants: { variant: "primary", size: "md" },
 	},
-};
-
-export const Badge = ({
-	children,
-	variant = "default",
-	style,
-}: {
-	children: ReactNode;
-	variant?: string;
-	style?: Sx;
-}) => (
-	<span
-		style={{
-			display: "inline-flex",
-			alignItems: "center",
-			gap: 6,
-			fontFamily: "var(--font-sans)",
-			fontWeight: 500,
-			fontSize: 13,
-			lineHeight: 1,
-			padding: "6px 12px",
-			borderRadius: "var(--radius-pill)",
-			whiteSpace: "nowrap",
-			...badgeVariants[variant],
-			...style,
-		}}
-	>
-		{children}
-	</span>
 );
 
-/* ── Button (hover는 .ds-btn-*:hover) ── */
-const btnSizes: Record<string, Sx> = {
-	sm: { height: 36, padding: "0 14px", fontSize: 14 },
-	md: { height: 44, padding: "0 20px", fontSize: 16 },
-	lg: { height: 52, padding: "0 28px", fontSize: 17 },
-};
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
+	VariantProps<typeof buttonVariants> & { iconStart?: ReactNode; iconEnd?: ReactNode };
 
 export const Button = ({
-	children,
-	variant = "primary",
-	size = "md",
-	disabled = false,
+	className,
+	variant,
+	size,
 	iconStart,
 	iconEnd,
-	onClick,
+	children,
 	type = "button",
-	style,
-}: {
-	children?: ReactNode;
-	variant?: string;
-	size?: string;
-	disabled?: boolean;
-	iconStart?: ReactNode;
-	iconEnd?: ReactNode;
-	onClick?: () => void;
-	type?: "button" | "submit" | "reset";
-	style?: Sx;
-}) => (
-	<button
-		type={type}
-		onClick={onClick}
-		disabled={disabled}
-		className={cn("ds-btn", `ds-btn-${variant}`, disabled && "is-disabled")}
-		style={{ ...btnSizes[size], ...style }}
-	>
+	...rest
+}: ButtonProps) => (
+	<button type={type} className={cn(buttonVariants({ variant, size }), className)} {...rest}>
 		{iconStart}
 		{children}
 		{iconEnd}
 	</button>
 );
 
+/* ── Badge ── */
+const badgeVariants = cva(
+	"inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 font-medium text-[13px] leading-none",
+	{
+		variants: {
+			variant: {
+				default: "bg-accent text-accent-foreground",
+				primary: "bg-primary text-primary-foreground",
+				outline: "bg-transparent text-foreground ring-1 ring-border ring-inset",
+			},
+		},
+		defaultVariants: { variant: "default" },
+	},
+);
+
+export const Badge = ({
+	className,
+	variant,
+	children,
+}: {
+	className?: string;
+	variant?: "default" | "primary" | "outline";
+	children: ReactNode;
+}) => <span className={cn(badgeVariants({ variant }), className)}>{children}</span>;
+
 /* ── Card ── */
 export const Card = ({
-	children,
+	className,
 	hover = false,
-	padding = "24px",
-	style,
-	onClick,
-}: {
-	children: ReactNode;
-	hover?: boolean;
-	padding?: string | number;
-	style?: Sx;
-	onClick?: () => void;
-}) => {
-	const className = cn("ds-card", hover && "is-hover");
-	if (onClick) {
-		return (
-			<button
-				type="button"
-				className={className}
-				onClick={onClick}
-				style={{ display: "block", textAlign: "left", width: "100%", padding, ...style }}
-			>
-				{children}
-			</button>
-		);
-	}
-	return (
-		<div className={className} style={{ padding, ...style }}>
-			{children}
-		</div>
-	);
-};
+	children,
+	...rest
+}: HTMLAttributes<HTMLDivElement> & { hover?: boolean }) => (
+	<div
+		className={cn(
+			"rounded-md border border-border bg-card p-6 shadow-xs",
+			hover && "transition hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(82,70,54,0.1)]",
+			className,
+		)}
+		{...rest}
+	>
+		{children}
+	</div>
+);
 
-export const CardTitle = ({ children, style }: { children: ReactNode; style?: Sx }) => (
+export const CardTitle = ({ className, children }: { className?: string; children: ReactNode }) => (
 	<h3
-		style={{
-			fontSize: "var(--text-h3)",
-			fontWeight: 700,
-			color: "var(--text-heading)",
-			lineHeight: "var(--leading-snug)",
-			letterSpacing: "var(--tracking-tight)",
-			margin: 0,
-			...style,
-		}}
+		className={cn(
+			"m-0 font-bold text-foreground text-lg leading-snug tracking-[-0.02em]",
+			className,
+		)}
 	>
 		{children}
 	</h3>
 );
 
-export const CardBody = ({ children, style }: { children: ReactNode; style?: Sx }) => (
-	<p
-		style={{
-			fontSize: "var(--text-base)",
-			color: "var(--text-body)",
-			lineHeight: "var(--leading-relaxed)",
-			margin: "12px 0 0",
-			...style,
-		}}
-	>
+export const CardBody = ({ className, children }: { className?: string; children: ReactNode }) => (
+	<p className={cn("mt-3 text-[var(--text-body)] text-base leading-relaxed", className)}>
 		{children}
 	</p>
 );
 
-/* ── Forms (focus는 .ds-field:focus) ── */
+/* ── Forms ── */
 export const Label = ({
+	className,
 	children,
 	htmlFor,
-	style,
 }: {
+	className?: string;
 	children: ReactNode;
 	htmlFor?: string;
-	style?: Sx;
 }) => (
 	<label
 		htmlFor={htmlFor}
-		style={{
-			display: "block",
-			fontSize: 14,
-			fontWeight: 500,
-			color: "var(--text-heading)",
-			marginBottom: 8,
-			...style,
-		}}
+		className={cn("mb-2 block font-medium text-foreground text-sm", className)}
 	>
 		{children}
 	</label>
 );
 
+const fieldClass =
+	"w-full rounded-md border border-border bg-card text-base text-[var(--text-body)] outline-none transition focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-[rgba(108,93,76,0.18)] aria-[invalid=true]:border-destructive";
+
 export const Input = ({
-	invalid = false,
-	style,
+	className,
+	invalid,
 	...rest
 }: InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }) => (
 	<input
-		className={cn("ds-field", invalid && "is-invalid")}
-		style={{ height: 48, padding: "0 14px", ...style }}
+		aria-invalid={invalid || undefined}
+		className={cn(fieldClass, "h-12 px-3.5", className)}
 		{...rest}
 	/>
 );
 
 export const Textarea = ({
-	invalid = false,
+	className,
+	invalid,
 	rows = 4,
-	style,
 	...rest
 }: TextareaHTMLAttributes<HTMLTextAreaElement> & { invalid?: boolean }) => (
 	<textarea
-		className={cn("ds-field", invalid && "is-invalid")}
 		rows={rows}
-		style={{ padding: "12px 14px", lineHeight: 1.6, resize: "vertical", ...style }}
+		aria-invalid={invalid || undefined}
+		className={cn(fieldClass, "resize-y px-3.5 py-3 leading-relaxed", className)}
 		{...rest}
 	/>
 );

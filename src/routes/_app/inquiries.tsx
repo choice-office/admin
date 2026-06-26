@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/ds";
 import { useContacts } from "@/hooks/use-contacts";
 import { consultLabel, STATUS_META, STATUS_ORDER } from "@/lib/contacts";
 import { formatDateCompact } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { ContactStatus } from "@/types/database";
 
 export const Route = createFileRoute("/_app/inquiries")({
@@ -23,7 +24,8 @@ const PERIODS = [
 type PeriodKey = (typeof PERIODS)[number]["key"];
 
 const PAGE_SIZE = 10;
-const GRID = "1.3fr 1.2fr 1.4fr 0.8fr 1fr";
+// 테이블 컬럼 비율 — 헤더/행이 동일 그리드를 공유
+const GRID = "grid-cols-[1.3fr_1.2fr_1.4fr_0.8fr_1fr]";
 
 function InquiriesPage() {
 	const { contacts, isLoading, updateContact } = useContacts();
@@ -73,35 +75,19 @@ function InquiriesPage() {
 	const resetPage = () => setPage(1);
 
 	return (
-		<div style={{ maxWidth: 1280 }}>
-			<div style={{ marginBottom: 20 }}>
-				<h2
-					style={{
-						fontSize: 24,
-						fontWeight: 700,
-						color: "var(--text-heading)",
-						margin: "0 0 6px",
-						letterSpacing: "-0.02em",
-					}}
-				>
+		<div className="max-w-[1280px]">
+			<div className="mb-5">
+				<h2 className="m-0 mb-1.5 font-bold text-2xl text-foreground tracking-[-0.02em]">
 					상담 문의 관리
 				</h2>
-				<p style={{ fontSize: 15, color: "var(--text-muted)", margin: 0 }}>
+				<p className="m-0 text-[15px] text-muted-foreground">
 					홈페이지로 접수된 상담 문의를 확인하고 처리 상태를 관리합니다.
 				</p>
 			</div>
 
 			{/* 필터 바 */}
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					gap: 12,
-					flexWrap: "wrap",
-					marginBottom: 16,
-				}}
-			>
-				<div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+			<div className="mb-4 flex flex-wrap items-center gap-3">
+				<div className="flex flex-wrap gap-1.5">
 					{tabs.map((t) => {
 						const active = statusFilter === t.key;
 						return (
@@ -112,40 +98,26 @@ function InquiriesPage() {
 									setStatusFilter(t.key);
 									resetPage();
 								}}
-								style={{
-									height: 36,
-									padding: "0 14px",
-									borderRadius: "var(--radius)",
-									fontSize: 14,
-									fontWeight: active ? 700 : 500,
-									cursor: "pointer",
-									background: active ? "var(--color-primary)" : "var(--surface-card)",
-									color: active ? "#fff" : "var(--text-body)",
-									border: `1px solid ${active ? "var(--color-primary)" : "var(--border-default)"}`,
-								}}
+								className={cn(
+									"h-9 rounded-md border px-3.5 text-sm transition-colors",
+									active
+										? "border-primary bg-primary font-bold text-primary-foreground"
+										: "border-border bg-card font-medium text-[var(--text-body)] hover:bg-muted",
+								)}
 							>
 								{t.label} {counts[t.key] ?? 0}
 							</button>
 						);
 					})}
 				</div>
-				<div style={{ flex: 1 }} />
+				<div className="flex-1" />
 				<select
 					value={period}
 					onChange={(e) => {
 						setPeriod(e.target.value as PeriodKey);
 						resetPage();
 					}}
-					style={{
-						height: 42,
-						padding: "0 12px",
-						borderRadius: "var(--radius)",
-						border: "1px solid var(--border-default)",
-						background: "var(--surface-card)",
-						fontFamily: "var(--font-sans)",
-						fontSize: 14,
-						color: "var(--text-body)",
-					}}
+					className="h-[42px] rounded-md border border-border bg-card px-3 text-[var(--text-body)] text-sm"
 				>
 					{PERIODS.map((p) => (
 						<option key={p.key} value={p.key}>
@@ -153,17 +125,8 @@ function InquiriesPage() {
 						</option>
 					))}
 				</select>
-				<div style={{ position: "relative", width: 240 }}>
-					<span
-						style={{
-							position: "absolute",
-							left: 12,
-							top: "50%",
-							transform: "translateY(-50%)",
-							color: "var(--text-muted)",
-							display: "flex",
-						}}
-					>
+				<div className="relative w-60">
+					<span className="absolute top-1/2 left-3 flex -translate-y-1/2 text-muted-foreground">
 						<Search size={17} />
 					</span>
 					<Input
@@ -173,32 +136,18 @@ function InquiriesPage() {
 							resetPage();
 						}}
 						placeholder="이름·연락처·이메일 검색"
-						style={{ height: 42, paddingLeft: 38 }}
+						className="h-[42px] pl-[38px]"
 					/>
 				</div>
 			</div>
 
 			{/* 테이블 */}
-			<div
-				style={{
-					background: "var(--surface-card)",
-					border: "1px solid var(--border-default)",
-					borderRadius: "var(--radius)",
-					overflow: "hidden",
-				}}
-			>
+			<div className="overflow-hidden rounded-md border border-border bg-card">
 				<div
-					style={{
-						display: "grid",
-						gridTemplateColumns: GRID,
-						gap: 12,
-						padding: "12px 20px",
-						background: "var(--surface-subtle)",
-						borderBottom: "1px solid var(--border-default)",
-						fontSize: 13,
-						fontWeight: 600,
-						color: "var(--text-muted)",
-					}}
+					className={cn(
+						"grid gap-3 border-border border-b bg-muted px-5 py-3 font-semibold text-[13px] text-muted-foreground",
+						GRID,
+					)}
 				>
 					<div>의뢰인</div>
 					<div>연락처</div>
@@ -208,22 +157,13 @@ function InquiriesPage() {
 				</div>
 
 				{isLoading ? (
-					<div
-						style={{
-							padding: "56px 20px",
-							textAlign: "center",
-							color: "var(--text-muted)",
-							fontSize: 14,
-						}}
-					>
-						불러오는 중…
-					</div>
+					<div className="px-5 py-14 text-center text-muted-foreground text-sm">불러오는 중…</div>
 				) : rows.length === 0 ? (
-					<div style={{ padding: "56px 20px", textAlign: "center" }}>
-						<div style={{ fontSize: 15, color: "var(--text-heading)", fontWeight: 500 }}>
+					<div className="px-5 py-14 text-center">
+						<div className="font-medium text-[15px] text-foreground">
 							조건에 맞는 문의가 없습니다
 						</div>
-						<div style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 6 }}>
+						<div className="mt-1.5 text-muted-foreground text-sm">
 							필터나 검색어를 바꿔 다시 시도해 보세요.
 						</div>
 					</div>
@@ -233,32 +173,18 @@ function InquiriesPage() {
 							key={c.id}
 							type="button"
 							onClick={() => setSelectedId(c.id)}
-							style={{
-								display: "grid",
-								gridTemplateColumns: GRID,
-								gap: 12,
-								alignItems: "center",
-								width: "100%",
-								padding: "14px 20px",
-								border: "none",
-								borderBottom: "1px solid var(--border-default)",
-								background: "transparent",
-								cursor: "pointer",
-								textAlign: "left",
-								font: "inherit",
-							}}
+							className={cn(
+								"grid w-full items-center gap-3 border-border border-b px-5 py-3.5 text-left transition-colors hover:bg-muted",
+								GRID,
+							)}
 						>
-							<div style={{ fontWeight: 500, color: "var(--text-heading)" }}>{c.name}</div>
-							<div style={{ color: "var(--text-body)", fontSize: 14 }}>{c.phone}</div>
-							<div style={{ color: "var(--text-body)", fontSize: 14 }}>
-								{consultLabel(c.consult_field)}
-							</div>
+							<div className="font-medium text-foreground">{c.name}</div>
+							<div className="text-[var(--text-body)] text-sm">{c.phone}</div>
+							<div className="text-[var(--text-body)] text-sm">{consultLabel(c.consult_field)}</div>
 							<div>
 								<StatusBadge status={c.status} />
 							</div>
-							<div style={{ color: "var(--text-muted)", fontSize: 14 }}>
-								{formatDateCompact(c.created_at)}
-							</div>
+							<div className="text-muted-foreground text-sm">{formatDateCompact(c.created_at)}</div>
 						</button>
 					))
 				)}
@@ -266,23 +192,18 @@ function InquiriesPage() {
 
 			{/* 페이지네이션 */}
 			{totalPages > 1 && (
-				<div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 20 }}>
+				<div className="mt-5 flex justify-center gap-1.5">
 					{Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
 						<button
 							key={n}
 							type="button"
 							onClick={() => setPage(n)}
-							style={{
-								minWidth: 38,
-								height: 38,
-								borderRadius: "var(--radius)",
-								border: `1px solid ${n === current ? "var(--color-primary)" : "var(--border-default)"}`,
-								background: n === current ? "var(--color-primary)" : "var(--surface-card)",
-								color: n === current ? "#fff" : "var(--text-body)",
-								fontWeight: n === current ? 700 : 500,
-								fontSize: 14,
-								cursor: "pointer",
-							}}
+							className={cn(
+								"h-[38px] min-w-[38px] rounded-md border text-sm transition-colors",
+								n === current
+									? "border-primary bg-primary font-bold text-primary-foreground"
+									: "border-border bg-card font-medium text-[var(--text-body)] hover:bg-muted",
+							)}
 						>
 							{n}
 						</button>

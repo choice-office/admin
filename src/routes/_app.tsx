@@ -19,19 +19,11 @@ export const Route = createFileRoute("/_app")({
 function AppLayout() {
 	const [collapsed, setCollapsed] = useState(false);
 	return (
-		<div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
+		<div className="flex h-screen overflow-hidden">
 			<AppSidebar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
-			<div
-				style={{
-					flex: 1,
-					display: "flex",
-					flexDirection: "column",
-					minWidth: 0,
-					background: "var(--surface-subtle)",
-				}}
-			>
+			<div className="flex min-w-0 flex-1 flex-col bg-muted">
 				<AppHeader />
-				<div style={{ flex: 1, overflowY: "auto", padding: "28px 32px 48px" }}>
+				<div className="flex-1 overflow-y-auto px-8 pt-7 pb-12">
 					<Outlet />
 				</div>
 			</div>
