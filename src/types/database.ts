@@ -1,9 +1,7 @@
-// Supabase 테이블 타입 정의
-// 실제 contacts 테이블 스키마에 맞게 수정하세요
-//
-// 컬럼 추가 마이그레이션 예시 (Supabase SQL Editor):
-//   ALTER TABLE contacts ADD COLUMN is_read BOOLEAN NOT NULL DEFAULT FALSE;
-//   ALTER TABLE contacts ADD COLUMN phone TEXT;
+// Supabase 테이블 타입 — 초이스 홈페이지/관리자 공용 DB(choice 프로젝트).
+// 실제 스키마(homepage) 기준. 컬럼 변경 시 여기와 Supabase 마이그레이션을 함께 수정.
+
+export type ContactStatus = "new" | "in_progress" | "done" | "hold";
 
 export type Database = {
 	public: {
@@ -11,31 +9,38 @@ export type Database = {
 			contacts: {
 				Row: {
 					id: string;
-					name: string;
-					email: string;
-					// ★ 클라이언트 커스텀 필드 — 여기에 컬럼 추가
-					phone?: string;
-					message: string;
 					created_at: string;
-					is_read: boolean;
+					updated_at: string;
+					name: string;
+					phone: string;
+					email: string;
+					nationality: string | null;
+					current_visa: string | null;
+					consult_field: string | null;
+					message: string | null;
+					privacy_consent: boolean;
+					source: string;
+					status: ContactStatus;
+					user_agent: string | null;
+					memo: string | null;
 				};
 				Insert: {
 					id?: string;
 					name: string;
+					phone: string;
 					email: string;
-					phone?: string;
-					message: string;
-					created_at?: string;
-					is_read?: boolean;
+					nationality?: string | null;
+					current_visa?: string | null;
+					consult_field?: string | null;
+					message?: string | null;
+					privacy_consent?: boolean;
+					source?: string;
+					status?: ContactStatus;
+					memo?: string | null;
 				};
 				Update: {
-					id?: string;
-					name?: string;
-					email?: string;
-					phone?: string;
-					message?: string;
-					created_at?: string;
-					is_read?: boolean;
+					status?: ContactStatus;
+					memo?: string | null;
 				};
 				Relationships: [];
 			};
@@ -48,9 +53,3 @@ export type Database = {
 };
 
 export type Contact = Database["public"]["Tables"]["contacts"]["Row"];
-
-// 시스템이 관리하는 필드 (contact-fields.ts에 포함하지 않음)
-export type ContactSystemKeys = "id" | "is_read" | "created_at";
-
-// 클라이언트가 정의하는 커스텀 필드 키 타입
-export type ContactFieldKey = keyof Omit<Contact, ContactSystemKeys>;
