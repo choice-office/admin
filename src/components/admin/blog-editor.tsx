@@ -15,6 +15,8 @@ import {
 	ArrowLeft,
 	Ban,
 	Bold,
+	Columns2,
+	Eye,
 	Heading2,
 	Heading3,
 	ImagePlus,
@@ -152,6 +154,9 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [coverUploading, setCoverUploading] = useState(false);
+	const [showPreview, setShowPreview] = useState(false);
+	// 분할 미리보기용 라이브 HTML — 편집할 때마다 갱신(velog식)
+	const [previewHtml, setPreviewHtml] = useState(post?.content ?? SKELETON);
 
 	const editor = useEditor({
 		extensions: [
@@ -165,6 +170,7 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 			FontSize,
 		],
 		content: post?.content ?? SKELETON,
+		onUpdate: ({ editor }) => setPreviewHtml(editor.getHTML()),
 	});
 
 	const handleTitleChange = (value: string) => {
@@ -271,7 +277,9 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 	if (!editor) return null;
 
 	return (
-		<div className="max-w-[1280px]">
+		<div
+			className={cn("transition-[max-width]", showPreview ? "max-w-[1600px]" : "max-w-[1280px]")}
+		>
 			<div className="mb-5 flex items-center justify-between gap-4">
 				<button
 					type="button"
@@ -281,6 +289,13 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 					<ArrowLeft size={17} /> 목록으로
 				</button>
 				<div className="flex items-center gap-2.5">
+					<Button
+						variant={showPreview ? "primary" : "outline"}
+						iconStart={<Columns2 size={16} />}
+						onClick={() => setShowPreview((v) => !v)}
+					>
+						미리보기
+					</Button>
 					<Button variant="outline" onClick={() => save("draft")} disabled={saving}>
 						임시저장
 					</Button>
@@ -296,7 +311,12 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 				</div>
 			)}
 
-			<div className="grid grid-cols-[1fr_340px] items-start gap-5">
+			<div
+				className={cn(
+					"grid items-start gap-5",
+					showPreview ? "grid-cols-[minmax(0,1fr)_minmax(0,1fr)_320px]" : "grid-cols-[1fr_340px]",
+				)}
+			>
 				{/* 본문 에디터 */}
 				<div className="overflow-hidden rounded-md border border-border bg-card">
 					<input
@@ -435,6 +455,29 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 					</div>
 					<EditorContent editor={editor} className="blog-prose px-6 py-5" />
 				</div>
+
+				{/* 분할 미리보기 — 홈페이지 노출 모습(velog식) */}
+				{showPreview && (
+					<div className="overflow-hidden rounded-md border border-border bg-card">
+						<div className="flex items-center gap-2 border-border border-b bg-muted px-4 py-2.5 font-semibold text-[13px] text-muted-foreground">
+							<Eye size={15} /> 미리보기 · 홈페이지 노출 모습
+						</div>
+						<div className="max-h-[72vh] overflow-y-auto px-7 py-7">
+							{coverUrl && (
+								<img
+									src={coverUrl}
+									alt={coverAlt || "커버"}
+									className="mb-6 aspect-video w-full rounded-md border border-border object-cover"
+								/>
+							)}
+							<h1 className="mb-5 font-bold text-[28px] text-foreground leading-tight tracking-[-0.02em]">
+								{title || "제목을 입력하세요"}
+							</h1>
+							{/* biome-ignore lint/security/noDangerouslySetInnerHtml: 관리자 본인이 작성한 본문 미리보기 */}
+							<div className="blog-preview" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+						</div>
+					</div>
+				)}
 
 				{/* 발행 설정 사이드 */}
 				<div className="flex flex-col gap-4">
