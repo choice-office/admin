@@ -43,7 +43,7 @@ function DashboardPage() {
 					.select("id", { count: "exact", head: true })
 					.eq("status", "published"),
 				supabase
-					.from("reviews")
+					.from("review_images")
 					.select("id", { count: "exact", head: true })
 					.eq("is_published", true),
 			]);

@@ -6,7 +6,7 @@ import { Badge, Button } from "@/components/ui/ds";
 import { useReviews } from "@/hooks/use-reviews";
 import { formatDateCompact } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { Review } from "@/types/database";
+import type { ReviewImage } from "@/types/database";
 
 export const Route = createFileRoute("/_app/reviews")({
 	component: ReviewsPage,
@@ -15,12 +15,12 @@ export const Route = createFileRoute("/_app/reviews")({
 const GRID = "grid-cols-[2.4fr_1fr_0.8fr_1fr_auto]";
 
 function ReviewsPage() {
-	const { reviews, isLoading, createReview, updateReview, deleteReview } = useReviews();
-	const [editing, setEditing] = useState<Review | null>(null);
+	const { images, isLoading, createReview, updateReview, deleteReview } = useReviews();
+	const [editing, setEditing] = useState<ReviewImage | null>(null);
 	const [isCreating, setIsCreating] = useState(false);
 	const [confirmId, setConfirmId] = useState<string | null>(null);
 
-	const publishedCount = reviews.filter((r) => r.is_published).length;
+	const publishedCount = images.filter((r) => r.is_published).length;
 
 	return (
 		<div className="max-w-[1280px]">
@@ -31,7 +31,7 @@ function ReviewsPage() {
 					</h2>
 					<p className="m-0 text-[15px] text-muted-foreground">
 						후기를 등록하고 홈페이지 노출 여부를 관리합니다. 노출 중 {publishedCount}건 / 전체{" "}
-						{reviews.length}건
+						{images.length}건
 					</p>
 				</div>
 				<Button
@@ -59,7 +59,7 @@ function ReviewsPage() {
 
 				{isLoading ? (
 					<div className="px-5 py-14 text-center text-muted-foreground text-sm">불러오는 중…</div>
-				) : reviews.length === 0 ? (
+				) : images.length === 0 ? (
 					<div className="px-5 py-14 text-center">
 						<div className="font-medium text-[15px] text-foreground">등록된 후기가 없습니다</div>
 						<div className="mt-1.5 text-muted-foreground text-sm">
@@ -67,7 +67,7 @@ function ReviewsPage() {
 						</div>
 					</div>
 				) : (
-					reviews.map((r) => (
+					images.map((r) => (
 						<div
 							key={r.id}
 							className={cn(
@@ -75,12 +75,18 @@ function ReviewsPage() {
 								GRID,
 							)}
 						>
-							<div className="min-w-0">
-								<div className="flex items-center gap-2">
-									<span className="text-base">{r.flag}</span>
-									<span className="truncate font-medium text-foreground">{r.title}</span>
+							<div className="flex min-w-0 items-center gap-3">
+								<img
+									src={r.src}
+									alt={r.quote}
+									className="h-12 w-12 flex-shrink-0 rounded-md border border-border object-cover"
+								/>
+								<div className="min-w-0">
+									<div className="truncate font-medium text-foreground">"{r.quote}"</div>
+									<div className="mt-1 truncate text-[13px] text-muted-foreground">
+										{r.meta || "—"}
+									</div>
 								</div>
-								<div className="mt-1 truncate text-[13px] text-muted-foreground">{r.body}</div>
 							</div>
 							<div className="text-[var(--text-body)] text-sm">{r.tag || "—"}</div>
 							<div>

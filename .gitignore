@@ -24,3 +24,4 @@ Thumbs.db
 .omc/sessions/
 .omc/project-memory.json
 .omc/notepad.json
+.vercel

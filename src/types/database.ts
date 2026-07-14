@@ -48,38 +48,38 @@ export type Database = {
 				};
 				Relationships: [];
 			};
-			reviews: {
+			review_images: {
 				Row: {
 					id: string;
 					created_at: string;
 					updated_at: string;
+					src: string;
+					w: number;
+					h: number;
 					tag: string;
-					country: string;
-					initial: string;
-					flag: string;
-					title: string;
-					body: string;
+					quote: string;
+					meta: string;
 					is_published: boolean;
 					sort_order: number;
 				};
 				Insert: {
 					id?: string;
-					tag?: string;
-					country?: string;
-					initial?: string;
-					flag?: string;
-					title: string;
-					body: string;
+					src: string;
+					w: number;
+					h: number;
+					tag: string;
+					quote: string;
+					meta: string;
 					is_published?: boolean;
 					sort_order?: number;
 				};
 				Update: {
+					src?: string;
+					w?: number;
+					h?: number;
 					tag?: string;
-					country?: string;
-					initial?: string;
-					flag?: string;
-					title?: string;
-					body?: string;
+					quote?: string;
+					meta?: string;
 					is_published?: boolean;
 					sort_order?: number;
 				};
@@ -168,9 +168,9 @@ export type Database = {
 };
 
 export type Contact = Database["public"]["Tables"]["contacts"]["Row"];
-export type Review = Database["public"]["Tables"]["reviews"]["Row"];
-export type ReviewInsert = Database["public"]["Tables"]["reviews"]["Insert"];
-export type ReviewUpdate = Database["public"]["Tables"]["reviews"]["Update"];
+export type ReviewImage = Database["public"]["Tables"]["review_images"]["Row"];
+export type ReviewImageInsert = Database["public"]["Tables"]["review_images"]["Insert"];
+export type ReviewImageUpdate = Database["public"]["Tables"]["review_images"]["Update"];
 export type BlogPost = Database["public"]["Tables"]["blog_posts"]["Row"];
 export type BlogPostInsert = Database["public"]["Tables"]["blog_posts"]["Insert"];
 export type BlogPostUpdate = Database["public"]["Tables"]["blog_posts"]["Update"];

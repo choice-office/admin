@@ -1,40 +1,42 @@
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button, Input, Label, Textarea } from "@/components/ui/ds";
-import type { Review, ReviewInsert } from "@/types/database";
+import { getImageDimensions, uploadReviewImage } from "@/lib/review-images";
+import type { ReviewImage, ReviewImageInsert } from "@/types/database";
 
 type Props = {
-	review: Review | null; // null이면 새 후기 작성
+	review: ReviewImage | null; // null이면 새 후기 작성
 	onClose: () => void;
-	onSubmit: (payload: ReviewInsert) => Promise<void>;
+	onSubmit: (payload: ReviewImageInsert) => Promise<void>;
 };
 
-const emptyDraft: ReviewInsert = {
+const emptyDraft: ReviewImageInsert = {
+	src: "",
+	w: 1000,
+	h: 1000,
 	tag: "",
-	country: "",
-	initial: "",
-	flag: "",
-	title: "",
-	body: "",
+	quote: "",
+	meta: "",
 	is_published: true,
 	sort_order: 0,
 };
 
 export const ReviewFormModal = ({ review, onClose, onSubmit }: Props) => {
-	const [draft, setDraft] = useState<ReviewInsert>(
+	const [draft, setDraft] = useState<ReviewImageInsert>(
 		review
 			? {
+					src: review.src,
+					w: review.w,
+					h: review.h,
 					tag: review.tag,
-					country: review.country,
-					initial: review.initial,
-					flag: review.flag,
-					title: review.title,
-					body: review.body,
+					quote: review.quote,
+					meta: review.meta,
 					is_published: review.is_published,
 					sort_order: review.sort_order,
 				}
 			: emptyDraft,
 	);
+	const [uploading, setUploading] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -46,12 +48,32 @@ export const ReviewFormModal = ({ review, onClose, onSubmit }: Props) => {
 		return () => document.removeEventListener("keydown", onKey);
 	}, [onClose]);
 
-	const set = <K extends keyof ReviewInsert>(key: K, value: ReviewInsert[K]) =>
+	const set = <K extends keyof ReviewImageInsert>(key: K, value: ReviewImageInsert[K]) =>
 		setDraft((prev) => ({ ...prev, [key]: value }));
 
+	const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+		setUploading(true);
+		const [url, dimensions] = await Promise.all([
+			uploadReviewImage(file),
+			getImageDimensions(file),
+		]);
+		setUploading(false);
+		if (!url) {
+			setError("이미지 업로드에 실패했습니다.");
+			return;
+		}
+		setDraft((prev) => ({ ...prev, src: url, w: dimensions.w, h: dimensions.h }));
+	};
+
 	const handleSave = async () => {
-		if (!draft.title?.trim() || !draft.body?.trim()) {
-			setError("제목과 후기 내용을 입력해 주세요.");
+		if (!draft.src?.trim()) {
+			setError("후기 이미지를 업로드해 주세요.");
+			return;
+		}
+		if (!draft.quote?.trim()) {
+			setError("한마디를 입력해 주세요.");
 			return;
 		}
 		setError(null);
@@ -59,11 +81,8 @@ export const ReviewFormModal = ({ review, onClose, onSubmit }: Props) => {
 		await onSubmit({
 			...draft,
 			tag: draft.tag?.trim() ?? "",
-			country: draft.country?.trim() ?? "",
-			initial: draft.initial?.trim() ?? "",
-			flag: draft.flag?.trim() ?? "",
-			title: draft.title.trim(),
-			body: draft.body.trim(),
+			quote: draft.quote.trim(),
+			meta: draft.meta?.trim() ?? "",
 		});
 		setSaving(false);
 		onClose();
@@ -98,65 +117,54 @@ export const ReviewFormModal = ({ review, onClose, onSubmit }: Props) => {
 				</div>
 
 				<div className="px-6 py-5">
-					<div className="mb-[18px] grid grid-cols-2 gap-3">
-						<div>
-							<Label htmlFor="rv-tag">업무분야</Label>
-							<Input
-								id="rv-tag"
-								value={draft.tag ?? ""}
-								onChange={(e) => set("tag", e.target.value)}
-								placeholder="거소증 F-4"
+					<div className="mb-[18px]">
+						<Label htmlFor="rv-image">후기 이미지 (마스킹된 카톡·이메일 캡처)</Label>
+						{draft.src && (
+							<img
+								src={draft.src}
+								alt="후기 미리보기"
+								className="mb-2 max-h-[240px] w-full rounded-md border border-border object-contain"
 							/>
-						</div>
-						<div>
-							<Label htmlFor="rv-country">국적</Label>
-							<Input
-								id="rv-country"
-								value={draft.country ?? ""}
-								onChange={(e) => set("country", e.target.value)}
-								placeholder="미국"
-							/>
-						</div>
-						<div>
-							<Label htmlFor="rv-initial">이니셜</Label>
-							<Input
-								id="rv-initial"
-								value={draft.initial ?? ""}
-								onChange={(e) => set("initial", e.target.value)}
-								placeholder="J"
-								maxLength={4}
-							/>
-						</div>
-						<div>
-							<Label htmlFor="rv-flag">국기 이모지</Label>
-							<Input
-								id="rv-flag"
-								value={draft.flag ?? ""}
-								onChange={(e) => set("flag", e.target.value)}
-								placeholder="🇺🇸"
-								maxLength={8}
-							/>
-						</div>
+						)}
+						<input
+							id="rv-image"
+							type="file"
+							accept="image/*"
+							onChange={handleImageUpload}
+							disabled={uploading}
+							className="block w-full text-foreground text-sm file:mr-3 file:cursor-pointer file:rounded-md file:border file:border-border file:bg-card file:px-3.5 file:py-2 file:font-medium file:text-foreground file:text-sm hover:file:bg-muted"
+						/>
+						{uploading && <p className="mt-1.5 text-[13px] text-muted-foreground">업로드 중…</p>}
 					</div>
 
 					<div className="mb-[18px]">
-						<Label htmlFor="rv-title">제목</Label>
+						<Label htmlFor="rv-tag">업무분야 뱃지</Label>
 						<Input
-							id="rv-title"
-							value={draft.title ?? ""}
-							onChange={(e) => set("title", e.target.value)}
-							placeholder="후기 제목"
+							id="rv-tag"
+							value={draft.tag ?? ""}
+							onChange={(e) => set("tag", e.target.value)}
+							placeholder="거소증 · 상담"
 						/>
 					</div>
 
 					<div className="mb-[18px]">
-						<Label htmlFor="rv-body">후기 내용</Label>
+						<Label htmlFor="rv-quote">한마디 (카드에 큰따옴표로 노출)</Label>
 						<Textarea
-							id="rv-body"
-							rows={5}
-							value={draft.body ?? ""}
-							onChange={(e) => set("body", e.target.value)}
-							placeholder="의뢰인 후기 내용을 입력해 주세요."
+							id="rv-quote"
+							rows={2}
+							value={draft.quote ?? ""}
+							onChange={(e) => set("quote", e.target.value)}
+							placeholder="늘 민첩하고 정확하게 일해 주셔서 고맙습니다."
+						/>
+					</div>
+
+					<div className="mb-[18px]">
+						<Label htmlFor="rv-meta">누가 쓴 후기인지</Label>
+						<Input
+							id="rv-meta"
+							value={draft.meta ?? ""}
+							onChange={(e) => set("meta", e.target.value)}
+							placeholder="체류 연장 의뢰인"
 						/>
 					</div>
 
@@ -187,7 +195,7 @@ export const ReviewFormModal = ({ review, onClose, onSubmit }: Props) => {
 						<Button variant="outline" onClick={onClose}>
 							취소
 						</Button>
-						<Button variant="primary" onClick={handleSave} disabled={saving}>
+						<Button variant="primary" onClick={handleSave} disabled={saving || uploading}>
 							{saving ? "저장 중…" : review ? "변경사항 저장" : "후기 추가"}
 						</Button>
 					</div>

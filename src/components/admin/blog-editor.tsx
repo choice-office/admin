@@ -1,10 +1,19 @@
+import type { ChainedCommands } from "@tiptap/core";
+import { Extension } from "@tiptap/core";
+import Color from "@tiptap/extension-color";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
+import TextAlign from "@tiptap/extension-text-align";
+import { TextStyle } from "@tiptap/extension-text-style";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import {
+	AlignCenter,
+	AlignLeft,
+	AlignRight,
 	ArrowLeft,
+	Ban,
 	Bold,
 	Heading2,
 	Heading3,
@@ -23,6 +32,67 @@ import { Button, Input, Label, Textarea } from "@/components/ui/ds";
 import { createPost, htmlToText, slugify, updatePost, uploadBlogImage } from "@/lib/blog";
 import { cn } from "@/lib/utils";
 import type { BlogAuthor, BlogCategory, BlogPost } from "@/types/database";
+
+// TextStyle의 fontSize 속성을 추가하는 확장 — 별도 패키지가 tiptap v3와 버전이 맞지 않아 직접 정의.
+declare module "@tiptap/core" {
+	interface Commands<ReturnType> {
+		fontSize: {
+			setFontSize: (fontSize: string) => ReturnType;
+			unsetFontSize: () => ReturnType;
+		};
+	}
+}
+
+const FontSize = Extension.create({
+	name: "fontSize",
+	addOptions() {
+		return { types: ["textStyle"] };
+	},
+	addGlobalAttributes() {
+		return [
+			{
+				types: this.options.types,
+				attributes: {
+					fontSize: {
+						default: null,
+						parseHTML: (element: HTMLElement) => element.style.fontSize || null,
+						renderHTML: (attributes: { fontSize?: string | null }) => {
+							if (!attributes.fontSize) return {};
+							return { style: `font-size: ${attributes.fontSize}` };
+						},
+					},
+				},
+			},
+		];
+	},
+	addCommands() {
+		return {
+			setFontSize:
+				(fontSize: string) =>
+				({ chain }: { chain: () => ChainedCommands }) =>
+					chain().setMark("textStyle", { fontSize }).run(),
+			unsetFontSize:
+				() =>
+				({ chain }: { chain: () => ChainedCommands }) =>
+					chain().setMark("textStyle", { fontSize: null }).run(),
+		};
+	},
+});
+
+const TEXT_COLORS = [
+	{ label: "빨강", value: "#c0392b" },
+	{ label: "파랑", value: "#2563eb" },
+	{ label: "초록", value: "#16a34a" },
+	{ label: "회색", value: "#6b7280" },
+	{ label: "브랜드", value: "#6c5d4c" },
+];
+
+const FONT_SIZES = [
+	{ label: "작게", value: "14px" },
+	{ label: "보통", value: "16px" },
+	{ label: "크게", value: "20px" },
+	{ label: "아주 크게", value: "26px" },
+];
 
 const SKELETON = `<p>이 글의 결론을 2~3문장으로 적어주세요. (검색·AI가 이 부분을 답으로 인용합니다)</p><h2>질문형 소제목을 적어주세요 (예: F-6 심사에서 무엇을 보나요?)</h2><p>본문을 작성하세요…</p>`;
 
@@ -89,6 +159,10 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 			Link.configure({ openOnClick: false, HTMLAttributes: { rel: "noopener noreferrer" } }),
 			Image.configure({ HTMLAttributes: { class: "blog-img" } }),
 			Placeholder.configure({ placeholder: "본문을 작성하세요…" }),
+			TextStyle,
+			Color,
+			TextAlign.configure({ types: ["heading", "paragraph"] }),
+			FontSize,
 		],
 		content: post?.content ?? SKELETON,
 	});
@@ -247,6 +321,47 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 							<Heading3 size={18} />
 						</ToolbarButton>
 						<div className="mx-1 h-5 w-px bg-border" />
+						<select
+							title="글자 크기"
+							value={editor.getAttributes("textStyle").fontSize ?? ""}
+							onChange={(e) => {
+								const value = e.target.value;
+								if (value) editor.chain().focus().setFontSize(value).run();
+								else editor.chain().focus().unsetFontSize().run();
+							}}
+							className="h-9 rounded-md border border-transparent bg-transparent px-1.5 text-foreground text-sm outline-none hover:bg-muted"
+						>
+							<option value="">글자 크기</option>
+							{FONT_SIZES.map((f) => (
+								<option key={f.value} value={f.value}>
+									{f.label}
+								</option>
+							))}
+						</select>
+						<div className="mx-1 h-5 w-px bg-border" />
+						<div className="flex items-center gap-1 px-0.5">
+							{TEXT_COLORS.map((c) => (
+								<button
+									key={c.value}
+									type="button"
+									title={c.label}
+									onClick={() => editor.chain().focus().setColor(c.value).run()}
+									style={{ backgroundColor: c.value }}
+									className={cn(
+										"h-5 w-5 flex-shrink-0 rounded-full ring-1 ring-border ring-inset transition-transform hover:scale-110",
+										editor.isActive("textStyle", { color: c.value }) &&
+											"ring-2 ring-foreground ring-offset-1",
+									)}
+								/>
+							))}
+							<ToolbarButton
+								title="글자색 초기화"
+								onClick={() => editor.chain().focus().unsetColor().run()}
+							>
+								<Ban size={16} />
+							</ToolbarButton>
+						</div>
+						<div className="mx-1 h-5 w-px bg-border" />
 						<ToolbarButton
 							title="굵게"
 							active={editor.isActive("bold")}
@@ -263,6 +378,28 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 						</ToolbarButton>
 						<ToolbarButton title="링크" active={editor.isActive("link")} onClick={handleSetLink}>
 							<Link2 size={17} />
+						</ToolbarButton>
+						<div className="mx-1 h-5 w-px bg-border" />
+						<ToolbarButton
+							title="왼쪽 정렬"
+							active={editor.isActive({ textAlign: "left" })}
+							onClick={() => editor.chain().focus().setTextAlign("left").run()}
+						>
+							<AlignLeft size={17} />
+						</ToolbarButton>
+						<ToolbarButton
+							title="가운데 정렬"
+							active={editor.isActive({ textAlign: "center" })}
+							onClick={() => editor.chain().focus().setTextAlign("center").run()}
+						>
+							<AlignCenter size={17} />
+						</ToolbarButton>
+						<ToolbarButton
+							title="오른쪽 정렬"
+							active={editor.isActive({ textAlign: "right" })}
+							onClick={() => editor.chain().focus().setTextAlign("right").run()}
+						>
+							<AlignRight size={17} />
 						</ToolbarButton>
 						<div className="mx-1 h-5 w-px bg-border" />
 						<ToolbarButton
