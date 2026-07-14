@@ -102,6 +102,24 @@ export const uploadBlogImage = async (file: File): Promise<string | null> => {
 	return data.publicUrl;
 };
 
+// 첨부파일 업로드(모든 타입) → storage(blog 버킷) → 공개 URL + 원본 파일명/MIME.
+export const uploadBlogFile = async (
+	file: File,
+): Promise<{ url: string; name: string; mime: string }> => {
+	const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
+	const rand = crypto.randomUUID().slice(0, 8);
+	const path = `files/${rand}.${ext}`;
+	const { error } = await supabase.storage
+		.from("blog")
+		.upload(path, file, { cacheControl: "31536000", upsert: false });
+	if (error) {
+		console.error("파일 업로드 실패:", error.message);
+		throw new Error(error.message);
+	}
+	const { data } = supabase.storage.from("blog").getPublicUrl(path);
+	return { url: data.publicUrl, name: file.name, mime: file.type };
+};
+
 // slug 자동 생성(규칙 기반, AI 없음). 영문/숫자만 kebab, 비면 post-{8hex}.
 export const slugify = (title: string): string => {
 	const base = title
