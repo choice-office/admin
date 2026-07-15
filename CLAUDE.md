@@ -7,8 +7,18 @@
 이 저장소는 admin-boilerplate에서 출발했지만 **구조가 달라졌다**(예: `_app` pathless 레이아웃, `ds.tsx` DS 컴포넌트, contacts memo/RLS). 아래 "Project Structure"보다 **`docs/`를 우선**한다:
 - **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — 실제 구조·라우팅/인증·Supabase 스키마/RLS·검증/배포
 - **[docs/PATTERNS.md](docs/PATTERNS.md)** — 구현 Cookbook(DS 컴포넌트·화면 추가·Supabase 조회/수정·모달·커밋)
+- **[docs/DEPLOY.md](docs/DEPLOY.md)** — 배포/커밋 규칙(커밋-only 기본, `git deploy`로만 배포)
 
 코드 변경으로 문서 사실이 달라지면 함께 갱신한다.
+
+## 배포 / 커밋 규칙 (Claude Code — 반드시 준수)
+
+> 전체·배경은 [docs/DEPLOY.md](docs/DEPLOY.md). 온케팅 공통(`onketing/homepage`·`tool`과 동일 방식).
+
+- **기본: 커밋만 하고 `push` 하지 않는다** (push = Vercel 배포 트리거). 작업 커밋은 개인 author(`KKIMDoHyun <kdh5998@naver.com>`, repo git config 기본) → 개인 잔디.
+- **"배포해 / 푸시해"** → choice 소유자 author 배포 커밋을 얹고 push:
+  `git deploy` = `git commit --allow-empty --author="choice <lawforyou7@naver.com>" -m "chore: deploy" && git push`
+- git config·`git deploy` 별칭은 이 repo에만(repo-local) 적용 — 전역/다른 프로젝트 무영향.
 
 ## Tech Stack
 - **Framework**: Vite + React 19 + TypeScript
