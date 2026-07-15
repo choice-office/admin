@@ -1,13 +1,15 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
 	FileText,
 	LayoutDashboard,
+	LogOut,
 	MessageSquare,
 	PanelLeft,
 	PanelLeftClose,
 	Settings,
 	Star,
 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
@@ -24,6 +26,12 @@ type AppSidebarProps = { collapsed: boolean; onToggle: () => void };
 
 export const AppSidebar = ({ collapsed, onToggle }: AppSidebarProps) => {
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
+	const navigate = useNavigate();
+
+	const handleLogout = async () => {
+		await supabase.auth.signOut();
+		navigate({ to: "/login" });
+	};
 
 	return (
 		<aside
@@ -75,11 +83,28 @@ export const AppSidebar = ({ collapsed, onToggle }: AppSidebarProps) => {
 				})}
 			</nav>
 
-			{!collapsed && (
-				<div className="whitespace-nowrap border-border border-t px-[18px] py-3.5 text-muted-foreground text-xs">
-					초이스 행정사 어드민 v1.0
+			{/* 계정 — 헤더 제거 후 여기로 접어넣음(로그아웃 포함) */}
+			<div className="border-border border-t p-3">
+				<div className={cn("flex items-center gap-2.5", collapsed && "flex-col")}>
+					<span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-accent font-bold text-[15px] text-accent-foreground">
+						관
+					</span>
+					{!collapsed && (
+						<div className="min-w-0 flex-1">
+							<div className="truncate font-medium text-foreground text-sm">관리자</div>
+							<div className="truncate text-[12px] text-muted-foreground">admin@kvisa1345.com</div>
+						</div>
+					)}
+					<button
+						type="button"
+						onClick={handleLogout}
+						title="로그아웃"
+						className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
+					>
+						<LogOut size={18} />
+					</button>
 				</div>
-			)}
+			</div>
 		</aside>
 	);
 };

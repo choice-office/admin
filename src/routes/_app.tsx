@@ -1,6 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { useState } from "react";
-import { AppHeader } from "@/components/admin/app-header";
 import { AppSidebar } from "@/components/admin/app-sidebar";
 import { isMockMode, supabase } from "@/lib/supabase";
 
@@ -22,7 +21,6 @@ function AppLayout() {
 		<div className="flex h-screen overflow-hidden">
 			<AppSidebar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
 			<div className="flex min-w-0 flex-1 flex-col bg-muted">
-				<AppHeader />
 				<div className="flex-1 overflow-y-auto px-8 pt-7 pb-12">
 					<Outlet />
 				</div>

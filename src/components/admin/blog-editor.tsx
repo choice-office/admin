@@ -1,4 +1,4 @@
-import { ArrowLeft, Columns2, Eye, Plus, Trash2, X } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, X } from "lucide-react";
 import { type KeyboardEvent, useRef, useState } from "react";
 import {
 	RichTextEditor,
@@ -13,7 +13,6 @@ import {
 	uploadBlogFile,
 	uploadBlogImage,
 } from "@/lib/blog";
-import { cn } from "@/lib/utils";
 import type { BlogAuthor, BlogCategory, BlogPost } from "@/types/database";
 
 const SKELETON = `<p>이 글의 결론을 2~3문장으로 적어주세요. (검색·AI가 이 부분을 답으로 인용합니다)</p><h2>질문형 소제목을 적어주세요 (예: F-6 심사에서 무엇을 보나요?)</h2><p>본문을 작성하세요…</p>`;
@@ -53,26 +52,7 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [coverUploading, setCoverUploading] = useState(false);
-	// 분할 미리보기 — 기본 노출(velog식)
-	const [showPreview, setShowPreview] = useState(true);
-	// 분할 미리보기용 라이브 HTML — 편집할 때마다 갱신
-	const [previewHtml, setPreviewHtml] = useState(post?.content ?? SKELETON);
 	const editorRef = useRef<RichTextEditorHandle>(null);
-	// 좌(편집)↔우(미리보기) 스크롤 동기화 — 비율로 미러링, 피드백 루프 방지
-	const editorScrollRef = useRef<HTMLDivElement>(null);
-	const previewScrollRef = useRef<HTMLDivElement>(null);
-	const syncingRef = useRef(false);
-
-	const mirrorScroll = (src: HTMLDivElement | null, dst: HTMLDivElement | null) => {
-		if (!src || !dst || syncingRef.current) return;
-		syncingRef.current = true;
-		const denom = src.scrollHeight - src.clientHeight;
-		const ratio = denom > 0 ? src.scrollTop / denom : 0;
-		dst.scrollTop = ratio * (dst.scrollHeight - dst.clientHeight);
-		requestAnimationFrame(() => {
-			syncingRef.current = false;
-		});
-	};
 
 	const handleTitleChange = (value: string) => {
 		setTitle(value);
@@ -133,7 +113,7 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 		setError(null);
 		setSaving(true);
 
-		const contentHtml = editorRef.current?.getHTML() ?? previewHtml;
+		const contentHtml = editorRef.current?.getHTML() ?? "";
 		const plain = htmlToText(contentHtml);
 		const finalSlug = slug.trim() || slugify(title);
 		const payload = {
@@ -169,8 +149,8 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 	};
 
 	return (
-		<div className="max-w-[1600px]">
-			<div className="mb-5 flex items-center justify-between gap-4">
+		<div className="mx-auto max-w-[1100px]">
+			<div className="mb-5">
 				<button
 					type="button"
 					onClick={onClose}
@@ -178,75 +158,29 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 				>
 					<ArrowLeft size={17} /> 목록으로
 				</button>
-				<Button
-					variant={showPreview ? "primary" : "outline"}
-					iconStart={<Columns2 size={16} />}
-					onClick={() => setShowPreview((v) => !v)}
-				>
-					미리보기
-				</Button>
 			</div>
 
-			{/* 본문 에디터 / 미리보기 — 기본 50:50 분할, 각 패널 고정 높이 + 내부 스크롤 */}
-			<div
-				className={cn(
-					"grid items-start gap-5",
-					showPreview ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1",
-				)}
-			>
-				<div className="flex h-[calc(100vh-260px)] min-h-[460px] flex-col overflow-hidden rounded-md border border-border bg-card">
-					<input
-						value={title}
-						onChange={(e) => handleTitleChange(e.target.value)}
-						placeholder="제목을 입력하세요"
-						className="w-full shrink-0 border-border border-b px-6 py-5 font-bold text-2xl text-foreground tracking-[-0.02em] outline-none placeholder:text-muted-foreground"
+			{/* 본문 에디터 — 단일 컬럼(제목 + 리치 에디터) */}
+			<div className="flex flex-col overflow-hidden rounded-md border border-border bg-card">
+				<input
+					value={title}
+					onChange={(e) => handleTitleChange(e.target.value)}
+					placeholder="제목을 입력하세요"
+					className="w-full border-border border-b px-6 py-5 font-bold text-2xl text-foreground tracking-[-0.02em] outline-none placeholder:text-muted-foreground"
+				/>
+				<div className="px-6 pb-5">
+					<RichTextEditor
+						ref={editorRef}
+						content={post?.content ?? SKELETON}
+						editable
+						placeholder="본문을 작성하세요…"
+						uploadImage={handleUploadImage}
+						uploadFile={uploadBlogFile}
 					/>
-					<div
-						ref={editorScrollRef}
-						onScroll={() => mirrorScroll(editorScrollRef.current, previewScrollRef.current)}
-						className="min-h-0 flex-1 overflow-y-auto px-6 pb-5"
-					>
-						<RichTextEditor
-							ref={editorRef}
-							content={post?.content ?? SKELETON}
-							editable
-							placeholder="본문을 작성하세요…"
-							uploadImage={handleUploadImage}
-							uploadFile={uploadBlogFile}
-							onChange={setPreviewHtml}
-						/>
-					</div>
 				</div>
-
-				{/* 분할 미리보기 — 홈페이지 노출 모습(velog식) */}
-				{showPreview && (
-					<div className="flex h-[calc(100vh-260px)] min-h-[460px] flex-col overflow-hidden rounded-md border border-border bg-card">
-						<div className="flex shrink-0 items-center gap-2 border-border border-b bg-muted px-4 py-2.5 font-semibold text-[13px] text-muted-foreground">
-							<Eye size={15} /> 미리보기 · 홈페이지 노출 모습
-						</div>
-						<div
-							ref={previewScrollRef}
-							onScroll={() => mirrorScroll(previewScrollRef.current, editorScrollRef.current)}
-							className="min-h-0 flex-1 overflow-y-auto px-7 py-7"
-						>
-							{coverUrl && (
-								<img
-									src={coverUrl}
-									alt={coverAlt || "커버"}
-									className="mb-6 aspect-video w-full rounded-md border border-border object-cover"
-								/>
-							)}
-							<h1 className="mb-5 font-bold text-[28px] text-foreground leading-tight tracking-[-0.02em]">
-								{title || "제목을 입력하세요"}
-							</h1>
-							{/* biome-ignore lint/security/noDangerouslySetInnerHtml: 관리자 본인이 작성한 본문 미리보기 */}
-							<div className="blog-preview" dangerouslySetInnerHTML={{ __html: previewHtml }} />
-						</div>
-					</div>
-				)}
 			</div>
 
-			{/* 발행 설정 — 에디터/미리보기 아래, 전체 폭 카드 그리드 */}
+			{/* 발행 설정 — 본문 아래, 카드 그리드 */}
 			<div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
 				<div className="rounded-md border border-border bg-card p-5">
 					<div className="mb-3 font-bold text-foreground text-sm">기본</div>
@@ -488,8 +422,8 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 				</div>
 			</div>
 
-			{/* 발행 바 — 화면 하단 고정 */}
-			<div className="sticky bottom-0 z-20 mt-6 border-border border-t bg-background/95 py-3 backdrop-blur">
+			{/* 발행 바 — 본문 흐름 하단(고정 아님) */}
+			<div className="mt-6 border-border border-t pt-4">
 				{error && (
 					<div className="mb-2.5 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-2.5 text-destructive text-sm">
 						{error}
