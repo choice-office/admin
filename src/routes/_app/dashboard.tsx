@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import { FileText, MessageSquare, Star, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { StatusBadge } from "@/components/admin/status-badge";
-import { Button, Card } from "@/components/ui/ds";
+import { Badge, Button, Card } from "@/components/ui/ds";
 import { consultLabel } from "@/lib/contacts";
 import { formatDateCompact } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
@@ -20,34 +20,57 @@ type Stats = {
 	reviews: number;
 };
 
+type RecentPost = {
+	id: string;
+	title: string;
+	slug: string;
+	status: "draft" | "published" | "archived";
+	updated_at: string;
+};
+
+const POST_STATUS: Record<RecentPost["status"], { label: string; variant: "primary" | "outline" }> =
+	{
+		published: { label: "발행", variant: "primary" },
+		draft: { label: "임시저장", variant: "outline" },
+		archived: { label: "보관", variant: "outline" },
+	};
+
 function DashboardPage() {
 	const navigate = useNavigate();
 	const [stats, setStats] = useState<Stats | null>(null);
 	const [recent, setRecent] = useState<Contact[]>([]);
+	const [recentPosts, setRecentPosts] = useState<RecentPost[]>([]);
 
 	useEffect(() => {
 		(async () => {
 			const monthStart = dayjs().startOf("month").toISOString();
-			const [contactsRes, monthRes, pendingRes, postsRes, reviewsRes] = await Promise.all([
-				supabase.from("contacts").select("*").order("created_at", { ascending: false }).limit(5),
-				supabase
-					.from("contacts")
-					.select("id", { count: "exact", head: true })
-					.gte("created_at", monthStart),
-				supabase
-					.from("contacts")
-					.select("id", { count: "exact", head: true })
-					.in("status", ["new", "in_progress"]),
-				supabase
-					.from("blog_posts")
-					.select("id", { count: "exact", head: true })
-					.eq("status", "published"),
-				supabase
-					.from("review_images")
-					.select("id", { count: "exact", head: true })
-					.eq("is_published", true),
-			]);
+			const [contactsRes, monthRes, pendingRes, postsRes, reviewsRes, postsListRes] =
+				await Promise.all([
+					supabase.from("contacts").select("*").order("created_at", { ascending: false }).limit(5),
+					supabase
+						.from("contacts")
+						.select("id", { count: "exact", head: true })
+						.gte("created_at", monthStart),
+					supabase
+						.from("contacts")
+						.select("id", { count: "exact", head: true })
+						.in("status", ["new", "in_progress"]),
+					supabase
+						.from("blog_posts")
+						.select("id", { count: "exact", head: true })
+						.eq("status", "published"),
+					supabase
+						.from("review_images")
+						.select("id", { count: "exact", head: true })
+						.eq("is_published", true),
+					supabase
+						.from("blog_posts")
+						.select("id,title,slug,status,updated_at")
+						.order("updated_at", { ascending: false })
+						.limit(6),
+				]);
 			setRecent((contactsRes.data ?? []) as Contact[]);
+			setRecentPosts((postsListRes.data ?? []) as unknown as RecentPost[]);
 			setStats({
 				monthInquiries: monthRes.count ?? 0,
 				pending: pendingRes.count ?? 0,
@@ -103,7 +126,7 @@ function DashboardPage() {
 			</div>
 
 			<div className="grid grid-cols-[1fr_320px] items-start gap-[18px]">
-				<div className="overflow-hidden rounded-md border border-border bg-card">
+				<div className="flex min-h-[300px] flex-col overflow-hidden rounded-md border border-border bg-card">
 					<div className="flex items-center justify-between border-border border-b px-5 py-[18px]">
 						<h3 className="m-0 font-bold text-[17px] text-foreground">최근 상담 문의</h3>
 						<button
@@ -115,7 +138,7 @@ function DashboardPage() {
 						</button>
 					</div>
 					{recent.length === 0 ? (
-						<div className="px-5 py-12 text-center text-muted-foreground text-sm">
+						<div className="flex flex-1 items-center justify-center px-5 py-12 text-center text-muted-foreground text-sm">
 							접수된 상담 문의가 없습니다.
 						</div>
 					) : (
@@ -163,6 +186,49 @@ function DashboardPage() {
 						</Button>
 					</div>
 				</Card>
+			</div>
+
+			{/* 최근 작성한 블로그 — 작은 카드 그리드 */}
+			<div className="mt-[22px] overflow-hidden rounded-md border border-border bg-card">
+				<div className="flex items-center justify-between border-border border-b px-5 py-[18px]">
+					<h3 className="m-0 font-bold text-[17px] text-foreground">최근 작성한 블로그</h3>
+					<button
+						type="button"
+						onClick={() => navigate({ to: "/blog" })}
+						className="font-medium text-primary text-sm hover:underline"
+					>
+						전체 보기
+					</button>
+				</div>
+				{recentPosts.length === 0 ? (
+					<div className="px-5 py-12 text-center text-muted-foreground text-sm">
+						작성된 글이 없습니다.
+					</div>
+				) : (
+					<div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
+						{recentPosts.map((p) => (
+							<button
+								key={p.id}
+								type="button"
+								onClick={() => navigate({ to: "/blog" })}
+								className="flex flex-col gap-2 rounded-md border border-border p-4 text-left transition-colors hover:bg-muted"
+							>
+								<div className="flex items-center justify-between gap-2">
+									<Badge variant={POST_STATUS[p.status].variant}>
+										{POST_STATUS[p.status].label}
+									</Badge>
+									<span className="text-[13px] text-muted-foreground">
+										{formatDateCompact(p.updated_at)}
+									</span>
+								</div>
+								<div className="line-clamp-2 font-medium text-foreground leading-snug">
+									{p.title || "(제목 없음)"}
+								</div>
+								<div className="truncate text-[13px] text-muted-foreground">/{p.slug}</div>
+							</button>
+						))}
+					</div>
+				)}
 			</div>
 		</div>
 	);
