@@ -1,9 +1,11 @@
 import { cva, type VariantProps } from "class-variance-authority";
+import { ChevronDown } from "lucide-react";
 import type {
 	ButtonHTMLAttributes,
 	HTMLAttributes,
 	InputHTMLAttributes,
 	ReactNode,
+	SelectHTMLAttributes,
 	TextareaHTMLAttributes,
 } from "react";
 import { cn } from "@/lib/utils";
@@ -154,7 +156,26 @@ export const Textarea = ({
 	<textarea
 		rows={rows}
 		aria-invalid={invalid || undefined}
-		className={cn(fieldClass, "resize-y px-3.5 py-3 leading-relaxed", className)}
+		className={cn(fieldClass, "resize-none px-3.5 py-3 leading-relaxed", className)}
 		{...rest}
 	/>
+);
+
+/* ── Select — 네이티브 select + DS 스타일(우측 셰브론). 홈페이지 폼 셀렉트와 동일 톤 ── */
+export const Select = ({
+	className,
+	invalid,
+	children,
+	...rest
+}: SelectHTMLAttributes<HTMLSelectElement> & { invalid?: boolean }) => (
+	<div className="relative">
+		<select
+			aria-invalid={invalid || undefined}
+			className={cn(fieldClass, "h-12 cursor-pointer appearance-none pr-10 pl-3.5", className)}
+			{...rest}
+		>
+			{children}
+		</select>
+		<ChevronDown className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
+	</div>
 );
