@@ -66,7 +66,7 @@ function BlogPage() {
 	}
 
 	return (
-		<div className="max-w-[1280px]">
+		<div>
 			<div className="mb-5 flex items-start justify-between gap-4">
 				<div>
 					<h2 className="m-0 mb-1.5 font-bold text-2xl text-foreground tracking-[-0.02em]">

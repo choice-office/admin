@@ -70,7 +70,7 @@ function DashboardPage() {
 	];
 
 	return (
-		<div className="max-w-[1180px]">
+		<div>
 			<div className="mb-[22px]">
 				<h2 className="m-0 mb-1.5 font-bold text-2xl text-foreground tracking-[-0.02em]">
 					안녕하세요, 관리자님

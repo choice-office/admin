@@ -75,7 +75,7 @@ function InquiriesPage() {
 	const resetPage = () => setPage(1);
 
 	return (
-		<div className="max-w-[1280px]">
+		<div>
 			<div className="mb-5">
 				<h2 className="m-0 mb-1.5 font-bold text-2xl text-foreground tracking-[-0.02em]">
 					상담 문의 관리
