@@ -30,6 +30,7 @@ import {
 	Redo2,
 	RemoveFormatting,
 	Strikethrough,
+	TextQuote,
 	Trash2,
 	Underline as UnderlineIcon,
 	Undo2,
@@ -49,6 +50,7 @@ import { Toggle } from "@/components/ui/toggle";
 import { FileEmbed } from "./FileEmbed";
 import { Indent } from "./Indent";
 import { LineHeight } from "./LineHeight";
+import { QuoteVariant } from "./QuoteVariant";
 import { ResizableImage } from "./ResizableImage";
 
 export type RichTextEditorHandle = { getHTML: () => string };
@@ -193,6 +195,7 @@ export const RichTextEditor = ({
 			FontSize,
 			LineHeight,
 			Indent,
+			QuoteVariant,
 			TaskList,
 			TaskItem.configure({ nested: true }),
 			...(editable && placeholder ? [Placeholder.configure({ placeholder })] : []),
@@ -312,6 +315,20 @@ export const RichTextEditor = ({
 		imageActive
 			? editor.chain().focus().updateAttributes("image", { align: a }).run()
 			: editor.chain().focus().setTextAlign(a).run();
+
+	// 중앙 인용(❝) — blockquote + variant=center. 일반 인용과 상호 전환.
+	const centerQuoteActive =
+		editor.isActive("blockquote") && editor.getAttributes("blockquote").variant === "center";
+	const toggleCenterQuote = () => {
+		const chain = editor.chain().focus();
+		if (!editor.isActive("blockquote")) {
+			chain.toggleBlockquote().updateAttributes("blockquote", { variant: "center" }).run();
+		} else if (centerQuoteActive) {
+			chain.toggleBlockquote().run();
+		} else {
+			chain.updateAttributes("blockquote", { variant: "center" }).run();
+		}
+	};
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col gap-2">
@@ -702,11 +719,25 @@ export const RichTextEditor = ({
 					</Button>
 					<Toggle
 						size="sm"
-						pressed={editor.isActive("blockquote")}
-						onPressedChange={() => editor.chain().focus().toggleBlockquote().run()}
+						pressed={editor.isActive("blockquote") && !centerQuoteActive}
+						onPressedChange={() =>
+							centerQuoteActive
+								? editor.chain().focus().updateAttributes("blockquote", { variant: null }).run()
+								: editor.chain().focus().toggleBlockquote().run()
+						}
 						aria-label="인용"
+						title="인용"
 					>
 						<Quote className="size-4" />
+					</Toggle>
+					<Toggle
+						size="sm"
+						pressed={centerQuoteActive}
+						onPressedChange={toggleCenterQuote}
+						aria-label="중앙 인용"
+						title="중앙 인용(후기·감사글)"
+					>
+						<TextQuote className="size-4" />
 					</Toggle>
 					<Toggle
 						size="sm"

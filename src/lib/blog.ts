@@ -10,32 +10,33 @@ import type {
 // 블로그 작성/관리 데이터 레이어 — authenticated RLS로 동작(로그인 세션).
 // 공개 렌더/JSON-LD는 홈페이지(choice-homepage)가 담당. 여기선 작성·발행만.
 
-const POST_SELECT =
+const POST_SELECT_BASE =
 	"id,slug,title,excerpt,content,cover_url,cover_alt,tldr,faq,sources,category_id,author_id,status,published_at,meta_title,meta_description,canonical_url,created_at,updated_at";
+// tags 컬럼은 마이그레이션 후에만 존재 → 포함 조회 실패 시 base로 폴백(마이그레이션 전에도 목록 정상)
+const POST_SELECT = `${POST_SELECT_BASE},tags`;
 
 export const listPosts = async (): Promise<BlogPost[]> => {
-	const { data, error } = await supabase
-		.from("blog_posts")
-		.select(POST_SELECT)
-		.order("updated_at", { ascending: false });
+	const run = (select: string) =>
+		supabase.from("blog_posts").select(select).order("updated_at", { ascending: false });
+	let { data, error } = await run(POST_SELECT);
+	if (error) ({ data, error } = await run(POST_SELECT_BASE));
 	if (error) {
 		console.error("글 목록 조회 실패:", error.message);
 		return [];
 	}
-	return (data ?? []) as BlogPost[];
+	return (data ?? []) as unknown as BlogPost[];
 };
 
 export const getPost = async (id: string): Promise<BlogPost | null> => {
-	const { data, error } = await supabase
-		.from("blog_posts")
-		.select(POST_SELECT)
-		.eq("id", id)
-		.maybeSingle();
+	const run = (select: string) =>
+		supabase.from("blog_posts").select(select).eq("id", id).maybeSingle();
+	let { data, error } = await run(POST_SELECT);
+	if (error) ({ data, error } = await run(POST_SELECT_BASE));
 	if (error) {
 		console.error("글 조회 실패:", error.message);
 		return null;
 	}
-	return (data as BlogPost) ?? null;
+	return (data as unknown as BlogPost) ?? null;
 };
 
 export const getCategories = async (): Promise<BlogCategory[]> => {
@@ -56,8 +57,19 @@ export const getAuthors = async (): Promise<BlogAuthor[]> => {
 	return (data ?? []) as BlogAuthor[];
 };
 
+// tags 컬럼 미적용(마이그레이션 전) 에러인지 판별 — 이때만 tags 빼고 재시도해 저장 자체는 항상 되게.
+// (그 외 에러는 그대로 실패시켜 조용한 데이터 손실 방지)
+const isMissingTagsError = (e: { code?: string; message?: string } | null): boolean =>
+	!!e && (e.code === "PGRST204" || e.code === "42703" || /\btags\b/i.test(e.message ?? ""));
+
 export const createPost = async (payload: BlogPostInsert): Promise<string | null> => {
-	const { data, error } = await supabase.from("blog_posts").insert(payload).select("id").single();
+	const insert = (p: BlogPostInsert) => supabase.from("blog_posts").insert(p).select("id").single();
+	let { data, error } = await insert(payload);
+	if (error && payload.tags !== undefined && isMissingTagsError(error)) {
+		const { tags, ...rest } = payload;
+		void tags;
+		({ data, error } = await insert(rest));
+	}
 	if (error) {
 		console.error("글 생성 실패:", error.message);
 		return null;
@@ -66,10 +78,17 @@ export const createPost = async (payload: BlogPostInsert): Promise<string | null
 };
 
 export const updatePost = async (id: string, patch: BlogPostUpdate): Promise<boolean> => {
-	const { error } = await supabase
-		.from("blog_posts")
-		.update({ ...patch, updated_at: new Date().toISOString() })
-		.eq("id", id);
+	const run = (p: BlogPostUpdate) =>
+		supabase
+			.from("blog_posts")
+			.update({ ...p, updated_at: new Date().toISOString() })
+			.eq("id", id);
+	let { error } = await run(patch);
+	if (error && patch.tags !== undefined && isMissingTagsError(error)) {
+		const { tags, ...rest } = patch;
+		void tags;
+		({ error } = await run(rest));
+	}
 	if (error) {
 		console.error("글 수정 실패:", error.message);
 		return false;

@@ -106,6 +106,7 @@ export type Database = {
 					meta_title: string | null;
 					meta_description: string | null;
 					canonical_url: string | null;
+					tags: string[];
 				};
 				Insert: {
 					id?: string;
@@ -125,6 +126,7 @@ export type Database = {
 					meta_title?: string | null;
 					meta_description?: string | null;
 					canonical_url?: string | null;
+					tags?: string[];
 				};
 				Update: {
 					slug?: string;
@@ -143,6 +145,7 @@ export type Database = {
 					meta_title?: string | null;
 					meta_description?: string | null;
 					canonical_url?: string | null;
+					tags?: string[];
 					updated_at?: string;
 				};
 				Relationships: [];

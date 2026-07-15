@@ -329,6 +329,25 @@ body {
 	color: var(--muted-foreground);
 	margin: 0.5rem 0;
 }
+/* 중앙 큰따옴표 인용(❝) — 에디터 본문·미리보기 모두 홈페이지 .prose .quote-center 와 동일하게 */
+.rich-content blockquote.quote-center,
+.blog-preview blockquote.quote-center {
+	border-left: none;
+	background: transparent;
+	border-radius: 0;
+	padding: 8px 0;
+	text-align: center;
+	color: inherit;
+}
+.rich-content blockquote.quote-center::before,
+.blog-preview blockquote.quote-center::before {
+	content: "\201C";
+	display: block;
+	font-size: 40px;
+	line-height: 1;
+	color: var(--color-primary, var(--primary));
+	margin-bottom: 6px;
+}
 .rich-content hr {
 	border: none;
 	border-top: 1px solid var(--border);

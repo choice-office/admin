@@ -1,10 +1,10 @@
-import { ArrowLeft, Columns2, Eye, Plus, Trash2 } from "lucide-react";
-import { useRef, useState } from "react";
+import { ArrowLeft, Columns2, Eye, Plus, Trash2, X } from "lucide-react";
+import { type KeyboardEvent, useRef, useState } from "react";
 import {
 	RichTextEditor,
 	type RichTextEditorHandle,
 } from "@/components/common/editor/RichTextEditor";
-import { Button, Input, Label, Textarea } from "@/components/ui/ds";
+import { Button, Input, Label, Select, Textarea } from "@/components/ui/ds";
 import {
 	createPost,
 	htmlToText,
@@ -35,7 +35,8 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 	const [slug, setSlug] = useState(post?.slug ?? "");
 	const [slugTouched, setSlugTouched] = useState(Boolean(post));
 	const [categoryId, setCategoryId] = useState(post?.category_id ?? "");
-	const [authorId, setAuthorId] = useState(post?.author_id ?? authors[0]?.id ?? "");
+	// 작성자는 "초이스 행정사 사무소" 고정(없으면 null → 홈페이지가 동일 이름으로 폴백)
+	const fixedAuthorId = authors.find((a) => a.name.includes("초이스"))?.id ?? null;
 	const [coverUrl, setCoverUrl] = useState(post?.cover_url ?? "");
 	const [coverAlt, setCoverAlt] = useState(post?.cover_alt ?? "");
 	const [tldr, setTldr] = useState(post?.tldr ?? "");
@@ -47,6 +48,8 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 	);
 	const [metaTitle, setMetaTitle] = useState(post?.meta_title ?? "");
 	const [metaDescription, setMetaDescription] = useState(post?.meta_description ?? "");
+	const [tags, setTags] = useState<string[]>(post?.tags ?? []);
+	const [tagInput, setTagInput] = useState("");
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [coverUploading, setCoverUploading] = useState(false);
@@ -55,6 +58,21 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 	// 분할 미리보기용 라이브 HTML — 편집할 때마다 갱신
 	const [previewHtml, setPreviewHtml] = useState(post?.content ?? SKELETON);
 	const editorRef = useRef<RichTextEditorHandle>(null);
+	// 좌(편집)↔우(미리보기) 스크롤 동기화 — 비율로 미러링, 피드백 루프 방지
+	const editorScrollRef = useRef<HTMLDivElement>(null);
+	const previewScrollRef = useRef<HTMLDivElement>(null);
+	const syncingRef = useRef(false);
+
+	const mirrorScroll = (src: HTMLDivElement | null, dst: HTMLDivElement | null) => {
+		if (!src || !dst || syncingRef.current) return;
+		syncingRef.current = true;
+		const denom = src.scrollHeight - src.clientHeight;
+		const ratio = denom > 0 ? src.scrollTop / denom : 0;
+		dst.scrollTop = ratio * (dst.scrollHeight - dst.clientHeight);
+		requestAnimationFrame(() => {
+			syncingRef.current = false;
+		});
+	};
 
 	const handleTitleChange = (value: string) => {
 		setTitle(value);
@@ -87,6 +105,22 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 		input.click();
 	};
 
+	// 해시태그 — # 없이 저장(공백 제거·중복 제거). Enter/쉼표/스페이스로 확정.
+	const addTag = (raw: string) => {
+		const t = raw.trim().replace(/^#+/, "").replace(/\s+/g, "");
+		if (!t) return;
+		setTags((prev) => (prev.includes(t) ? prev : [...prev, t]));
+		setTagInput("");
+	};
+	const handleTagKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+		if (e.key === "Enter" || e.key === "," || e.key === " ") {
+			e.preventDefault();
+			addTag(tagInput);
+		} else if (e.key === "Backspace" && !tagInput && tags.length > 0) {
+			setTags((prev) => prev.slice(0, -1));
+		}
+	};
+
 	const save = async (status: "draft" | "published") => {
 		if (!title.trim()) {
 			setError("제목을 입력해 주세요.");
@@ -115,10 +149,11 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 				.filter((s) => s.label.trim() && s.href.trim())
 				.map((s) => ({ label: s.label, href: s.href })),
 			category_id: categoryId || null,
-			author_id: authorId || null,
+			author_id: fixedAuthorId,
 			status,
 			meta_title: metaTitle.trim() || null,
 			meta_description: metaDescription.trim() || plain.slice(0, 155) || null,
+			tags,
 			published_at:
 				status === "published" ? (post?.published_at ?? new Date().toISOString()) : null,
 		};
@@ -143,28 +178,14 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 				>
 					<ArrowLeft size={17} /> 목록으로
 				</button>
-				<div className="flex items-center gap-2.5">
-					<Button
-						variant={showPreview ? "primary" : "outline"}
-						iconStart={<Columns2 size={16} />}
-						onClick={() => setShowPreview((v) => !v)}
-					>
-						미리보기
-					</Button>
-					<Button variant="outline" onClick={() => save("draft")} disabled={saving}>
-						임시저장
-					</Button>
-					<Button variant="primary" onClick={() => save("published")} disabled={saving}>
-						{saving ? "저장 중…" : "발행"}
-					</Button>
-				</div>
+				<Button
+					variant={showPreview ? "primary" : "outline"}
+					iconStart={<Columns2 size={16} />}
+					onClick={() => setShowPreview((v) => !v)}
+				>
+					미리보기
+				</Button>
 			</div>
-
-			{error && (
-				<div className="mb-4 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-destructive text-sm">
-					{error}
-				</div>
-			)}
 
 			{/* 본문 에디터 / 미리보기 — 기본 50:50 분할, 각 패널 고정 높이 + 내부 스크롤 */}
 			<div
@@ -180,7 +201,11 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 						placeholder="제목을 입력하세요"
 						className="w-full shrink-0 border-border border-b px-6 py-5 font-bold text-2xl text-foreground tracking-[-0.02em] outline-none placeholder:text-muted-foreground"
 					/>
-					<div className="min-h-0 flex-1 overflow-y-auto px-6 pb-5">
+					<div
+						ref={editorScrollRef}
+						onScroll={() => mirrorScroll(editorScrollRef.current, previewScrollRef.current)}
+						className="min-h-0 flex-1 overflow-y-auto px-6 pb-5"
+					>
 						<RichTextEditor
 							ref={editorRef}
 							content={post?.content ?? SKELETON}
@@ -199,7 +224,11 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 						<div className="flex shrink-0 items-center gap-2 border-border border-b bg-muted px-4 py-2.5 font-semibold text-[13px] text-muted-foreground">
 							<Eye size={15} /> 미리보기 · 홈페이지 노출 모습
 						</div>
-						<div className="min-h-0 flex-1 overflow-y-auto px-7 py-7">
+						<div
+							ref={previewScrollRef}
+							onScroll={() => mirrorScroll(previewScrollRef.current, editorScrollRef.current)}
+							className="min-h-0 flex-1 overflow-y-auto px-7 py-7"
+						>
 							{coverUrl && (
 								<img
 									src={coverUrl}
@@ -223,19 +252,14 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 					<div className="mb-3 font-bold text-foreground text-sm">기본</div>
 					<div className="mb-4">
 						<Label htmlFor="be-cat">카테고리</Label>
-						<select
-							id="be-cat"
-							value={categoryId}
-							onChange={(e) => setCategoryId(e.target.value)}
-							className="h-12 w-full rounded-md border border-border bg-card px-3.5 text-[var(--text-body)] text-base"
-						>
+						<Select id="be-cat" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
 							<option value="">선택하세요</option>
 							{categories.map((c) => (
 								<option key={c.id} value={c.id}>
 									{c.name}
 								</option>
 							))}
-						</select>
+						</Select>
 					</div>
 					<div className="mb-4">
 						<Label htmlFor="be-slug">slug (URL)</Label>
@@ -280,9 +304,43 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 							placeholder="커버 이미지 설명(alt)"
 						/>
 					</div>
+
+					<div className="mt-4">
+						<Label htmlFor="be-tags">해시태그</Label>
+						<div className="flex flex-wrap items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1.5">
+							{tags.map((t) => (
+								<span
+									key={t}
+									className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-[13px] text-muted-foreground"
+								>
+									#{t}
+									<button
+										type="button"
+										aria-label={`태그 ${t} 삭제`}
+										onClick={() => setTags((prev) => prev.filter((x) => x !== t))}
+										className="hover:text-destructive"
+									>
+										<X size={12} />
+									</button>
+								</span>
+							))}
+							<input
+								id="be-tags"
+								value={tagInput}
+								onChange={(e) => setTagInput(e.target.value)}
+								onKeyDown={handleTagKeyDown}
+								onBlur={() => addTag(tagInput)}
+								placeholder={tags.length ? "" : "예: F4비자연장"}
+								className="min-w-[100px] flex-1 bg-transparent px-1 py-1 text-sm outline-none placeholder:text-muted-foreground"
+							/>
+						</div>
+						<p className="mt-1 text-[12px] text-muted-foreground">
+							# 없이 입력, Enter·쉼표·스페이스로 구분
+						</p>
+					</div>
 				</div>
 
-				<details className="rounded-md border border-border bg-card p-5">
+				<details open className="rounded-md border border-border bg-card p-5">
 					<summary className="cursor-pointer font-bold text-foreground text-sm">SEO</summary>
 					<div className="mt-4">
 						<Label htmlFor="be-mt">검색 제목</Label>
@@ -305,7 +363,7 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 					</div>
 				</details>
 
-				<details className="rounded-md border border-border bg-card p-5">
+				<details open className="rounded-md border border-border bg-card p-5">
 					<summary className="cursor-pointer font-bold text-foreground text-sm">
 						AEO · 요점 / FAQ / 출처
 					</summary>
@@ -423,24 +481,28 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 					</div>
 				</details>
 
-				<details className="rounded-md border border-border bg-card p-5">
-					<summary className="cursor-pointer font-bold text-foreground text-sm">작성자</summary>
-					<div className="mt-4">
-						<Label htmlFor="be-author">작성자</Label>
-						<select
-							id="be-author"
-							value={authorId}
-							onChange={(e) => setAuthorId(e.target.value)}
-							className="h-12 w-full rounded-md border border-border bg-card px-3.5 text-[var(--text-body)] text-base"
-						>
-							{authors.map((a) => (
-								<option key={a.id} value={a.id}>
-									{a.name}
-								</option>
-							))}
-						</select>
+				<div className="rounded-md border border-border bg-card p-5">
+					<div className="mb-1.5 font-bold text-foreground text-sm">작성자</div>
+					<div className="text-[var(--text-body)] text-base">초이스 행정사 사무소</div>
+					<p className="mt-1 text-[13px] text-muted-foreground">모든 글의 작성자로 고정됩니다.</p>
+				</div>
+			</div>
+
+			{/* 발행 바 — 화면 하단 고정 */}
+			<div className="sticky bottom-0 z-20 mt-6 border-border border-t bg-background/95 py-3 backdrop-blur">
+				{error && (
+					<div className="mb-2.5 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-2.5 text-destructive text-sm">
+						{error}
 					</div>
-				</details>
+				)}
+				<div className="flex items-center justify-end gap-2.5">
+					<Button variant="outline" onClick={() => save("draft")} disabled={saving}>
+						임시저장
+					</Button>
+					<Button variant="primary" onClick={() => save("published")} disabled={saving}>
+						{saving ? "저장 중…" : "발행"}
+					</Button>
+				</div>
 			</div>
 		</div>
 	);
