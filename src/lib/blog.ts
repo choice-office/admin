@@ -1,3 +1,4 @@
+import { resizeImage } from "@/lib/resize-image";
 import { supabase } from "@/lib/supabase";
 import type {
 	BlogAuthor,
@@ -105,14 +106,15 @@ export const deletePost = async (id: string): Promise<boolean> => {
 	return true;
 };
 
-// 이미지 업로드 → storage(blog 버킷) → 공개 URL. 핫링크 깨짐 방지(재호스팅).
+// 이미지 업로드 → (축소·WebP 압축) → storage(blog 버킷) → 공개 URL. 핫링크 깨짐 방지(재호스팅).
 export const uploadBlogImage = async (file: File): Promise<string | null> => {
-	const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+	const optimized = await resizeImage(file);
+	const ext = optimized.name.split(".").pop()?.toLowerCase() || "webp";
 	const rand = crypto.randomUUID().slice(0, 8);
 	const path = `uploads/${rand}.${ext}`;
 	const { error } = await supabase.storage
 		.from("blog")
-		.upload(path, file, { cacheControl: "31536000", upsert: false });
+		.upload(path, optimized, { cacheControl: "31536000", upsert: false });
 	if (error) {
 		console.error("이미지 업로드 실패:", error.message);
 		return null;

@@ -1,6 +1,12 @@
 import { TaskItem, TaskList } from "@tiptap/extension-list";
 import TextAlign from "@tiptap/extension-text-align";
-import { BackgroundColor, Color, FontSize, TextStyle } from "@tiptap/extension-text-style";
+import {
+	BackgroundColor,
+	Color,
+	FontFamily,
+	FontSize,
+	TextStyle,
+} from "@tiptap/extension-text-style";
 import { Placeholder } from "@tiptap/extensions";
 import { type Editor, EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -12,6 +18,7 @@ import {
 	Ban,
 	Baseline,
 	Bold,
+	ChevronDown,
 	Code,
 	ExternalLink,
 	Highlighter,
@@ -32,6 +39,7 @@ import {
 	Strikethrough,
 	TextQuote,
 	Trash2,
+	Type,
 	Underline as UnderlineIcon,
 	Undo2,
 } from "lucide-react";
@@ -75,33 +83,64 @@ const imagesFromList = (files?: FileList | null): File[] =>
 
 const Divider = () => <span className="mx-1 h-5 w-px self-center bg-border" />;
 
-// 글자 색상 팔레트 (Ban 버튼 = 색 해제)
+// 글자 색상 팔레트 (네이버식 확장 그리드 — grid-cols-6). Ban 버튼 = 색 해제
 const TEXT_COLORS = [
-	{ label: "검정", value: "#111827" },
-	{ label: "회색", value: "#6b7280" },
-	{ label: "빨강", value: "#ef4444" },
-	{ label: "주황", value: "#f97316" },
-	{ label: "노랑", value: "#eab308" },
-	{ label: "초록", value: "#22c55e" },
-	{ label: "파랑", value: "#3b82f6" },
-	{ label: "파랑(진)", value: "#2563eb" },
-	{ label: "보라", value: "#8b5cf6" },
-	{ label: "분홍", value: "#ec4899" },
+	"#000000",
+	"#374151",
+	"#6b7280",
+	"#9ca3af",
+	"#d1d5db",
+	"#ffffff",
+	"#ef4444",
+	"#f97316",
+	"#f59e0b",
+	"#eab308",
+	"#84cc16",
+	"#22c55e",
+	"#10b981",
+	"#14b8a6",
+	"#06b6d4",
+	"#0ea5e9",
+	"#3b82f6",
+	"#2563eb",
+	"#6366f1",
+	"#8b5cf6",
+	"#a855f7",
+	"#ec4899",
+	"#f43f5e",
+	"#92400e",
 ];
 
-// 형광펜(글자 배경) 팔레트 (Ban 버튼 = 해제)
+// 형광펜(글자 배경) 팔레트 (grid-cols-6). Ban 버튼 = 해제
 const HIGHLIGHT_COLORS = [
-	{ label: "노랑", value: "#fef08a" },
-	{ label: "초록", value: "#bbf7d0" },
-	{ label: "파랑", value: "#bfdbfe" },
-	{ label: "분홍", value: "#fbcfe8" },
-	{ label: "주황", value: "#fed7aa" },
-	{ label: "보라", value: "#e9d5ff" },
-	{ label: "회색", value: "#e5e7eb" },
+	"#fef08a",
+	"#d9f99d",
+	"#bbf7d0",
+	"#a7f3d0",
+	"#bae6fd",
+	"#bfdbfe",
+	"#e9d5ff",
+	"#fbcfe8",
+	"#fecdd3",
+	"#fed7aa",
+	"#fde68a",
+	"#e5e7eb",
 ];
 
 // 줄 간격 프리셋
 const LINE_HEIGHTS = ["1", "1.15", "1.5", "2", "2.5"];
+
+// 글자 크기 프리셋(px)
+const FONT_SIZES = [11, 13, 15, 16, 18, 20, 24, 28, 32, 40];
+
+// 글씨체 — value는 CSS font-family(에디터·홈페이지 양쪽에 웹폰트 로드 필요). "" = 기본서체.
+const FONTS = [
+	{ label: "기본서체", value: "" },
+	{ label: "나눔고딕", value: "'Nanum Gothic', sans-serif" },
+	{ label: "나눔명조", value: "'Nanum Myeongjo', serif" },
+	{ label: "검은고딕", value: "'Black Han Sans', sans-serif" },
+	{ label: "나눔손글씨", value: "'Nanum Brush Script', cursive" },
+];
 
 const MIN_FONT_PX = 8;
 const MAX_FONT_PX = 120;
@@ -193,6 +232,7 @@ export const RichTextEditor = ({
 			Color,
 			BackgroundColor,
 			FontSize,
+			FontFamily,
 			LineHeight,
 			Indent,
 			QuoteVariant,
@@ -289,6 +329,7 @@ export const RichTextEditor = ({
 	const currentColor = editor.getAttributes("textStyle").color as string | undefined;
 	const currentBg = editor.getAttributes("textStyle").backgroundColor as string | undefined;
 	const currentSize = editor.getAttributes("textStyle").fontSize as string | undefined;
+	const currentFontFamily = editor.getAttributes("textStyle").fontFamily as string | undefined;
 	const currentLineHeight = (editor.getAttributes("paragraph").lineHeight ??
 		editor.getAttributes("heading").lineHeight) as string | undefined;
 
@@ -355,6 +396,40 @@ export const RichTextEditor = ({
 						<Redo2 className="size-4" />
 					</Button>
 					<Divider />
+					{/* 글씨체 */}
+					<Popover>
+						<PopoverTrigger
+							render={
+								<Button
+									type="button"
+									variant="ghost"
+									className="h-9 gap-1 px-2"
+									aria-label="글씨체"
+								>
+									<Type className="size-4" />
+									<ChevronDown className="size-3 text-muted-foreground" />
+								</Button>
+							}
+						/>
+						<PopoverContent align="start" className="w-40 p-1">
+							{FONTS.map((f) => (
+								<button
+									key={f.label}
+									type="button"
+									onClick={() => {
+										const chain = editor.chain().focus();
+										if (f.value) chain.setFontFamily(f.value).run();
+										else chain.unsetFontFamily().run();
+									}}
+									style={{ fontFamily: f.value || undefined }}
+									className={`flex w-full items-center rounded-md px-2 py-1.5 text-[15px] hover:bg-muted ${(currentFontFamily ?? "") === f.value ? "bg-muted font-medium" : ""}`}
+								>
+									{f.label}
+								</button>
+							))}
+						</PopoverContent>
+					</Popover>
+					<Divider />
 					{/* 글자 크기 — 구글 독스처럼 [−] [px] [+] 항상 노출 */}
 					<Button
 						type="button"
@@ -393,6 +468,33 @@ export const RichTextEditor = ({
 					>
 						<Plus className="size-4" />
 					</Button>
+					<Popover>
+						<PopoverTrigger
+							render={
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon"
+									className="size-8"
+									aria-label="글자 크기 목록"
+								>
+									<ChevronDown className="size-4" />
+								</Button>
+							}
+						/>
+						<PopoverContent align="start" className="w-16 p-1">
+							{FONT_SIZES.map((sz) => (
+								<button
+									key={sz}
+									type="button"
+									onClick={() => applyFontPx(sz)}
+									className={`flex w-full items-center justify-center rounded-md px-2 py-1.5 text-sm hover:bg-muted ${(currentSize ? Number.parseInt(currentSize, 10) : DEFAULT_FONT_PX) === sz ? "bg-muted font-medium" : ""}`}
+								>
+									{sz}
+								</button>
+							))}
+						</PopoverContent>
+					</Popover>
 					<Divider />
 					<Toggle
 						size="sm"
@@ -447,28 +549,27 @@ export const RichTextEditor = ({
 							}
 						/>
 						<PopoverContent align="start" className="w-auto p-2">
-							<div className="grid grid-cols-5 gap-1">
-								<button
-									type="button"
-									title="기본"
-									onClick={() => editor.chain().focus().unsetColor().run()}
-									className="flex size-7 items-center justify-center rounded-md border hover:ring-2 hover:ring-ring"
-								>
-									<Ban className="size-4 text-muted-foreground" />
-								</button>
+							<button
+								type="button"
+								onClick={() => editor.chain().focus().unsetColor().run()}
+								className="mb-1.5 flex w-full items-center justify-center gap-1.5 rounded-md border py-1.5 text-[13px] text-muted-foreground hover:bg-muted"
+							>
+								<Ban className="size-3.5" /> 기본색
+							</button>
+							<div className="grid grid-cols-6 gap-1.5">
 								{TEXT_COLORS.map((c) => (
 									<button
-										key={c.value}
+										key={c}
 										type="button"
-										title={c.label}
-										onClick={() => editor.chain().focus().setColor(c.value).run()}
-										className="flex size-7 items-center justify-center rounded-md border hover:ring-2 hover:ring-ring"
+										title={c}
+										onClick={() => editor.chain().focus().setColor(c).run()}
+										className="size-6 rounded-md border"
 										style={{
-											outline: currentColor === c.value ? "2px solid currentColor" : undefined,
+											backgroundColor: c,
+											outline: currentColor === c ? "2px solid var(--ring)" : undefined,
+											outlineOffset: 1,
 										}}
-									>
-										<span className="size-4 rounded-full" style={{ backgroundColor: c.value }} />
-									</button>
+									/>
 								))}
 							</div>
 						</PopoverContent>
@@ -486,31 +587,27 @@ export const RichTextEditor = ({
 							}
 						/>
 						<PopoverContent align="start" className="w-auto p-2">
-							<div className="grid grid-cols-4 gap-1">
-								<button
-									type="button"
-									title="없음"
-									onClick={() => editor.chain().focus().unsetBackgroundColor().run()}
-									className="flex size-7 items-center justify-center rounded-md border hover:ring-2 hover:ring-ring"
-								>
-									<Ban className="size-4 text-muted-foreground" />
-								</button>
+							<button
+								type="button"
+								onClick={() => editor.chain().focus().unsetBackgroundColor().run()}
+								className="mb-1.5 flex w-full items-center justify-center gap-1.5 rounded-md border py-1.5 text-[13px] text-muted-foreground hover:bg-muted"
+							>
+								<Ban className="size-3.5" /> 없음
+							</button>
+							<div className="grid grid-cols-6 gap-1.5">
 								{HIGHLIGHT_COLORS.map((c) => (
 									<button
-										key={c.value}
+										key={c}
 										type="button"
-										title={c.label}
-										onClick={() => editor.chain().focus().setBackgroundColor(c.value).run()}
-										className="flex size-7 items-center justify-center rounded-md border hover:ring-2 hover:ring-ring"
+										title={c}
+										onClick={() => editor.chain().focus().setBackgroundColor(c).run()}
+										className="size-6 rounded-md border"
 										style={{
-											outline: currentBg === c.value ? "2px solid currentColor" : undefined,
+											backgroundColor: c,
+											outline: currentBg === c ? "2px solid var(--ring)" : undefined,
+											outlineOffset: 1,
 										}}
-									>
-										<span
-											className="size-4 rounded-full border"
-											style={{ backgroundColor: c.value }}
-										/>
-									</button>
+									/>
 								))}
 							</div>
 						</PopoverContent>
