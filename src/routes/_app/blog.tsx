@@ -13,6 +13,7 @@ export const Route = createFileRoute("/_app/blog")({
 });
 
 const GRID = "grid-cols-[2.4fr_1fr_0.8fr_1fr_auto]";
+const PAGE_SIZE = 10;
 
 const STATUS_LABEL: Record<PostStatus, string> = {
 	draft: "임시저장",
@@ -28,6 +29,7 @@ function BlogPage() {
 	const [editing, setEditing] = useState<BlogPost | null>(null);
 	const [isEditorOpen, setIsEditorOpen] = useState(false);
 	const [confirmId, setConfirmId] = useState<string | null>(null);
+	const [page, setPage] = useState(1);
 
 	const refetch = useCallback(async () => {
 		setIsLoading(true);
@@ -44,6 +46,11 @@ function BlogPage() {
 
 	const categoryName = (id: string | null): string =>
 		categories.find((c) => c.id === id)?.name ?? "—";
+
+	// 페이지네이션(클라이언트) — 목록 삭제로 페이지가 줄면 safePage로 보정
+	const totalPages = Math.max(1, Math.ceil(posts.length / PAGE_SIZE));
+	const safePage = Math.min(page, totalPages);
+	const pagePosts = posts.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
 	const openEditor = (post: BlogPost | null) => {
 		setEditing(post);
@@ -95,60 +102,99 @@ function BlogPage() {
 					<div className="text-right">관리</div>
 				</div>
 
-				{isLoading ? (
-					<div className="px-5 py-14 text-center text-muted-foreground text-sm">불러오는 중…</div>
-				) : posts.length === 0 ? (
-					<div className="px-5 py-14 text-center">
-						<div className="font-medium text-[15px] text-foreground">작성된 글이 없습니다</div>
-						<div className="mt-1.5 text-muted-foreground text-sm">
-							"새 글" 버튼으로 첫 글을 작성해 보세요.
-						</div>
-					</div>
-				) : (
-					posts.map((p) => (
-						<div
-							key={p.id}
-							className={cn(
-								"grid items-center gap-3 border-border border-b px-5 py-3.5 last:border-b-0",
-								GRID,
-							)}
-						>
-							<div className="min-w-0">
-								<div className="truncate font-medium text-foreground">
-									{p.title || "(제목 없음)"}
-								</div>
-								<div className="mt-0.5 truncate text-[13px] text-muted-foreground">/{p.slug}</div>
+				<div className="max-h-[calc(100vh-300px)] overflow-y-auto">
+					{isLoading ? (
+						<div className="px-5 py-14 text-center text-muted-foreground text-sm">불러오는 중…</div>
+					) : posts.length === 0 ? (
+						<div className="px-5 py-14 text-center">
+							<div className="font-medium text-[15px] text-foreground">작성된 글이 없습니다</div>
+							<div className="mt-1.5 text-muted-foreground text-sm">
+								"새 글" 버튼으로 첫 글을 작성해 보세요.
 							</div>
-							<div className="text-[var(--text-body)] text-sm">{categoryName(p.category_id)}</div>
-							<div>
-								{p.status === "published" ? (
-									<Badge variant="primary">{STATUS_LABEL[p.status]}</Badge>
-								) : (
-									<Badge variant="outline">{STATUS_LABEL[p.status]}</Badge>
+						</div>
+					) : (
+						pagePosts.map((p) => (
+							<div
+								key={p.id}
+								className={cn(
+									"grid items-center gap-3 border-border border-b px-5 py-3.5 last:border-b-0",
+									GRID,
 								)}
+							>
+								<div className="min-w-0">
+									<div className="truncate font-medium text-foreground">
+										{p.title || "(제목 없음)"}
+									</div>
+									<div className="mt-0.5 truncate text-[13px] text-muted-foreground">/{p.slug}</div>
+								</div>
+								<div className="text-[var(--text-body)] text-sm">{categoryName(p.category_id)}</div>
+								<div>
+									{p.status === "published" ? (
+										<Badge variant="primary">{STATUS_LABEL[p.status]}</Badge>
+									) : (
+										<Badge variant="outline">{STATUS_LABEL[p.status]}</Badge>
+									)}
+								</div>
+								<div className="text-muted-foreground text-sm">
+									{formatDateCompact(p.updated_at)}
+								</div>
+								<div className="flex items-center justify-end gap-1">
+									<button
+										type="button"
+										title="수정"
+										onClick={() => openEditor(p)}
+										className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
+									>
+										<Pencil size={16} />
+									</button>
+									<button
+										type="button"
+										title="삭제"
+										onClick={() => setConfirmId(p.id)}
+										className="flex h-9 w-9 items-center justify-center rounded-md text-destructive hover:bg-destructive/10"
+									>
+										<Trash2 size={16} />
+									</button>
+								</div>
 							</div>
-							<div className="text-muted-foreground text-sm">{formatDateCompact(p.updated_at)}</div>
-							<div className="flex items-center justify-end gap-1">
-								<button
-									type="button"
-									title="수정"
-									onClick={() => openEditor(p)}
-									className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
-								>
-									<Pencil size={16} />
-								</button>
-								<button
-									type="button"
-									title="삭제"
-									onClick={() => setConfirmId(p.id)}
-									className="flex h-9 w-9 items-center justify-center rounded-md text-destructive hover:bg-destructive/10"
-								>
-									<Trash2 size={16} />
-								</button>
-							</div>
-						</div>
-					))
-				)}
+						))
+					)}
+				</div>
+			</div>
+
+			{/* 페이지네이션 — 1페이지여도 항상 표시 */}
+			<div className="mt-4 flex items-center justify-center gap-1.5">
+				<button
+					type="button"
+					disabled={safePage <= 1}
+					onClick={() => setPage(safePage - 1)}
+					className="flex h-9 min-w-9 items-center justify-center rounded-md border border-border px-2 text-foreground text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+				>
+					이전
+				</button>
+				{Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+					<button
+						key={n}
+						type="button"
+						onClick={() => setPage(n)}
+						className={cn(
+							"flex h-9 min-w-9 items-center justify-center rounded-md border px-2 text-sm",
+							n === safePage
+								? "border-primary bg-primary font-bold text-primary-foreground"
+								: "border-border text-foreground hover:bg-muted",
+						)}
+					>
+						{n}
+					</button>
+				))}
+				<button
+					type="button"
+					disabled={safePage >= totalPages}
+					onClick={() => setPage(safePage + 1)}
+					className="flex h-9 min-w-9 items-center justify-center rounded-md border border-border px-2 text-foreground text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+				>
+					다음
+				</button>
 			</div>
 
 			{confirmId && (
