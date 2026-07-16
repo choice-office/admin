@@ -75,7 +75,7 @@ function InquiriesPage() {
 	const resetPage = () => setPage(1);
 
 	return (
-		<div>
+		<div className="flex h-full flex-col">
 			<div className="mb-5">
 				<h2 className="m-0 mb-1.5 font-bold text-2xl text-foreground tracking-[-0.02em]">
 					상담 문의 관리
@@ -142,7 +142,7 @@ function InquiriesPage() {
 			</div>
 
 			{/* 테이블 */}
-			<div className="overflow-hidden rounded-md border border-border bg-card">
+			<div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
 				<div
 					className={cn(
 						"grid gap-3 border-border border-b bg-muted px-5 py-3 font-semibold text-[13px] text-muted-foreground",
@@ -156,7 +156,7 @@ function InquiriesPage() {
 					<div>접수일</div>
 				</div>
 
-				<div className="flex min-h-[calc(100vh-330px)] flex-col overflow-y-auto">
+				<div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
 					{isLoading ? (
 						<div className="flex flex-1 items-center justify-center px-5 py-14 text-muted-foreground text-sm">
 							불러오는 중…

@@ -78,7 +78,7 @@ function BlogPage() {
 	}
 
 	return (
-		<div>
+		<div className="flex h-full flex-col">
 			<div className="mb-5 flex items-start justify-between gap-4">
 				<div>
 					<h2 className="m-0 mb-1.5 font-bold text-2xl text-foreground tracking-[-0.02em]">
@@ -93,7 +93,7 @@ function BlogPage() {
 				</Button>
 			</div>
 
-			<div className="overflow-hidden rounded-md border border-border bg-card">
+			<div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
 				<div
 					className={cn(
 						"grid gap-3 border-border border-b bg-muted px-5 py-3 font-semibold text-[13px] text-muted-foreground",
@@ -107,7 +107,7 @@ function BlogPage() {
 					<div className="text-right">관리</div>
 				</div>
 
-				<div className="max-h-[calc(100vh-300px)] overflow-y-auto">
+				<div className="min-h-0 flex-1 overflow-y-auto">
 					{isLoading ? (
 						<div className="px-5 py-14 text-center text-muted-foreground text-sm">불러오는 중…</div>
 					) : posts.length === 0 ? (
