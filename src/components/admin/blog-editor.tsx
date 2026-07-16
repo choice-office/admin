@@ -160,9 +160,9 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 		}`;
 
 	return (
-		<div>
+		<div className="flex h-full flex-col">
 			{/* 상단 바 — 목록으로 + 작성/미리보기 모드 토글 */}
-			<div className="mb-5 flex items-center justify-between gap-4">
+			<div className="mb-4 flex shrink-0 items-center justify-between gap-4">
 				<button
 					type="button"
 					onClick={onClose}
@@ -170,28 +170,41 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 				>
 					<ArrowLeft size={17} /> 목록으로
 				</button>
-				<div className="inline-flex rounded-md border border-border bg-card p-0.5">
-					<button
-						type="button"
-						onClick={() => setMode("write")}
-						className={tabClass(mode === "write")}
-					>
-						작성
-					</button>
-					<button type="button" onClick={showPreview} className={tabClass(mode === "preview")}>
-						미리보기
-					</button>
+				<div className="flex items-center gap-2.5">
+					<div className="inline-flex rounded-md border border-border bg-card p-0.5">
+						<button
+							type="button"
+							onClick={() => setMode("write")}
+							className={tabClass(mode === "write")}
+						>
+							작성
+						</button>
+						<button type="button" onClick={showPreview} className={tabClass(mode === "preview")}>
+							미리보기
+						</button>
+					</div>
+					<Button variant="outline" onClick={() => save("draft")} disabled={saving}>
+						임시저장
+					</Button>
+					<Button variant="primary" onClick={() => save("published")} disabled={saving}>
+						{saving ? "저장 중…" : "발행"}
+					</Button>
 				</div>
 			</div>
+			{error && (
+				<div className="mb-4 shrink-0 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-2.5 text-destructive text-sm">
+					{error}
+				</div>
+			)}
 
 			{/* 좌: 작성/미리보기(길게) · 우: 발행 설정 */}
-			<div className="grid items-start gap-5 lg:grid-cols-[1fr_360px]">
-				<div className="min-h-[calc(100vh-160px)]">
+			<div className="grid min-h-0 flex-1 gap-5 lg:grid-cols-[1fr_360px]">
+				<div className="flex min-h-0 flex-col">
 					{/* 작성 모드 — 제목 + 리치 에디터(항상 마운트 유지: 저장 시 HTML 읽기) */}
 					<div
 						className={
 							mode === "write"
-								? "flex min-h-[calc(100vh-160px)] flex-col overflow-hidden rounded-md border border-border bg-card"
+								? "flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card"
 								: "hidden"
 						}
 					>
@@ -216,7 +229,7 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 
 					{/* 미리보기 모드 — 홈페이지 노출 모습 */}
 					{mode === "preview" && (
-						<div className="min-h-[calc(100vh-160px)] overflow-hidden rounded-md border border-border bg-card px-8 py-8">
+						<div className="min-h-0 flex-1 overflow-y-auto rounded-md border border-border bg-card px-8 py-8">
 							<h1 className="mb-5 font-bold text-[30px] text-foreground leading-tight tracking-[-0.02em]">
 								{title || "제목을 입력하세요"}
 							</h1>
@@ -237,7 +250,7 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 				</div>
 
 				{/* 우: 발행 설정(세로 스택) */}
-				<div className="flex flex-col gap-4">
+				<div className="flex min-h-0 flex-col gap-4 overflow-y-auto pr-1">
 					<div className="rounded-md border border-border bg-card p-5">
 						<div className="mb-3 font-bold text-foreground text-sm">기본</div>
 						<div className="mb-4">
@@ -492,23 +505,6 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 						<div className="text-[var(--text-body)] text-base">초이스 행정사 사무소</div>
 						<p className="mt-1 text-[13px] text-muted-foreground">모든 글의 작성자로 고정됩니다.</p>
 					</div>
-				</div>
-			</div>
-
-			{/* 발행 바 — 스크롤해도 하단에 고정 */}
-			<div className="sticky bottom-0 z-10 mt-6 border-border border-t bg-muted pt-4 pb-4 shadow-[0_-4px_12px_rgba(34,29,22,0.05)]">
-				{error && (
-					<div className="mb-2.5 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-2.5 text-destructive text-sm">
-						{error}
-					</div>
-				)}
-				<div className="flex items-center justify-end gap-2.5">
-					<Button variant="outline" onClick={() => save("draft")} disabled={saving}>
-						임시저장
-					</Button>
-					<Button variant="primary" onClick={() => save("published")} disabled={saving}>
-						{saving ? "저장 중…" : "발행"}
-					</Button>
 				</div>
 			</div>
 		</div>
