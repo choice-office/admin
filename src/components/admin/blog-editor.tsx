@@ -160,7 +160,7 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 		}`;
 
 	return (
-		<div className="mx-auto max-w-[1400px]">
+		<div>
 			{/* 상단 바 — 목록으로 + 작성/미리보기 모드 토글 */}
 			<div className="mb-5 flex items-center justify-between gap-4">
 				<button
@@ -495,8 +495,8 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 				</div>
 			</div>
 
-			{/* 발행 바 */}
-			<div className="mt-6 border-border border-t pt-4">
+			{/* 발행 바 — 스크롤해도 하단에 고정 */}
+			<div className="sticky bottom-0 z-10 mt-6 border-border border-t bg-muted pt-4 pb-4 shadow-[0_-4px_12px_rgba(34,29,22,0.05)]">
 				{error && (
 					<div className="mb-2.5 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-2.5 text-destructive text-sm">
 						{error}
