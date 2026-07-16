@@ -15,8 +15,6 @@ import {
 } from "@/lib/blog";
 import type { BlogAuthor, BlogCategory, BlogPost } from "@/types/database";
 
-const SKELETON = `<p>이 글의 결론을 2~3문장으로 적어주세요. (검색·AI가 이 부분을 답으로 인용합니다)</p><h2>질문형 소제목을 적어주세요 (예: F-6 심사에서 무엇을 보나요?)</h2><p>본문을 작성하세요…</p>`;
-
 // 로컬 편집용(안정적 key 보장) — 저장 시 _id 제거
 type FaqRow = { _id: string; q: string; a: string };
 type SourceRow = { _id: string; label: string; href: string };
@@ -52,11 +50,19 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [coverUploading, setCoverUploading] = useState(false);
+	// 작성/미리보기 모드 — 미리보기는 홈페이지 노출 모습을 그대로 렌더
+	const [mode, setMode] = useState<"write" | "preview">("write");
+	const [previewHtml, setPreviewHtml] = useState(post?.content ?? "");
 	const editorRef = useRef<RichTextEditorHandle>(null);
 
 	const handleTitleChange = (value: string) => {
 		setTitle(value);
 		if (!slugTouched) setSlug(slugify(value));
+	};
+
+	const showPreview = () => {
+		setPreviewHtml(editorRef.current?.getHTML() ?? previewHtml);
+		setMode("preview");
 	};
 
 	// RichTextEditor 는 실패 시 throw 를 기대(토스트로 안내) — 기존 nullable 업로더를 어댑트
@@ -113,7 +119,7 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 		setError(null);
 		setSaving(true);
 
-		const contentHtml = editorRef.current?.getHTML() ?? "";
+		const contentHtml = editorRef.current?.getHTML() ?? previewHtml;
 		const plain = htmlToText(contentHtml);
 		const finalSlug = slug.trim() || slugify(title);
 		const payload = {
@@ -148,9 +154,15 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 		onClose();
 	};
 
+	const tabClass = (active: boolean) =>
+		`rounded px-4 py-1.5 font-medium text-sm transition-colors ${
+			active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+		}`;
+
 	return (
-		<div className="mx-auto max-w-[1100px]">
-			<div className="mb-5">
+		<div className="mx-auto max-w-[1400px]">
+			{/* 상단 바 — 목록으로 + 작성/미리보기 모드 토글 */}
+			<div className="mb-5 flex items-center justify-between gap-4">
 				<button
 					type="button"
 					onClick={onClose}
@@ -158,271 +170,334 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 				>
 					<ArrowLeft size={17} /> 목록으로
 				</button>
-			</div>
-
-			{/* 본문 에디터 — 단일 컬럼(제목 + 리치 에디터) */}
-			<div className="flex flex-col overflow-hidden rounded-md border border-border bg-card">
-				<input
-					value={title}
-					onChange={(e) => handleTitleChange(e.target.value)}
-					placeholder="제목을 입력하세요"
-					className="w-full border-border border-b px-6 py-5 font-bold text-2xl text-foreground tracking-[-0.02em] outline-none placeholder:text-muted-foreground"
-				/>
-				<div className="px-6 pb-5">
-					<RichTextEditor
-						ref={editorRef}
-						content={post?.content ?? SKELETON}
-						editable
-						placeholder="본문을 작성하세요…"
-						uploadImage={handleUploadImage}
-						uploadFile={uploadBlogFile}
-					/>
+				<div className="inline-flex rounded-md border border-border bg-card p-0.5">
+					<button
+						type="button"
+						onClick={() => setMode("write")}
+						className={tabClass(mode === "write")}
+					>
+						작성
+					</button>
+					<button type="button" onClick={showPreview} className={tabClass(mode === "preview")}>
+						미리보기
+					</button>
 				</div>
 			</div>
 
-			{/* 발행 설정 — 본문 아래, 카드 그리드 */}
-			<div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-				<div className="rounded-md border border-border bg-card p-5">
-					<div className="mb-3 font-bold text-foreground text-sm">기본</div>
-					<div className="mb-4">
-						<Label htmlFor="be-cat">카테고리</Label>
-						<Select id="be-cat" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-							<option value="">선택하세요</option>
-							{categories.map((c) => (
-								<option key={c.id} value={c.id}>
-									{c.name}
-								</option>
-							))}
-						</Select>
-					</div>
-					<div className="mb-4">
-						<Label htmlFor="be-slug">slug (URL)</Label>
-						<Input
-							id="be-slug"
-							value={slug}
-							onChange={(e) => {
-								setSlug(e.target.value);
-								setSlugTouched(true);
-							}}
-							placeholder="자동 생성됩니다"
+			{/* 좌: 작성/미리보기(길게) · 우: 발행 설정 */}
+			<div className="grid items-start gap-5 lg:grid-cols-[1fr_360px]">
+				<div className="min-h-[calc(100vh-230px)]">
+					{/* 작성 모드 — 제목 + 리치 에디터(항상 마운트 유지: 저장 시 HTML 읽기) */}
+					<div
+						className={
+							mode === "write"
+								? "flex min-h-[calc(100vh-230px)] flex-col overflow-hidden rounded-md border border-border bg-card"
+								: "hidden"
+						}
+					>
+						<input
+							value={title}
+							onChange={(e) => handleTitleChange(e.target.value)}
+							placeholder="제목을 입력하세요"
+							className="w-full border-border border-b px-6 py-5 font-bold text-2xl text-foreground tracking-[-0.02em] outline-none placeholder:text-muted-foreground"
 						/>
-					</div>
-					<div>
-						<Label htmlFor="be-cover">커버 이미지</Label>
-						{coverUrl && (
-							<img
-								src={coverUrl}
-								alt={coverAlt || "커버 미리보기"}
-								className="mb-2 aspect-video w-full rounded-md border border-border object-cover"
+						<div className="min-h-0 flex-1 overflow-y-auto px-6 pb-5">
+							<RichTextEditor
+								ref={editorRef}
+								content={post?.content ?? ""}
+								editable
+								placeholder="본문을 작성하세요. 질문형 소제목(제목2)으로 나누면 검색·AI에 유리합니다."
+								uploadImage={handleUploadImage}
+								uploadFile={uploadBlogFile}
+								onChange={setPreviewHtml}
 							/>
-						)}
-						<div className="flex gap-2">
-							<Button
-								variant="outline"
-								size="sm"
-								onClick={handleCoverUpload}
-								disabled={coverUploading}
-							>
-								{coverUploading ? "업로드 중…" : coverUrl ? "변경" : "업로드"}
-							</Button>
+						</div>
+					</div>
+
+					{/* 미리보기 모드 — 홈페이지 노출 모습 */}
+					{mode === "preview" && (
+						<div className="min-h-[calc(100vh-230px)] overflow-hidden rounded-md border border-border bg-card px-8 py-8">
 							{coverUrl && (
-								<Button variant="ghost" size="sm" onClick={() => setCoverUrl("")}>
-									제거
-								</Button>
+								<img
+									src={coverUrl}
+									alt={coverAlt || "커버"}
+									className="mb-6 aspect-video w-full rounded-md border border-border object-cover"
+								/>
 							)}
-						</div>
-						<Input
-							className="mt-2"
-							value={coverAlt}
-							onChange={(e) => setCoverAlt(e.target.value)}
-							placeholder="커버 이미지 설명(alt)"
-						/>
-					</div>
-
-					<div className="mt-4">
-						<Label htmlFor="be-tags">해시태그</Label>
-						<div className="flex flex-wrap items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1.5">
-							{tags.map((t) => (
-								<span
-									key={t}
-									className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-[13px] text-muted-foreground"
-								>
-									#{t}
-									<button
-										type="button"
-										aria-label={`태그 ${t} 삭제`}
-										onClick={() => setTags((prev) => prev.filter((x) => x !== t))}
-										className="hover:text-destructive"
-									>
-										<X size={12} />
-									</button>
-								</span>
-							))}
-							<input
-								id="be-tags"
-								value={tagInput}
-								onChange={(e) => setTagInput(e.target.value)}
-								onKeyDown={handleTagKeyDown}
-								onBlur={() => addTag(tagInput)}
-								placeholder={tags.length ? "" : "예: F4비자연장"}
-								className="min-w-[100px] flex-1 bg-transparent px-1 py-1 text-sm outline-none placeholder:text-muted-foreground"
+							<h1 className="mb-5 font-bold text-[30px] text-foreground leading-tight tracking-[-0.02em]">
+								{title || "제목을 입력하세요"}
+							</h1>
+							{tldr.trim() && (
+								<div className="mb-6 rounded-md border border-border border-l-4 border-l-primary bg-muted px-4 py-3 text-[var(--text-body)] leading-relaxed">
+									{tldr}
+								</div>
+							)}
+							<div
+								className="blog-preview"
+								// biome-ignore lint/security/noDangerouslySetInnerHtml: 관리자 본인이 작성한 본문 미리보기
+								dangerouslySetInnerHTML={{
+									__html: previewHtml || '<p style="color:#9ca3af">본문이 비어 있습니다.</p>',
+								}}
 							/>
 						</div>
-						<p className="mt-1 text-[12px] text-muted-foreground">
-							# 없이 입력, Enter·쉼표·스페이스로 구분
-						</p>
-					</div>
+					)}
 				</div>
 
-				<details open className="rounded-md border border-border bg-card p-5">
-					<summary className="cursor-pointer font-bold text-foreground text-sm">SEO</summary>
-					<div className="mt-4">
-						<Label htmlFor="be-mt">검색 제목</Label>
-						<Input
-							id="be-mt"
-							value={metaTitle}
-							onChange={(e) => setMetaTitle(e.target.value)}
-							placeholder="비우면 제목 사용"
-						/>
-					</div>
-					<div className="mt-4">
-						<Label htmlFor="be-md">검색 설명</Label>
-						<Textarea
-							id="be-md"
-							rows={3}
-							value={metaDescription}
-							onChange={(e) => setMetaDescription(e.target.value)}
-							placeholder="비우면 본문 앞 155자 자동"
-						/>
-					</div>
-				</details>
+				{/* 우: 발행 설정(세로 스택) */}
+				<div className="flex flex-col gap-4">
+					<div className="rounded-md border border-border bg-card p-5">
+						<div className="mb-3 font-bold text-foreground text-sm">기본</div>
+						<div className="mb-4">
+							<Label htmlFor="be-cat">카테고리</Label>
+							<Select
+								id="be-cat"
+								value={categoryId}
+								onChange={(e) => setCategoryId(e.target.value)}
+							>
+								<option value="">선택하세요</option>
+								{categories.map((c) => (
+									<option key={c.id} value={c.id}>
+										{c.name}
+									</option>
+								))}
+							</Select>
+						</div>
+						<div className="mb-4">
+							<Label htmlFor="be-slug">slug (URL)</Label>
+							<Input
+								id="be-slug"
+								value={slug}
+								onChange={(e) => {
+									setSlug(e.target.value);
+									setSlugTouched(true);
+								}}
+								placeholder="자동 생성됩니다"
+							/>
+						</div>
+						<div>
+							<Label htmlFor="be-cover">커버 이미지</Label>
+							{coverUrl && (
+								<img
+									src={coverUrl}
+									alt={coverAlt || "커버 미리보기"}
+									className="mb-2 aspect-video w-full rounded-md border border-border object-cover"
+								/>
+							)}
+							<div className="flex gap-2">
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={handleCoverUpload}
+									disabled={coverUploading}
+								>
+									{coverUploading ? "업로드 중…" : coverUrl ? "변경" : "업로드"}
+								</Button>
+								{coverUrl && (
+									<Button variant="ghost" size="sm" onClick={() => setCoverUrl("")}>
+										제거
+									</Button>
+								)}
+							</div>
+							<Input
+								className="mt-2"
+								value={coverAlt}
+								onChange={(e) => setCoverAlt(e.target.value)}
+								placeholder="커버 이미지 설명(alt)"
+							/>
+						</div>
 
-				<details open className="rounded-md border border-border bg-card p-5">
-					<summary className="cursor-pointer font-bold text-foreground text-sm">
-						AEO · 요점 / FAQ / 출처
-					</summary>
-					<div className="mt-4">
-						<Label htmlFor="be-tldr">요점 (TL;DR)</Label>
+						<div className="mt-4">
+							<Label htmlFor="be-tags">해시태그</Label>
+							<div className="flex flex-wrap items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1.5">
+								{tags.map((t) => (
+									<span
+										key={t}
+										className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-[13px] text-muted-foreground"
+									>
+										#{t}
+										<button
+											type="button"
+											aria-label={`태그 ${t} 삭제`}
+											onClick={() => setTags((prev) => prev.filter((x) => x !== t))}
+											className="hover:text-destructive"
+										>
+											<X size={12} />
+										</button>
+									</span>
+								))}
+								<input
+									id="be-tags"
+									value={tagInput}
+									onChange={(e) => setTagInput(e.target.value)}
+									onKeyDown={handleTagKeyDown}
+									onBlur={() => addTag(tagInput)}
+									placeholder={tags.length ? "" : "예: F4비자연장"}
+									className="min-w-[100px] flex-1 bg-transparent px-1 py-1 text-sm outline-none placeholder:text-muted-foreground"
+								/>
+							</div>
+							<p className="mt-1 text-[12px] text-muted-foreground">
+								# 없이 입력, Enter·쉼표·스페이스로 구분
+							</p>
+						</div>
+					</div>
+
+					{/* 요점(결론) — 본문과 별개 입력. 글 상단에 '요점'으로 노출됨 */}
+					<div className="rounded-md border border-border bg-card p-5">
+						<Label htmlFor="be-tldr">요점 (결론)</Label>
 						<Textarea
 							id="be-tldr"
-							rows={3}
+							rows={4}
 							value={tldr}
 							onChange={(e) => setTldr(e.target.value)}
-							placeholder="이 글의 결론을 2~3문장으로"
+							placeholder="이 글의 결론을 2~3문장으로. (본문 아님)"
 						/>
+						<p className="mt-1.5 text-[12px] text-muted-foreground">
+							글 <b>맨 위 요점 상자</b>로 노출되고, 검색·AI가 이 부분을 답으로 인용합니다. 본문에 또
+							쓸 필요 없습니다.
+						</p>
 					</div>
 
-					<div className="mt-5">
-						<div className="mb-2 flex items-center justify-between">
-							<span className="font-medium text-foreground text-sm">FAQ</span>
-							<button
-								type="button"
-								onClick={() => setFaq((p) => [...p, { _id: crypto.randomUUID(), q: "", a: "" }])}
-								className="flex items-center gap-1 font-medium text-[13px] text-primary hover:underline"
-							>
-								<Plus size={14} /> 추가
-							</button>
-						</div>
-						<div className="flex flex-col gap-3">
-							{faq.map((f, i) => (
-								<div key={f._id} className="rounded-md border border-border p-3">
-									<div className="mb-2 flex items-center justify-between">
-										<span className="text-[13px] text-muted-foreground">질문 {i + 1}</span>
-										<button
-											type="button"
-											aria-label="FAQ 삭제"
-											onClick={() => setFaq((p) => p.filter((x) => x._id !== f._id))}
-											className="text-muted-foreground hover:text-destructive"
-										>
-											<Trash2 size={14} />
-										</button>
+					<details className="rounded-md border border-border bg-card p-5">
+						<summary className="cursor-pointer font-bold text-foreground text-sm">
+							FAQ · 참고 출처
+						</summary>
+						<div className="mt-4">
+							<div className="mb-2 flex items-center justify-between">
+								<span className="font-medium text-foreground text-sm">FAQ</span>
+								<button
+									type="button"
+									onClick={() => setFaq((p) => [...p, { _id: crypto.randomUUID(), q: "", a: "" }])}
+									className="flex items-center gap-1 font-medium text-[13px] text-primary hover:underline"
+								>
+									<Plus size={14} /> 추가
+								</button>
+							</div>
+							<div className="flex flex-col gap-3">
+								{faq.map((f, i) => (
+									<div key={f._id} className="rounded-md border border-border p-3">
+										<div className="mb-2 flex items-center justify-between">
+											<span className="text-[13px] text-muted-foreground">질문 {i + 1}</span>
+											<button
+												type="button"
+												aria-label="FAQ 삭제"
+												onClick={() => setFaq((p) => p.filter((x) => x._id !== f._id))}
+												className="text-muted-foreground hover:text-destructive"
+											>
+												<Trash2 size={14} />
+											</button>
+										</div>
+										<Input
+											className="mb-2 h-10"
+											value={f.q}
+											onChange={(e) =>
+												setFaq((p) =>
+													p.map((x) => (x._id === f._id ? { ...x, q: e.target.value } : x)),
+												)
+											}
+											placeholder="질문"
+										/>
+										<Textarea
+											rows={2}
+											value={f.a}
+											onChange={(e) =>
+												setFaq((p) =>
+													p.map((x) => (x._id === f._id ? { ...x, a: e.target.value } : x)),
+												)
+											}
+											placeholder="답변"
+										/>
 									</div>
-									<Input
-										className="mb-2 h-10"
-										value={f.q}
-										onChange={(e) =>
-											setFaq((p) =>
-												p.map((x) => (x._id === f._id ? { ...x, q: e.target.value } : x)),
-											)
-										}
-										placeholder="질문"
-									/>
-									<Textarea
-										rows={2}
-										value={f.a}
-										onChange={(e) =>
-											setFaq((p) =>
-												p.map((x) => (x._id === f._id ? { ...x, a: e.target.value } : x)),
-											)
-										}
-										placeholder="답변"
-									/>
-								</div>
-							))}
+								))}
+							</div>
 						</div>
-					</div>
 
-					<div className="mt-5">
-						<div className="mb-2 flex items-center justify-between">
-							<span className="font-medium text-foreground text-sm">참고 출처</span>
-							<button
-								type="button"
-								onClick={() =>
-									setSources((p) => [...p, { _id: crypto.randomUUID(), label: "", href: "" }])
-								}
-								className="flex items-center gap-1 font-medium text-[13px] text-primary hover:underline"
-							>
-								<Plus size={14} /> 추가
-							</button>
-						</div>
-						<div className="flex flex-col gap-3">
-							{sources.map((s, i) => (
-								<div key={s._id} className="rounded-md border border-border p-3">
-									<div className="mb-2 flex items-center justify-between">
-										<span className="text-[13px] text-muted-foreground">출처 {i + 1}</span>
-										<button
-											type="button"
-											aria-label="출처 삭제"
-											onClick={() => setSources((p) => p.filter((x) => x._id !== s._id))}
-											className="text-muted-foreground hover:text-destructive"
-										>
-											<Trash2 size={14} />
-										</button>
+						<div className="mt-5">
+							<div className="mb-2 flex items-center justify-between">
+								<span className="font-medium text-foreground text-sm">참고 출처</span>
+								<button
+									type="button"
+									onClick={() =>
+										setSources((p) => [...p, { _id: crypto.randomUUID(), label: "", href: "" }])
+									}
+									className="flex items-center gap-1 font-medium text-[13px] text-primary hover:underline"
+								>
+									<Plus size={14} /> 추가
+								</button>
+							</div>
+							<div className="flex flex-col gap-3">
+								{sources.map((s, i) => (
+									<div key={s._id} className="rounded-md border border-border p-3">
+										<div className="mb-2 flex items-center justify-between">
+											<span className="text-[13px] text-muted-foreground">출처 {i + 1}</span>
+											<button
+												type="button"
+												aria-label="출처 삭제"
+												onClick={() => setSources((p) => p.filter((x) => x._id !== s._id))}
+												className="text-muted-foreground hover:text-destructive"
+											>
+												<Trash2 size={14} />
+											</button>
+										</div>
+										<Input
+											className="mb-2 h-10"
+											value={s.label}
+											onChange={(e) =>
+												setSources((p) =>
+													p.map((x) => (x._id === s._id ? { ...x, label: e.target.value } : x)),
+												)
+											}
+											placeholder="라벨 (예: 하이코리아)"
+										/>
+										<Input
+											className="h-10"
+											value={s.href}
+											onChange={(e) =>
+												setSources((p) =>
+													p.map((x) => (x._id === s._id ? { ...x, href: e.target.value } : x)),
+												)
+											}
+											placeholder="https://"
+										/>
 									</div>
-									<Input
-										className="mb-2 h-10"
-										value={s.label}
-										onChange={(e) =>
-											setSources((p) =>
-												p.map((x) => (x._id === s._id ? { ...x, label: e.target.value } : x)),
-											)
-										}
-										placeholder="라벨 (예: 하이코리아)"
-									/>
-									<Input
-										className="h-10"
-										value={s.href}
-										onChange={(e) =>
-											setSources((p) =>
-												p.map((x) => (x._id === s._id ? { ...x, href: e.target.value } : x)),
-											)
-										}
-										placeholder="https://"
-									/>
-								</div>
-							))}
+								))}
+							</div>
 						</div>
-					</div>
-				</details>
+					</details>
 
-				<div className="rounded-md border border-border bg-card p-5">
-					<div className="mb-1.5 font-bold text-foreground text-sm">작성자</div>
-					<div className="text-[var(--text-body)] text-base">초이스 행정사 사무소</div>
-					<p className="mt-1 text-[13px] text-muted-foreground">모든 글의 작성자로 고정됩니다.</p>
+					<details className="rounded-md border border-border bg-card p-5">
+						<summary className="cursor-pointer font-bold text-foreground text-sm">
+							SEO (검색 노출)
+						</summary>
+						<div className="mt-4">
+							<Label htmlFor="be-mt">검색 제목</Label>
+							<Input
+								id="be-mt"
+								value={metaTitle}
+								onChange={(e) => setMetaTitle(e.target.value)}
+								placeholder="비우면 제목 사용"
+							/>
+						</div>
+						<div className="mt-4">
+							<Label htmlFor="be-md">검색 설명</Label>
+							<Textarea
+								id="be-md"
+								rows={3}
+								value={metaDescription}
+								onChange={(e) => setMetaDescription(e.target.value)}
+								placeholder="비우면 요점/본문 앞 155자 자동"
+							/>
+						</div>
+					</details>
+
+					<div className="rounded-md border border-border bg-card p-5">
+						<div className="mb-1.5 font-bold text-foreground text-sm">작성자</div>
+						<div className="text-[var(--text-body)] text-base">초이스 행정사 사무소</div>
+						<p className="mt-1 text-[13px] text-muted-foreground">모든 글의 작성자로 고정됩니다.</p>
+					</div>
 				</div>
 			</div>
 
-			{/* 발행 바 — 본문 흐름 하단(고정 아님) */}
+			{/* 발행 바 */}
 			<div className="mt-6 border-border border-t pt-4">
 				{error && (
 					<div className="mb-2.5 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-2.5 text-destructive text-sm">

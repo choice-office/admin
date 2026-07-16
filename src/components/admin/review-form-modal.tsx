@@ -174,8 +174,9 @@ export const ReviewFormModal = ({ review, onClose, onSubmit }: Props) => {
 							<Input
 								id="rv-order"
 								type="number"
-								value={String(draft.sort_order ?? 0)}
-								onChange={(e) => set("sort_order", Number(e.target.value) || 0)}
+								min={1}
+								value={String((draft.sort_order ?? 0) + 1)}
+								onChange={(e) => set("sort_order", Math.max(0, (Number(e.target.value) || 1) - 1))}
 							/>
 						</div>
 						<label className="flex cursor-pointer items-center gap-2.5 pt-6 text-foreground text-sm">

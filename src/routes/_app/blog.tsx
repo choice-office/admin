@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { BlogEditor } from "@/components/admin/blog-editor";
@@ -10,6 +10,9 @@ import type { BlogAuthor, BlogCategory, BlogPost, PostStatus } from "@/types/dat
 
 export const Route = createFileRoute("/_app/blog")({
 	component: BlogPage,
+	validateSearch: (search: Record<string, unknown>): { page: number } => ({
+		page: Math.max(1, Number(search.page) || 1),
+	}),
 });
 
 const GRID = "grid-cols-[2.4fr_1fr_0.8fr_1fr_auto]";
@@ -29,7 +32,9 @@ function BlogPage() {
 	const [editing, setEditing] = useState<BlogPost | null>(null);
 	const [isEditorOpen, setIsEditorOpen] = useState(false);
 	const [confirmId, setConfirmId] = useState<string | null>(null);
-	const [page, setPage] = useState(1);
+	const navigate = useNavigate({ from: Route.fullPath });
+	const { page } = Route.useSearch();
+	const goPage = (n: number) => navigate({ search: { page: n } });
 
 	const refetch = useCallback(async () => {
 		setIsLoading(true);
@@ -167,7 +172,7 @@ function BlogPage() {
 				<button
 					type="button"
 					disabled={safePage <= 1}
-					onClick={() => setPage(safePage - 1)}
+					onClick={() => goPage(safePage - 1)}
 					className="flex h-9 min-w-9 items-center justify-center rounded-md border border-border px-2 text-foreground text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
 				>
 					이전
@@ -176,7 +181,7 @@ function BlogPage() {
 					<button
 						key={n}
 						type="button"
-						onClick={() => setPage(n)}
+						onClick={() => goPage(n)}
 						className={cn(
 							"flex h-9 min-w-9 items-center justify-center rounded-md border px-2 text-sm",
 							n === safePage
@@ -190,7 +195,7 @@ function BlogPage() {
 				<button
 					type="button"
 					disabled={safePage >= totalPages}
-					onClick={() => setPage(safePage + 1)}
+					onClick={() => goPage(safePage + 1)}
 					className="flex h-9 min-w-9 items-center justify-center rounded-md border border-border px-2 text-foreground text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
 				>
 					다음
