@@ -186,12 +186,12 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 
 			{/* 좌: 작성/미리보기(길게) · 우: 발행 설정 */}
 			<div className="grid items-start gap-5 lg:grid-cols-[1fr_360px]">
-				<div className="min-h-[calc(100vh-230px)]">
+				<div className="min-h-[calc(100vh-160px)]">
 					{/* 작성 모드 — 제목 + 리치 에디터(항상 마운트 유지: 저장 시 HTML 읽기) */}
 					<div
 						className={
 							mode === "write"
-								? "flex min-h-[calc(100vh-230px)] flex-col overflow-hidden rounded-md border border-border bg-card"
+								? "flex min-h-[calc(100vh-160px)] flex-col overflow-hidden rounded-md border border-border bg-card"
 								: "hidden"
 						}
 					>
@@ -216,14 +216,7 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 
 					{/* 미리보기 모드 — 홈페이지 노출 모습 */}
 					{mode === "preview" && (
-						<div className="min-h-[calc(100vh-230px)] overflow-hidden rounded-md border border-border bg-card px-8 py-8">
-							{coverUrl && (
-								<img
-									src={coverUrl}
-									alt={coverAlt || "커버"}
-									className="mb-6 aspect-video w-full rounded-md border border-border object-cover"
-								/>
-							)}
+						<div className="min-h-[calc(100vh-160px)] overflow-hidden rounded-md border border-border bg-card px-8 py-8">
 							<h1 className="mb-5 font-bold text-[30px] text-foreground leading-tight tracking-[-0.02em]">
 								{title || "제목을 입력하세요"}
 							</h1>
@@ -277,11 +270,16 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 						<div>
 							<Label htmlFor="be-cover">커버 이미지</Label>
 							{coverUrl && (
-								<img
-									src={coverUrl}
-									alt={coverAlt || "커버 미리보기"}
-									className="mb-2 aspect-video w-full rounded-md border border-border object-cover"
-								/>
+								<>
+									<img
+										src={coverUrl}
+										alt={coverAlt || "커버 미리보기"}
+										className="aspect-[4/3] w-full rounded-md border border-border object-cover"
+									/>
+									<p className="mt-1 mb-2 text-[12px] text-muted-foreground">
+										목록 카드 비율(4:3) 미리보기
+									</p>
+								</>
 							)}
 							<div className="flex gap-2">
 								<Button

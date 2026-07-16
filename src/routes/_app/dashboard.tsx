@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import { FileText, MessageSquare, Star, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { StatusBadge } from "@/components/admin/status-badge";
-import { Badge, Button, Card } from "@/components/ui/ds";
+import { Badge, Card } from "@/components/ui/ds";
 import { consultLabel } from "@/lib/contacts";
 import { formatDateCompact } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
@@ -125,7 +125,7 @@ function DashboardPage() {
 				})}
 			</div>
 
-			<div className="grid grid-cols-[1fr_320px] items-start gap-[18px]">
+			<div>
 				<div className="flex min-h-[300px] flex-col overflow-hidden rounded-md border border-border bg-card">
 					<div className="flex items-center justify-between border-border border-b px-5 py-[18px]">
 						<h3 className="m-0 font-bold text-[17px] text-foreground">최근 상담 문의</h3>
@@ -163,29 +163,6 @@ function DashboardPage() {
 						))
 					)}
 				</div>
-
-				<Card>
-					<h3 className="m-0 mb-4 font-bold text-[17px] text-foreground">빠른 작업</h3>
-					<div className="flex flex-col gap-2.5">
-						<Button variant="primary" onClick={() => navigate({ to: "/blog" })} className="w-full">
-							새 글 작성
-						</Button>
-						<Button
-							variant="outline"
-							onClick={() => navigate({ to: "/inquiries" })}
-							className="w-full"
-						>
-							상담 문의 보기
-						</Button>
-						<Button
-							variant="outline"
-							onClick={() => navigate({ to: "/reviews" })}
-							className="w-full"
-						>
-							후기 관리
-						</Button>
-					</div>
-				</Card>
 			</div>
 
 			{/* 최근 작성한 블로그 — 작은 카드 그리드 */}

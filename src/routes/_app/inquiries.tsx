@@ -156,60 +156,66 @@ function InquiriesPage() {
 					<div>접수일</div>
 				</div>
 
-				{isLoading ? (
-					<div className="px-5 py-14 text-center text-muted-foreground text-sm">불러오는 중…</div>
-				) : rows.length === 0 ? (
-					<div className="px-5 py-14 text-center">
-						<div className="font-medium text-[15px] text-foreground">
-							조건에 맞는 문의가 없습니다
+				<div className="flex min-h-[calc(100vh-330px)] flex-col overflow-y-auto">
+					{isLoading ? (
+						<div className="flex flex-1 items-center justify-center px-5 py-14 text-muted-foreground text-sm">
+							불러오는 중…
 						</div>
-						<div className="mt-1.5 text-muted-foreground text-sm">
-							필터나 검색어를 바꿔 다시 시도해 보세요.
-						</div>
-					</div>
-				) : (
-					rows.map((c) => (
-						<button
-							key={c.id}
-							type="button"
-							onClick={() => setSelectedId(c.id)}
-							className={cn(
-								"grid w-full items-center gap-3 border-border border-b px-5 py-3.5 text-left transition-colors hover:bg-muted",
-								GRID,
-							)}
-						>
-							<div className="font-medium text-foreground">{c.name}</div>
-							<div className="text-[var(--text-body)] text-sm">{c.phone}</div>
-							<div className="text-[var(--text-body)] text-sm">{consultLabel(c.consult_field)}</div>
-							<div>
-								<StatusBadge status={c.status} />
+					) : rows.length === 0 ? (
+						<div className="flex flex-1 flex-col items-center justify-center px-5 py-14 text-center">
+							<div className="font-medium text-[15px] text-foreground">
+								조건에 맞는 문의가 없습니다
 							</div>
-							<div className="text-muted-foreground text-sm">{formatDateCompact(c.created_at)}</div>
-						</button>
-					))
-				)}
+							<div className="mt-1.5 text-muted-foreground text-sm">
+								필터나 검색어를 바꿔 다시 시도해 보세요.
+							</div>
+						</div>
+					) : (
+						rows.map((c) => (
+							<button
+								key={c.id}
+								type="button"
+								onClick={() => setSelectedId(c.id)}
+								className={cn(
+									"grid w-full items-center gap-3 border-border border-b px-5 py-3.5 text-left transition-colors hover:bg-muted",
+									GRID,
+								)}
+							>
+								<div className="font-medium text-foreground">{c.name}</div>
+								<div className="text-[var(--text-body)] text-sm">{c.phone}</div>
+								<div className="text-[var(--text-body)] text-sm">
+									{consultLabel(c.consult_field)}
+								</div>
+								<div>
+									<StatusBadge status={c.status} />
+								</div>
+								<div className="text-muted-foreground text-sm">
+									{formatDateCompact(c.created_at)}
+								</div>
+							</button>
+						))
+					)}
+				</div>
 			</div>
 
-			{/* 페이지네이션 */}
-			{totalPages > 1 && (
-				<div className="mt-5 flex justify-center gap-1.5">
-					{Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-						<button
-							key={n}
-							type="button"
-							onClick={() => setPage(n)}
-							className={cn(
-								"h-[38px] min-w-[38px] rounded-md border text-sm transition-colors",
-								n === current
-									? "border-primary bg-primary font-bold text-primary-foreground"
-									: "border-border bg-card font-medium text-[var(--text-body)] hover:bg-muted",
-							)}
-						>
-							{n}
-						</button>
-					))}
-				</div>
-			)}
+			{/* 페이지네이션 — 1페이지여도 항상 표시 */}
+			<div className="mt-5 flex justify-center gap-1.5">
+				{Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+					<button
+						key={n}
+						type="button"
+						onClick={() => setPage(n)}
+						className={cn(
+							"h-[38px] min-w-[38px] rounded-md border text-sm transition-colors",
+							n === current
+								? "border-primary bg-primary font-bold text-primary-foreground"
+								: "border-border bg-card font-medium text-[var(--text-body)] hover:bg-muted",
+						)}
+					>
+						{n}
+					</button>
+				))}
+			</div>
 
 			{selected && (
 				<InquiryDetailModal
