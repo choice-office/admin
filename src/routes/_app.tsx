@@ -21,7 +21,7 @@ function AppLayout() {
 		<div className="flex h-screen overflow-hidden">
 			<AppSidebar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
 			<div className="flex min-w-0 flex-1 flex-col bg-muted">
-				<div className="flex-1 overflow-y-auto px-8 pt-5 pb-6">
+				<div className="flex-1 overflow-y-auto px-6 pt-5 pb-6">
 					<Outlet />
 				</div>
 			</div>
