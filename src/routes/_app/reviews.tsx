@@ -62,7 +62,7 @@ function ReviewsPage() {
 				</div>
 			) : (
 				<>
-					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 						{pageItems.map((r) => (
 							<div
 								key={r.id}
@@ -81,7 +81,7 @@ function ReviewsPage() {
 								{/* 이미지 창 — 홈 그리드와 동일 비율(4/3.4) + 하단 페이드 */}
 								<div
 									className="relative mx-4 mt-2.5 overflow-hidden border border-border"
-									style={{ aspectRatio: "4 / 3", background: "#e9edf1" }}
+									style={{ aspectRatio: "4 / 5", background: "#e9edf1" }}
 								>
 									<img
 										src={r.src}
@@ -89,7 +89,7 @@ function ReviewsPage() {
 										className="h-full w-full object-cover object-top"
 									/>
 									<span
-										className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5"
+										className="pointer-events-none absolute inset-x-0 bottom-0 h-[44%]"
 										style={{
 											background:
 												"linear-gradient(to bottom, rgba(251,250,247,0) 0%, rgba(251,250,247,0.94) 90%)",
