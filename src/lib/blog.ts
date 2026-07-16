@@ -141,7 +141,8 @@ export const uploadBlogFile = async (
 	return { url: data.publicUrl, name: file.name, mime: file.type };
 };
 
-// slug 자동 생성(규칙 기반, AI 없음). 영문/숫자만 kebab, 비면 post-{8hex}.
+// slug 자동 생성(규칙 기반, AI 없음). 한글/영문/숫자 kebab 유지(URL에 키워드 노출 → SEO).
+// 하이픈 제외 실질 문자 3자 미만이면 post-{8hex} 폴백. DB CHECK: ^[a-z0-9가-힣]+(?:-[a-z0-9가-힣]+)*$
 export const slugify = (title: string): string => {
 	const base = title
 		.toLowerCase()
@@ -150,8 +151,7 @@ export const slugify = (title: string): string => {
 		.replace(/[\s_]+/g, "-")
 		.replace(/-+/g, "-")
 		.replace(/^-|-$/g, "");
-	const ascii = base.replace(/[^a-z0-9-]/g, "");
-	return ascii.length >= 3 ? ascii : `post-${crypto.randomUUID().slice(0, 8)}`;
+	return base.replace(/-/g, "").length >= 3 ? base : `post-${crypto.randomUUID().slice(0, 8)}`;
 };
 
 // 본문 HTML → 일반 텍스트(요약/메타 자동값용)
