@@ -12,6 +12,7 @@ import { type Editor, EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import {
 	AlignCenter,
+	AlignJustify,
 	AlignLeft,
 	AlignRight,
 	AlignVerticalSpaceAround,
@@ -45,12 +46,14 @@ import {
 } from "lucide-react";
 import {
 	type ChangeEvent,
+	type ReactNode,
 	type Ref,
 	useEffect,
 	useImperativeHandle,
 	useRef,
 	useState,
 } from "react";
+import { HexColorInput, HexColorPicker } from "react-colorful";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -127,8 +130,8 @@ const HIGHLIGHT_COLORS = [
 	"#e5e7eb",
 ];
 
-// 줄 간격 프리셋
-const LINE_HEIGHTS = ["1", "1.15", "1.5", "2", "2.5"];
+// 줄 간격 프리셋 — 네이버 에디터와 동일하게 %(붙여넣은 원고 값과도 일치)
+const LINE_HEIGHTS = ["100%", "150%", "160%", "170%", "180%", "190%", "200%", "210%"];
 
 // 글자 크기 프리셋(px)
 const FONT_SIZES = [11, 13, 15, 16, 18, 20, 24, 28, 32, 40];
@@ -153,6 +156,88 @@ const normalizeUrl = (raw: string): string | null => {
 	if (/^(https?:\/\/|mailto:|tel:)/i.test(v)) return v;
 	if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return `mailto:${v}`;
 	return `https://${v}`;
+};
+
+// 정렬 옵션 — 네이버식 단일 드롭다운(펼쳐서 선택). 이미지 선택 시 justify 제외
+const ALIGN_OPTIONS = [
+	{ key: "left", label: "왼쪽 정렬", Icon: AlignLeft },
+	{ key: "center", label: "가운데 정렬", Icon: AlignCenter },
+	{ key: "right", label: "오른쪽 정렬", Icon: AlignRight },
+	{ key: "justify", label: "양쪽 정렬", Icon: AlignJustify },
+] as const;
+
+// 색상 선택 팝오버(글자색·형광펜 공용) — 빠른 팔레트 + 그라디언트 피커 + hex 직접 입력(네이버식)
+type ColorMenuProps = {
+	icon: ReactNode;
+	ariaLabel: string;
+	current?: string;
+	swatches: string[];
+	clearLabel: string;
+	onPick: (hex: string) => void;
+	onClear: () => void;
+};
+
+const ColorMenu = ({
+	icon,
+	ariaLabel,
+	current,
+	swatches,
+	clearLabel,
+	onPick,
+	onClear,
+}: ColorMenuProps) => {
+	const [draft, setDraft] = useState(current ?? "#000000");
+	return (
+		<Popover>
+			<PopoverTrigger
+				render={
+					<Button type="button" variant="ghost" size="icon" aria-label={ariaLabel}>
+						{icon}
+					</Button>
+				}
+			/>
+			<PopoverContent align="start" className="w-[228px] p-3">
+				<div className="mb-2.5 grid grid-cols-8 gap-1.5">
+					{swatches.map((c) => (
+						<button
+							key={c}
+							type="button"
+							title={c}
+							onClick={() => onPick(c)}
+							className="size-5 rounded border"
+							style={{
+								backgroundColor: c,
+								outline:
+									current?.toLowerCase() === c.toLowerCase() ? "2px solid var(--ring)" : undefined,
+								outlineOffset: 1,
+							}}
+						/>
+					))}
+				</div>
+				<div className="flex justify-center [&_.react-colorful]:w-full">
+					<HexColorPicker color={draft} onChange={setDraft} />
+				</div>
+				<div className="mt-2.5 flex items-center gap-1.5">
+					<HexColorInput
+						prefixed
+						color={draft}
+						onChange={setDraft}
+						className="h-8 flex-1 rounded-md border bg-background px-2 text-sm uppercase outline-none"
+					/>
+					<Button type="button" size="sm" className="h-8" onClick={() => onPick(draft)}>
+						확인
+					</Button>
+				</div>
+				<button
+					type="button"
+					onClick={onClear}
+					className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-md border py-1.5 text-[13px] text-muted-foreground hover:bg-muted"
+				>
+					<Ban className="size-3.5" /> {clearLabel}
+				</button>
+			</PopoverContent>
+		</Popover>
+	);
 };
 
 // 블로그 본문 리치 텍스트 에디터 (Tiptap). 업로드 동작은 props 로 주입(피처별 저장소 분리).
@@ -348,13 +433,17 @@ export const RichTextEditor = ({
 
 	// 정렬 — 이미지가 선택돼 있으면 이미지 위치, 아니면 문단 정렬
 	const imageActive = editor.isActive("image");
-	const isAligned = (a: "left" | "center" | "right") =>
+	const currentAlign = imageActive
+		? ((editor.getAttributes("image").align as string | undefined) ?? "center")
+		: (["center", "right", "justify"].find((a) => editor.isActive({ textAlign: a })) ?? "left");
+	const CurrentAlignIcon = ALIGN_OPTIONS.find((o) => o.key === currentAlign)?.Icon ?? AlignLeft;
+	const setAlign = (a: "left" | "center" | "right" | "justify") =>
 		imageActive
-			? ((editor.getAttributes("image").align as string | undefined) ?? "center") === a
-			: editor.isActive({ textAlign: a });
-	const setAlign = (a: "left" | "center" | "right") =>
-		imageActive
-			? editor.chain().focus().updateAttributes("image", { align: a }).run()
+			? editor
+					.chain()
+					.focus()
+					.updateAttributes("image", { align: a === "justify" ? "center" : a })
+					.run()
 			: editor.chain().focus().setTextAlign(a).run();
 
 	// 중앙 인용(❝) — blockquote + variant=center. 일반 인용과 상호 전환.
@@ -536,82 +625,36 @@ export const RichTextEditor = ({
 					>
 						<Code className="size-4" />
 					</Toggle>
-					{/* 글자 색상 */}
-					<Popover>
-						<PopoverTrigger
-							render={
-								<Button type="button" variant="ghost" size="icon" aria-label="글자 색상">
-									<Baseline
-										className="size-4"
-										style={currentColor ? { color: currentColor } : undefined}
-									/>
-								</Button>
-							}
-						/>
-						<PopoverContent align="start" className="w-auto p-2">
-							<button
-								type="button"
-								onClick={() => editor.chain().focus().unsetColor().run()}
-								className="mb-1.5 flex w-full items-center justify-center gap-1.5 rounded-md border py-1.5 text-[13px] text-muted-foreground hover:bg-muted"
-							>
-								<Ban className="size-3.5" /> 기본색
-							</button>
-							<div className="grid grid-cols-6 gap-1.5">
-								{TEXT_COLORS.map((c) => (
-									<button
-										key={c}
-										type="button"
-										title={c}
-										onClick={() => editor.chain().focus().setColor(c).run()}
-										className="size-6 rounded-md border"
-										style={{
-											backgroundColor: c,
-											outline: currentColor === c ? "2px solid var(--ring)" : undefined,
-											outlineOffset: 1,
-										}}
-									/>
-								))}
-							</div>
-						</PopoverContent>
-					</Popover>
-					{/* 형광펜 */}
-					<Popover>
-						<PopoverTrigger
-							render={
-								<Button type="button" variant="ghost" size="icon" aria-label="형광펜">
-									<Highlighter
-										className="size-4"
-										style={currentBg ? { color: currentBg } : undefined}
-									/>
-								</Button>
-							}
-						/>
-						<PopoverContent align="start" className="w-auto p-2">
-							<button
-								type="button"
-								onClick={() => editor.chain().focus().unsetBackgroundColor().run()}
-								className="mb-1.5 flex w-full items-center justify-center gap-1.5 rounded-md border py-1.5 text-[13px] text-muted-foreground hover:bg-muted"
-							>
-								<Ban className="size-3.5" /> 없음
-							</button>
-							<div className="grid grid-cols-6 gap-1.5">
-								{HIGHLIGHT_COLORS.map((c) => (
-									<button
-										key={c}
-										type="button"
-										title={c}
-										onClick={() => editor.chain().focus().setBackgroundColor(c).run()}
-										className="size-6 rounded-md border"
-										style={{
-											backgroundColor: c,
-											outline: currentBg === c ? "2px solid var(--ring)" : undefined,
-											outlineOffset: 1,
-										}}
-									/>
-								))}
-							</div>
-						</PopoverContent>
-					</Popover>
+					{/* 글자 색상 — 팔레트 + 그라디언트 + hex 입력 */}
+					<ColorMenu
+						icon={
+							<Baseline
+								className="size-4"
+								style={currentColor ? { color: currentColor } : undefined}
+							/>
+						}
+						ariaLabel="글자 색상"
+						current={currentColor}
+						swatches={TEXT_COLORS}
+						clearLabel="기본색"
+						onPick={(hex) => editor.chain().focus().setColor(hex).run()}
+						onClear={() => editor.chain().focus().unsetColor().run()}
+					/>
+					{/* 형광펜 — 팔레트 + 그라디언트 + hex 입력 */}
+					<ColorMenu
+						icon={
+							<Highlighter
+								className="size-4"
+								style={currentBg ? { color: currentBg } : undefined}
+							/>
+						}
+						ariaLabel="형광펜"
+						current={currentBg}
+						swatches={HIGHLIGHT_COLORS}
+						clearLabel="없음"
+						onPick={(hex) => editor.chain().focus().setBackgroundColor(hex).run()}
+						onClear={() => editor.chain().focus().unsetBackgroundColor().run()}
+					/>
 					<Divider />
 					<Popover open={linkOpen} onOpenChange={setLinkOpen}>
 						<PopoverTrigger
@@ -707,31 +750,35 @@ export const RichTextEditor = ({
 						</>
 					)}
 					<Divider />
-					{/* 정렬 */}
-					<Toggle
-						size="sm"
-						pressed={isAligned("left")}
-						onPressedChange={() => setAlign("left")}
-						aria-label={imageActive ? "이미지 왼쪽" : "왼쪽 정렬"}
-					>
-						<AlignLeft className="size-4" />
-					</Toggle>
-					<Toggle
-						size="sm"
-						pressed={isAligned("center")}
-						onPressedChange={() => setAlign("center")}
-						aria-label={imageActive ? "이미지 가운데" : "가운데 정렬"}
-					>
-						<AlignCenter className="size-4" />
-					</Toggle>
-					<Toggle
-						size="sm"
-						pressed={isAligned("right")}
-						onPressedChange={() => setAlign("right")}
-						aria-label={imageActive ? "이미지 오른쪽" : "오른쪽 정렬"}
-					>
-						<AlignRight className="size-4" />
-					</Toggle>
+					{/* 정렬 — 네이버식 드롭다운 */}
+					<Popover>
+						<PopoverTrigger
+							render={
+								<Button
+									type="button"
+									variant="ghost"
+									className="h-9 gap-1 px-2"
+									aria-label="정렬"
+									title="정렬"
+								>
+									<CurrentAlignIcon className="size-4" />
+									<ChevronDown className="size-3 text-muted-foreground" />
+								</Button>
+							}
+						/>
+						<PopoverContent align="start" className="w-40 p-1">
+							{ALIGN_OPTIONS.filter((o) => !imageActive || o.key !== "justify").map((o) => (
+								<button
+									key={o.key}
+									type="button"
+									onClick={() => setAlign(o.key)}
+									className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted ${currentAlign === o.key ? "bg-muted font-medium" : ""}`}
+								>
+									<o.Icon className="size-4" /> {o.label}
+								</button>
+							))}
+						</PopoverContent>
+					</Popover>
 					{/* 줄 간격 */}
 					<Popover>
 						<PopoverTrigger
@@ -739,11 +786,12 @@ export const RichTextEditor = ({
 								<Button
 									type="button"
 									variant="ghost"
-									size="icon"
+									className="h-9 gap-1 px-2"
 									aria-label="줄 간격"
 									title="줄 간격"
 								>
 									<AlignVerticalSpaceAround className="size-4" />
+									<ChevronDown className="size-3 text-muted-foreground" />
 								</Button>
 							}
 						/>
@@ -768,32 +816,58 @@ export const RichTextEditor = ({
 						</PopoverContent>
 					</Popover>
 					<Divider />
-					{/* 목록 */}
-					<Toggle
-						size="sm"
-						pressed={editor.isActive("bulletList")}
-						onPressedChange={() => editor.chain().focus().toggleBulletList().run()}
-						aria-label="목록"
-					>
-						<List className="size-4" />
-					</Toggle>
-					<Toggle
-						size="sm"
-						pressed={editor.isActive("orderedList")}
-						onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}
-						aria-label="번호 목록"
-					>
-						<ListOrdered className="size-4" />
-					</Toggle>
-					<Toggle
-						size="sm"
-						pressed={editor.isActive("taskList")}
-						onPressedChange={() => editor.chain().focus().toggleTaskList().run()}
-						aria-label="체크리스트"
-						title="체크리스트"
-					>
-						<ListChecks className="size-4" />
-					</Toggle>
+					{/* 목록 — 네이버식 드롭다운 */}
+					<Popover>
+						<PopoverTrigger
+							render={
+								<Button
+									type="button"
+									variant="ghost"
+									className="h-9 gap-1 px-2"
+									aria-label="목록"
+									title="목록"
+								>
+									<List className="size-4" />
+									<ChevronDown className="size-3 text-muted-foreground" />
+								</Button>
+							}
+						/>
+						<PopoverContent align="start" className="w-40 p-1">
+							<button
+								type="button"
+								onClick={() => editor.chain().focus().toggleBulletList().run()}
+								className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted ${editor.isActive("bulletList") ? "bg-muted font-medium" : ""}`}
+							>
+								<List className="size-4" /> 불릿 목록
+							</button>
+							<button
+								type="button"
+								onClick={() => editor.chain().focus().toggleOrderedList().run()}
+								className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted ${editor.isActive("orderedList") ? "bg-muted font-medium" : ""}`}
+							>
+								<ListOrdered className="size-4" /> 번호 목록
+							</button>
+							<button
+								type="button"
+								onClick={() => editor.chain().focus().toggleTaskList().run()}
+								className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted ${editor.isActive("taskList") ? "bg-muted font-medium" : ""}`}
+							>
+								<ListChecks className="size-4" /> 체크리스트
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									const c = editor.chain().focus();
+									if (editor.isActive("bulletList")) c.toggleBulletList().run();
+									else if (editor.isActive("orderedList")) c.toggleOrderedList().run();
+									else if (editor.isActive("taskList")) c.toggleTaskList().run();
+								}}
+								className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-muted-foreground text-sm hover:bg-muted"
+							>
+								<Ban className="size-4" /> 목록 없음
+							</button>
+						</PopoverContent>
+					</Popover>
 					<Button
 						type="button"
 						variant="ghost"
