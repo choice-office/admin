@@ -85,8 +85,20 @@ export const FileEmbed = Node.create({
 		return [{ tag: "div[data-file-embed]" }];
 	},
 
-	renderHTML({ HTMLAttributes }) {
-		return ["div", mergeAttributes(HTMLAttributes, { "data-file-embed": "" })];
+	// 직렬화 = 자체 완결형 앵커 카드(공개 홈페이지 .prose·미리보기가 JS 없이 렌더).
+	// 편집 중에는 addNodeView(FileEmbedView)가 대신 그려지고, 저장/재파싱은 data-* 속성으로 왕복.
+	renderHTML({ node, HTMLAttributes }) {
+		const href = (node.attrs.href as string) || "";
+		const name = (node.attrs.name as string) || "첨부파일";
+		return [
+			"div",
+			mergeAttributes(HTMLAttributes, { "data-file-embed": "" }),
+			[
+				"a",
+				{ href, target: "_blank", rel: "noopener noreferrer", class: "file-embed-link" },
+				`📎 ${name}`,
+			],
+		];
 	},
 
 	addCommands() {

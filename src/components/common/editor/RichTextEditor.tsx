@@ -22,6 +22,7 @@ import {
 	ChevronDown,
 	Code,
 	ExternalLink,
+	Heading as HeadingIcon,
 	Highlighter,
 	ImageIcon,
 	IndentDecrease,
@@ -276,7 +277,13 @@ export const RichTextEditor = ({
 		try {
 			for (const file of files) {
 				const url = await up(file);
-				editorRef.current?.chain().focus().setImage({ src: url }).run();
+				// 이미지 설명(alt) — 검색·접근성용. 비워도 삽입은 하되 경고(작성자 판단).
+				const alt = (
+					window.prompt("이미지 설명(alt)을 입력하세요. 검색·접근성에 사용됩니다.", "") ?? ""
+				).trim();
+				if (!alt)
+					toast.warning("이미지 설명(alt)이 비어 있습니다. 검색·접근성을 위해 추가를 권장합니다.");
+				editorRef.current?.chain().focus().setImage({ src: url, alt }).run();
 			}
 		} catch {
 			toast.error("이미지 업로드에 실패했습니다.");
@@ -484,6 +491,47 @@ export const RichTextEditor = ({
 					>
 						<Redo2 className="size-4" />
 					</Button>
+					<Divider />
+					{/* 문단 스타일 — 본문/제목2/제목3 (검색·AI는 진짜 h2/h3만 인식) */}
+					<Popover>
+						<PopoverTrigger
+							render={
+								<Button
+									type="button"
+									variant="ghost"
+									className="h-9 gap-1 px-2"
+									aria-label="문단 스타일"
+									title="제목/본문"
+								>
+									<HeadingIcon className="size-4" />
+									<ChevronDown className="size-3 text-muted-foreground" />
+								</Button>
+							}
+						/>
+						<PopoverContent align="start" className="w-36 p-1">
+							<button
+								type="button"
+								onClick={() => editor.chain().focus().setParagraph().run()}
+								className={`flex w-full items-center rounded-md px-2 py-1.5 text-[15px] hover:bg-muted ${editor.isActive("paragraph") ? "bg-muted font-medium" : ""}`}
+							>
+								본문
+							</button>
+							<button
+								type="button"
+								onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+								className={`flex w-full items-center rounded-md px-2 py-1.5 font-bold text-[19px] hover:bg-muted ${editor.isActive("heading", { level: 2 }) ? "bg-muted" : ""}`}
+							>
+								제목 2
+							</button>
+							<button
+								type="button"
+								onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+								className={`flex w-full items-center rounded-md px-2 py-1.5 font-bold text-[16px] hover:bg-muted ${editor.isActive("heading", { level: 3 }) ? "bg-muted" : ""}`}
+							>
+								제목 3
+							</button>
+						</PopoverContent>
+					</Popover>
 					<Divider />
 					{/* 글씨체 */}
 					<Popover>
