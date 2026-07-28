@@ -39,6 +39,7 @@ function BlogPage() {
 	const [searchInput, setSearchInput] = useState("");
 	const [query, setQuery] = useState("");
 	const [isSearching, setIsSearching] = useState(false);
+	const [featuredOnly, setFeaturedOnly] = useState(false); // 대표글만 보기
 	const navigate = useNavigate({ from: Route.fullPath });
 	const { page } = Route.useSearch();
 	const goPage = (n: number) => navigate({ search: { page: n } });
@@ -73,13 +74,14 @@ function BlogPage() {
 		if (await setFeatured(post.id, !post.is_featured, nextOrder)) await refetch();
 	};
 
-	// 검색 필터(적용값 query 기준) — 제목·slug·카테고리명 대상. "조회" 클릭 시에만 갱신.
+	// 필터 — 검색(적용값 query, "조회" 클릭 시 갱신) + 대표글만 보기.
 	const q = query.trim().toLowerCase();
-	const filtered = q
-		? posts.filter((p) =>
-				`${p.title} ${p.slug} ${categoryName(p.category_id)}`.toLowerCase().includes(q),
-			)
-		: posts;
+	let filtered = posts;
+	if (q)
+		filtered = filtered.filter((p) =>
+			`${p.title} ${p.slug} ${categoryName(p.category_id)}`.toLowerCase().includes(q),
+		);
+	if (featuredOnly) filtered = filtered.filter((p) => p.is_featured);
 
 	// 페이지네이션(클라이언트) — 목록/검색으로 페이지가 줄면 safePage로 보정
 	const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -126,7 +128,7 @@ function BlogPage() {
 			<div className="mb-5 flex items-start justify-between gap-4">
 				<div>
 					<h2 className="m-0 mb-1.5 font-bold text-2xl text-foreground tracking-[-0.02em]">
-						블로그 · 공지 관리
+						블로그 관리
 					</h2>
 					<p className="m-0 text-[15px] text-muted-foreground">
 						글을 작성하고 발행합니다. 발행한 글은 홈페이지 블로그에 노출되고, ★로 지정한 대표글 최대
@@ -162,6 +164,22 @@ function BlogPage() {
 						초기화
 					</Button>
 				)}
+				<button
+					type="button"
+					onClick={() => {
+						setFeaturedOnly((v) => !v);
+						goPage(1);
+					}}
+					className={cn(
+						"ml-auto flex h-10 shrink-0 items-center gap-1.5 rounded-md border px-3 text-sm transition-colors",
+						featuredOnly
+							? "border-primary bg-primary font-bold text-primary-foreground"
+							: "border-border bg-card font-medium text-foreground hover:bg-muted",
+					)}
+				>
+					<Star size={15} fill={featuredOnly ? "currentColor" : "none"} />
+					대표글만
+				</button>
 			</div>
 
 			<div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
@@ -173,10 +191,10 @@ function BlogPage() {
 				>
 					<div>제목</div>
 					<div>카테고리</div>
-					<div>상태</div>
-					<div>대표</div>
-					<div>수정일</div>
-					<div className="text-right">관리</div>
+					<div className="md:text-center">상태</div>
+					<div className="md:text-center">대표</div>
+					<div className="md:text-center">수정일</div>
+					<div className="md:text-center">관리</div>
 				</div>
 
 				<div className="min-h-0 flex-1 overflow-y-auto">
@@ -188,11 +206,11 @@ function BlogPage() {
 					) : filtered.length === 0 ? (
 						<div className="px-5 py-14 text-center">
 							<div className="font-medium text-[15px] text-foreground">
-								{query ? "검색 결과가 없습니다" : "작성된 글이 없습니다"}
+								{query || featuredOnly ? "조건에 맞는 글이 없습니다" : "작성된 글이 없습니다"}
 							</div>
 							<div className="mt-1.5 text-muted-foreground text-sm">
-								{query
-									? "다른 검색어로 다시 시도해 보세요."
+								{query || featuredOnly
+									? "검색어나 필터를 바꿔 다시 시도해 보세요."
 									: '"새 글" 버튼으로 첫 글을 작성해 보세요.'}
 							</div>
 						</div>
@@ -227,7 +245,7 @@ function BlogPage() {
 									{categoryName(p.category_id)}
 								</div>
 								{/* 상태 — 데스크탑 열 */}
-								<div className="hidden md:block">
+								<div className="hidden md:block md:text-center">
 									{p.status === "published" ? (
 										<Badge variant="primary">{STATUS_LABEL[p.status]}</Badge>
 									) : (
@@ -241,7 +259,7 @@ function BlogPage() {
 										title={p.is_featured ? "홈 대표글 해제" : "홈 대표글로 선택"}
 										onClick={() => handleToggleFeatured(p)}
 										className={cn(
-											"flex h-8 items-center gap-1 rounded-md px-2 text-sm",
+											"flex h-8 items-center gap-1 rounded-md px-2 text-sm md:justify-self-center",
 											p.is_featured
 												? "font-semibold text-primary"
 												: "text-muted-foreground hover:bg-muted",
@@ -250,10 +268,10 @@ function BlogPage() {
 										<Star size={16} fill={p.is_featured ? "currentColor" : "none"} />
 										{p.is_featured && p.featured_order ? <span>{p.featured_order}</span> : null}
 									</button>
-									<div className="text-[13px] text-muted-foreground md:text-sm">
+									<div className="text-[13px] text-muted-foreground md:text-center md:text-sm">
 										{formatDateCompact(p.updated_at)}
 									</div>
-									<div className="flex items-center justify-end gap-1">
+									<div className="flex items-center justify-end gap-1 md:justify-center">
 										<button
 											type="button"
 											title="수정"

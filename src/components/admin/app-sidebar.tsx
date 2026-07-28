@@ -18,7 +18,7 @@ export const NAV_ITEMS: NavItem[] = [
 	{ to: "/dashboard", label: "대시보드", icon: LayoutDashboard },
 	{ to: "/inquiries", label: "상담 문의", icon: MessageSquare },
 	{ to: "/reviews", label: "후기 관리", icon: Star },
-	{ to: "/blog", label: "블로그 · 공지", icon: FileText },
+	{ to: "/blog", label: "블로그", icon: FileText },
 	{ to: "/settings", label: "설정", icon: Settings },
 ];
 

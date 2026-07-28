@@ -88,7 +88,7 @@ function DashboardPage() {
 			icon: MessageSquare,
 		},
 		{ label: "처리 대기", value: stats?.pending, sub: "회신이 필요한 건", icon: TrendingUp },
-		{ label: "게시 글", value: stats?.posts, sub: "블로그 · 공지", icon: FileText },
+		{ label: "게시 글", value: stats?.posts, sub: "블로그", icon: FileText },
 		{ label: "노출 후기", value: stats?.reviews, sub: "홈페이지 노출 중", icon: Star },
 	];
 
