@@ -18,7 +18,8 @@ export const Route = createFileRoute("/_app/blog")({
 
 // md+ 에서만 테이블 그리드(헤더/행 공유). 모바일은 카드 스택.
 const GRID = "md:grid md:grid-cols-[2.4fr_1fr_0.7fr_0.6fr_0.9fr_auto] md:items-center md:gap-3";
-const MAX_FEATURED = 3;
+// 홈 "비자 정보·소식" 그리드가 4칸이라 대표글 상한도 4로 맞춘다(부족분은 홈이 최신글로 자동 채움).
+const MAX_FEATURED = 4;
 const PAGE_SIZE = 10;
 
 const STATUS_LABEL: Record<PostStatus, string> = {
@@ -132,7 +133,7 @@ function BlogPage() {
 					</h2>
 					<p className="m-0 text-[15px] text-muted-foreground">
 						글을 작성하고 발행합니다. 발행한 글은 홈페이지 블로그에 노출되고, ★로 지정한 대표글 최대
-						3개가 홈 화면에 보입니다.
+						4개가 홈 화면에 보입니다. 지정한 개수가 부족하면 최신글로 자동 채워집니다.
 					</p>
 				</div>
 				<Button variant="primary" iconStart={<Plus size={18} />} onClick={() => openEditor(null)}>
