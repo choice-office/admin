@@ -63,7 +63,7 @@ function ReviewsPage() {
 				</div>
 			) : (
 				<>
-					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+					<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
 						{pageItems.map((r) => (
 							<div
 								key={r.id}
@@ -74,15 +74,15 @@ function ReviewsPage() {
 								style={{ background: "#fbfaf7", borderTop: "2px solid var(--color-accent)" }}
 							>
 								{/* 업무분야 뱃지 */}
-								<div className="flex items-center gap-1.5 px-4 pt-3 font-semibold text-[12px] text-[var(--color-accent)]">
+								<div className="flex items-center gap-1.5 px-3 pt-2.5 font-semibold text-[11px] text-[var(--color-accent)]">
 									<span aria-hidden>❝</span>
 									<span className="truncate">{r.tag || "—"}</span>
 								</div>
 
-								{/* 이미지 창 — 홈 그리드와 동일 비율(4/3.4) + 하단 페이드 */}
+								{/* 이미지 창 — 카드 축소를 위해 높이 낮춤(4/4.4) + 하단 페이드 */}
 								<div
-									className="relative mx-4 mt-2.5 overflow-hidden border border-border"
-									style={{ aspectRatio: "4 / 5", background: "#e9edf1" }}
+									className="relative mx-3 mt-2 overflow-hidden border border-border"
+									style={{ aspectRatio: "4 / 4.4", background: "#e9edf1" }}
 								>
 									<img
 										src={r.src}
@@ -100,13 +100,13 @@ function ReviewsPage() {
 
 								{/* 한마디 */}
 								<p
-									className="px-4 pt-3 font-semibold text-[14px] text-[var(--text-heading)] leading-snug"
+									className="px-3 pt-2.5 font-semibold text-[13px] text-[var(--text-heading)] leading-snug"
 									style={{ wordBreak: "keep-all" }}
 								>
 									"{r.quote}"
 								</p>
 								{/* 작성자 */}
-								<p className="px-4 pt-1.5 pb-1 text-[12px] text-muted-foreground">
+								<p className="px-3 pt-1 pb-1 text-[11px] text-muted-foreground">
 									— {r.meta || "익명"}
 								</p>
 
