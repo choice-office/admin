@@ -103,7 +103,7 @@ function DashboardPage() {
 				</p>
 			</div>
 
-			<div className="mb-[22px] grid grid-cols-4 gap-[18px]">
+			<div className="mb-[22px] grid grid-cols-2 gap-3 sm:gap-[18px] xl:grid-cols-4">
 				{cards.map((c) => {
 					const Icon = c.icon;
 					return (

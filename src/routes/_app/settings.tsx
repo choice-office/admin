@@ -66,12 +66,17 @@ function SettingsPage() {
 			<div className="flex flex-col gap-4">
 				<Card>
 					<CardTitle>계정</CardTitle>
-					<div className="mt-4 flex items-center justify-between gap-4 rounded-md bg-muted px-4 py-3.5">
-						<div>
+					<div className="mt-4 flex flex-col gap-3 rounded-md bg-muted px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+						<div className="min-w-0">
 							<div className="text-[13px] text-muted-foreground">로그인 계정</div>
-							<div className="mt-0.5 font-medium text-foreground">{email || "—"}</div>
+							<div className="mt-0.5 truncate font-medium text-foreground">{email || "—"}</div>
 						</div>
-						<Button variant="outline" size="sm" onClick={handleLogout}>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={handleLogout}
+							className="self-start sm:self-auto"
+						>
 							로그아웃
 						</Button>
 					</div>

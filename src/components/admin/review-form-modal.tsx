@@ -93,7 +93,7 @@ export const ReviewFormModal = ({ review, onClose, onSubmit }: Props) => {
 			role="dialog"
 			aria-modal="true"
 			aria-label={review ? "후기 수정" : "새 후기 작성"}
-			className="fixed inset-0 z-[100] flex items-center justify-center p-6"
+			className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6"
 		>
 			<button
 				type="button"
@@ -102,7 +102,7 @@ export const ReviewFormModal = ({ review, onClose, onSubmit }: Props) => {
 				className="absolute inset-0 cursor-default border-none bg-[rgba(34,29,22,0.45)] p-0"
 			/>
 			<div className="relative z-[1] max-h-[88vh] w-full max-w-[560px] overflow-y-auto rounded-lg border border-border bg-card shadow-[var(--shadow-md)]">
-				<div className="sticky top-0 flex items-center justify-between gap-3 border-border border-b bg-card px-6 py-5">
+				<div className="sticky top-0 flex items-center justify-between gap-3 border-border border-b bg-card px-4 py-4 sm:px-6 sm:py-5">
 					<h3 className="m-0 font-bold text-foreground text-xl tracking-[-0.02em]">
 						{review ? "후기 수정" : "새 후기 작성"}
 					</h3>
@@ -116,7 +116,7 @@ export const ReviewFormModal = ({ review, onClose, onSubmit }: Props) => {
 					</button>
 				</div>
 
-				<div className="px-6 py-5">
+				<div className="px-4 py-5 sm:px-6">
 					<div className="mb-[18px]">
 						<Label htmlFor="rv-image">후기 이미지 (마스킹된 카톡·이메일 캡처)</Label>
 						{draft.src && (

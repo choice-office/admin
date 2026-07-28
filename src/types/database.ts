@@ -107,6 +107,8 @@ export type Database = {
 					meta_description: string | null;
 					canonical_url: string | null;
 					tags: string[];
+					is_featured: boolean;
+					featured_order: number | null;
 				};
 				Insert: {
 					id?: string;
@@ -127,6 +129,8 @@ export type Database = {
 					meta_description?: string | null;
 					canonical_url?: string | null;
 					tags?: string[];
+					is_featured?: boolean;
+					featured_order?: number | null;
 				};
 				Update: {
 					slug?: string;
@@ -146,6 +150,8 @@ export type Database = {
 					meta_description?: string | null;
 					canonical_url?: string | null;
 					tags?: string[];
+					is_featured?: boolean;
+					featured_order?: number | null;
 					updated_at?: string;
 				};
 				Relationships: [];

@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Star, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { BlogEditor } from "@/components/admin/blog-editor";
 import { Badge, Button } from "@/components/ui/ds";
-import { deletePost, getAuthors, getCategories, listPosts } from "@/lib/blog";
+import { PaginationBar } from "@/components/ui/pagination-bar";
+import { deletePost, getAuthors, getCategories, listPosts, setFeatured } from "@/lib/blog";
 import { formatDateCompact } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { BlogAuthor, BlogCategory, BlogPost, PostStatus } from "@/types/database";
@@ -15,7 +16,9 @@ export const Route = createFileRoute("/_app/blog")({
 	}),
 });
 
-const GRID = "grid-cols-[2.4fr_1fr_0.8fr_1fr_auto]";
+// md+ 에서만 테이블 그리드(헤더/행 공유). 모바일은 카드 스택.
+const GRID = "md:grid md:grid-cols-[2.4fr_1fr_0.7fr_0.6fr_0.9fr_auto] md:items-center md:gap-3";
+const MAX_FEATURED = 3;
 const PAGE_SIZE = 10;
 
 const STATUS_LABEL: Record<PostStatus, string> = {
@@ -52,6 +55,20 @@ function BlogPage() {
 	const categoryName = (id: string | null): string =>
 		categories.find((c) => c.id === id)?.name ?? "—";
 
+	// 홈 대표글(최대 3개) 지정/해제. 지정 시 featured_order = 기존 최대 +1.
+	const featuredCount = posts.filter((p) => p.is_featured).length;
+	const handleToggleFeatured = async (post: BlogPost) => {
+		if (!post.is_featured && featuredCount >= MAX_FEATURED) {
+			alert(
+				`홈 대표글은 최대 ${MAX_FEATURED}개까지 선택할 수 있습니다. 다른 글을 먼저 해제해 주세요.`,
+			);
+			return;
+		}
+		const orders = posts.filter((p) => p.is_featured).map((p) => p.featured_order ?? 0);
+		const nextOrder = post.is_featured ? null : Math.max(0, ...orders) + 1;
+		if (await setFeatured(post.id, !post.is_featured, nextOrder)) await refetch();
+	};
+
 	// 페이지네이션(클라이언트) — 목록 삭제로 페이지가 줄면 safePage로 보정
 	const totalPages = Math.max(1, Math.ceil(posts.length / PAGE_SIZE));
 	const safePage = Math.min(page, totalPages);
@@ -85,7 +102,8 @@ function BlogPage() {
 						블로그 · 공지 관리
 					</h2>
 					<p className="m-0 text-[15px] text-muted-foreground">
-						글을 작성하고 발행합니다. 발행한 글은 홈페이지 블로그에 노출됩니다.
+						글을 작성하고 발행합니다. 발행한 글은 홈페이지 블로그에 노출되고, ★로 지정한 대표글 최대
+						3개가 홈 화면에 보입니다.
 					</p>
 				</div>
 				<Button variant="primary" iconStart={<Plus size={18} />} onClick={() => openEditor(null)}>
@@ -96,13 +114,14 @@ function BlogPage() {
 			<div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
 				<div
 					className={cn(
-						"grid gap-3 border-border border-b bg-muted px-5 py-3 font-semibold text-[13px] text-muted-foreground",
+						"hidden border-border border-b bg-muted px-5 py-3 font-semibold text-[13px] text-muted-foreground",
 						GRID,
 					)}
 				>
 					<div>제목</div>
 					<div>카테고리</div>
 					<div>상태</div>
+					<div>대표</div>
 					<div>수정일</div>
 					<div className="text-right">관리</div>
 				</div>
@@ -122,44 +141,76 @@ function BlogPage() {
 							<div
 								key={p.id}
 								className={cn(
-									"grid items-center gap-3 border-border border-b px-5 py-3.5 last:border-b-0",
+									"flex flex-col gap-2 border-border border-b px-4 py-3.5 last:border-b-0 md:px-5",
 									GRID,
 								)}
 							>
-								<div className="min-w-0">
-									<div className="truncate font-medium text-foreground">
-										{p.title || "(제목 없음)"}
+								{/* 제목 + (모바일) 상태 */}
+								<div className="flex items-start justify-between gap-2 md:contents">
+									<div className="min-w-0">
+										<div className="truncate font-medium text-foreground">
+											{p.title || "(제목 없음)"}
+										</div>
+										<div className="mt-0.5 truncate text-[13px] text-muted-foreground">
+											/{p.slug}
+										</div>
 									</div>
-									<div className="mt-0.5 truncate text-[13px] text-muted-foreground">/{p.slug}</div>
+									<div className="shrink-0 md:hidden">
+										{p.status === "published" ? (
+											<Badge variant="primary">{STATUS_LABEL[p.status]}</Badge>
+										) : (
+											<Badge variant="outline">{STATUS_LABEL[p.status]}</Badge>
+										)}
+									</div>
 								</div>
-								<div className="text-[var(--text-body)] text-sm">{categoryName(p.category_id)}</div>
-								<div>
+								<div className="text-[13px] text-muted-foreground md:text-[var(--text-body)] md:text-sm">
+									{categoryName(p.category_id)}
+								</div>
+								{/* 상태 — 데스크탑 열 */}
+								<div className="hidden md:block">
 									{p.status === "published" ? (
 										<Badge variant="primary">{STATUS_LABEL[p.status]}</Badge>
 									) : (
 										<Badge variant="outline">{STATUS_LABEL[p.status]}</Badge>
 									)}
 								</div>
-								<div className="text-muted-foreground text-sm">
-									{formatDateCompact(p.updated_at)}
-								</div>
-								<div className="flex items-center justify-end gap-1">
+								{/* 대표 · 수정일 · 관리 (모바일: 한 줄 푸터 / 데스크탑: 개별 열) */}
+								<div className="flex items-center justify-between gap-2 md:contents">
 									<button
 										type="button"
-										title="수정"
-										onClick={() => openEditor(p)}
-										className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
+										title={p.is_featured ? "홈 대표글 해제" : "홈 대표글로 선택"}
+										onClick={() => handleToggleFeatured(p)}
+										className={cn(
+											"flex h-8 items-center gap-1 rounded-md px-2 text-sm",
+											p.is_featured
+												? "font-semibold text-primary"
+												: "text-muted-foreground hover:bg-muted",
+										)}
 									>
-										<Pencil size={16} />
+										<Star size={16} fill={p.is_featured ? "currentColor" : "none"} />
+										{p.is_featured && p.featured_order ? <span>{p.featured_order}</span> : null}
 									</button>
-									<button
-										type="button"
-										title="삭제"
-										onClick={() => setConfirmId(p.id)}
-										className="flex h-9 w-9 items-center justify-center rounded-md text-destructive hover:bg-destructive/10"
-									>
-										<Trash2 size={16} />
-									</button>
+									<div className="text-[13px] text-muted-foreground md:text-sm">
+										{formatDateCompact(p.updated_at)}
+									</div>
+									<div className="flex items-center justify-end gap-1">
+										<button
+											type="button"
+											title="수정"
+											onClick={() => openEditor(p)}
+											className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
+										>
+											<Pencil size={16} />
+										</button>
+										<button
+											type="button"
+											title="삭제"
+											onClick={() => setConfirmId(p.id)}
+											className="flex h-9 w-9 items-center justify-center rounded-md text-destructive hover:bg-destructive/10"
+										>
+											<Trash2 size={16} />
+										</button>
+									</div>
 								</div>
 							</div>
 						))
@@ -168,39 +219,12 @@ function BlogPage() {
 			</div>
 
 			{/* 페이지네이션 — 1페이지여도 항상 표시 */}
-			<div className="mt-4 flex items-center justify-center gap-1.5">
-				<button
-					type="button"
-					disabled={safePage <= 1}
-					onClick={() => goPage(safePage - 1)}
-					className="flex h-9 min-w-9 items-center justify-center rounded-md border border-border px-2 text-foreground text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
-				>
-					이전
-				</button>
-				{Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-					<button
-						key={n}
-						type="button"
-						onClick={() => goPage(n)}
-						className={cn(
-							"flex h-9 min-w-9 items-center justify-center rounded-md border px-2 text-sm",
-							n === safePage
-								? "border-primary bg-primary font-bold text-primary-foreground"
-								: "border-border text-foreground hover:bg-muted",
-						)}
-					>
-						{n}
-					</button>
-				))}
-				<button
-					type="button"
-					disabled={safePage >= totalPages}
-					onClick={() => goPage(safePage + 1)}
-					className="flex h-9 min-w-9 items-center justify-center rounded-md border border-border px-2 text-foreground text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
-				>
-					다음
-				</button>
-			</div>
+			<PaginationBar
+				page={safePage}
+				totalPages={totalPages}
+				onPageChange={goPage}
+				className="mt-4"
+			/>
 
 			{confirmId && (
 				<div

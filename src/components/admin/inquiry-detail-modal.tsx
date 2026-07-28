@@ -44,7 +44,7 @@ export const InquiryDetailModal = ({ contact, onClose, onSave }: Props) => {
 			role="dialog"
 			aria-modal="true"
 			aria-label="상담 상세"
-			className="fixed inset-0 z-[100] flex items-center justify-center p-6"
+			className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6"
 		>
 			<button
 				type="button"
@@ -53,7 +53,7 @@ export const InquiryDetailModal = ({ contact, onClose, onSave }: Props) => {
 				className="absolute inset-0 cursor-default border-none bg-[rgba(34,29,22,0.45)] p-0"
 			/>
 			<div className="relative z-[1] max-h-[88vh] w-full max-w-[560px] overflow-y-auto rounded-lg border border-border bg-card shadow-[var(--shadow-md)]">
-				<div className="sticky top-0 flex items-center justify-between gap-3 border-border border-b bg-card px-6 py-5">
+				<div className="sticky top-0 flex items-center justify-between gap-3 border-border border-b bg-card px-4 py-4 sm:px-6 sm:py-5">
 					<div>
 						<h3 className="m-0 font-bold text-foreground text-xl tracking-[-0.02em]">상담 상세</h3>
 						<div className="mt-1 text-[13px] text-muted-foreground">
@@ -70,7 +70,7 @@ export const InquiryDetailModal = ({ contact, onClose, onSave }: Props) => {
 					</button>
 				</div>
 
-				<div className="px-6 py-5">
+				<div className="px-4 py-5 sm:px-6">
 					<div className="mb-[18px] border-border border-b pb-2">
 						<InfoRow label="의뢰인" value={contact.name} />
 						<InfoRow label="연락처" value={contact.phone} />

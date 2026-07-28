@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { InquiryDetailModal } from "@/components/admin/inquiry-detail-modal";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { Input } from "@/components/ui/ds";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import { useContacts } from "@/hooks/use-contacts";
 import { consultLabel, STATUS_META, STATUS_ORDER } from "@/lib/contacts";
 import { formatDateCompact } from "@/lib/format";
@@ -24,8 +25,8 @@ const PERIODS = [
 type PeriodKey = (typeof PERIODS)[number]["key"];
 
 const PAGE_SIZE = 10;
-// 테이블 컬럼 비율 — 헤더/행이 동일 그리드를 공유
-const GRID = "grid-cols-[1.3fr_1.2fr_1.4fr_0.8fr_1fr]";
+// md+ 에서만 테이블 그리드(헤더/행 공유). 모바일은 카드 스택(flex-col).
+const GRID = "md:grid md:grid-cols-[1.3fr_1.2fr_1.4fr_0.8fr_1fr] md:items-center md:gap-3";
 
 function InquiriesPage() {
 	const { contacts, isLoading, updateContact } = useContacts();
@@ -125,7 +126,7 @@ function InquiriesPage() {
 						</option>
 					))}
 				</select>
-				<div className="relative w-60">
+				<div className="relative w-full sm:w-60">
 					<span className="absolute top-1/2 left-3 flex -translate-y-1/2 text-muted-foreground">
 						<Search size={17} />
 					</span>
@@ -145,7 +146,7 @@ function InquiriesPage() {
 			<div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
 				<div
 					className={cn(
-						"grid gap-3 border-border border-b bg-muted px-5 py-3 font-semibold text-[13px] text-muted-foreground",
+						"hidden border-border border-b bg-muted px-5 py-3 font-semibold text-[13px] text-muted-foreground",
 						GRID,
 					)}
 				>
@@ -177,19 +178,26 @@ function InquiriesPage() {
 								type="button"
 								onClick={() => setSelectedId(c.id)}
 								className={cn(
-									"grid w-full items-center gap-3 border-border border-b px-5 py-3.5 text-left transition-colors hover:bg-muted",
+									"flex w-full flex-col gap-1.5 border-border border-b px-4 py-3.5 text-left transition-colors hover:bg-muted md:px-5",
 									GRID,
 								)}
 							>
-								<div className="font-medium text-foreground">{c.name}</div>
+								{/* 의뢰인 + (모바일) 상태 */}
+								<div className="flex items-center justify-between gap-2 md:block">
+									<span className="font-medium text-foreground">{c.name}</span>
+									<span className="md:hidden">
+										<StatusBadge status={c.status} />
+									</span>
+								</div>
 								<div className="text-[var(--text-body)] text-sm">{c.phone}</div>
 								<div className="text-[var(--text-body)] text-sm">
 									{consultLabel(c.consult_field)}
 								</div>
-								<div>
+								{/* 상태 — 데스크탑 열 */}
+								<div className="hidden md:block">
 									<StatusBadge status={c.status} />
 								</div>
-								<div className="text-muted-foreground text-sm">
+								<div className="text-[13px] text-muted-foreground md:text-sm">
 									{formatDateCompact(c.created_at)}
 								</div>
 							</button>
@@ -199,23 +207,12 @@ function InquiriesPage() {
 			</div>
 
 			{/* 페이지네이션 — 1페이지여도 항상 표시 */}
-			<div className="mt-5 flex justify-center gap-1.5">
-				{Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-					<button
-						key={n}
-						type="button"
-						onClick={() => setPage(n)}
-						className={cn(
-							"h-[38px] min-w-[38px] rounded-md border text-sm transition-colors",
-							n === current
-								? "border-primary bg-primary font-bold text-primary-foreground"
-								: "border-border bg-card font-medium text-[var(--text-body)] hover:bg-muted",
-						)}
-					>
-						{n}
-					</button>
-				))}
-			</div>
+			<PaginationBar
+				page={current}
+				totalPages={totalPages}
+				onPageChange={setPage}
+				className="mt-5"
+			/>
 
 			{selected && (
 				<InquiryDetailModal

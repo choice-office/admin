@@ -12,7 +12,7 @@ import type {
 // 공개 렌더/JSON-LD는 홈페이지(choice-homepage)가 담당. 여기선 작성·발행만.
 
 const POST_SELECT_BASE =
-	"id,slug,title,excerpt,content,cover_url,cover_alt,tldr,faq,sources,category_id,author_id,status,published_at,meta_title,meta_description,canonical_url,created_at,updated_at";
+	"id,slug,title,excerpt,content,cover_url,cover_alt,tldr,faq,sources,category_id,author_id,status,published_at,meta_title,meta_description,canonical_url,created_at,updated_at,is_featured,featured_order";
 // tags 컬럼은 마이그레이션 후에만 존재 → 포함 조회 실패 시 base로 폴백(마이그레이션 전에도 목록 정상)
 const POST_SELECT = `${POST_SELECT_BASE},tags`;
 
@@ -92,6 +92,23 @@ export const updatePost = async (id: string, patch: BlogPostUpdate): Promise<boo
 	}
 	if (error) {
 		console.error("글 수정 실패:", error.message);
+		return false;
+	}
+	return true;
+};
+
+// 홈 대표글 지정/해제 — updated_at은 건드리지 않아(목록 정렬 유지) 별도 함수로 둔다. 최대 3개는 UI에서 제어.
+export const setFeatured = async (
+	id: string,
+	isFeatured: boolean,
+	featuredOrder: number | null,
+): Promise<boolean> => {
+	const { error } = await supabase
+		.from("blog_posts")
+		.update({ is_featured: isFeatured, featured_order: featuredOrder })
+		.eq("id", id);
+	if (error) {
+		console.error("대표글 설정 실패:", error.message);
 		return false;
 	}
 	return true;

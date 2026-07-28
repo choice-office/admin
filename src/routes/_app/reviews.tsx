@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, Eye, EyeOff, Pencil, Plus, Trash2 } from "lucide-react";
+import { Eye, EyeOff, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { ReviewFormModal } from "@/components/admin/review-form-modal";
 import { Badge, Button } from "@/components/ui/ds";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import { useReviews } from "@/hooks/use-reviews";
 import { formatDateCompact } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -12,8 +13,8 @@ export const Route = createFileRoute("/_app/reviews")({
 	component: ReviewsPage,
 });
 
-// 홈페이지 그리드와 동일하게 페이지당 6개(1페이지여도 페이저 표시)
-const REVIEWS_PER_PAGE = 6;
+// 관리자 후기 목록 — 페이지당 8개(1페이지여도 페이저 표시)
+const REVIEWS_PER_PAGE = 8;
 
 function ReviewsPage() {
 	const { images, isLoading, createReview, updateReview, deleteReview } = useReviews();
@@ -153,45 +154,12 @@ function ReviewsPage() {
 					</div>
 
 					{/* 페이지네이션 — 1페이지여도 표시 */}
-					<nav
-						className="mt-7 flex items-center justify-center gap-1"
-						aria-label="후기 페이지 이동"
-					>
-						<button
-							type="button"
-							aria-label="이전 페이지"
-							disabled={current === 1}
-							onClick={() => setPage(current - 1)}
-							className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
-						>
-							<ChevronLeft size={18} />
-						</button>
-						{Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-							<button
-								type="button"
-								key={p}
-								aria-current={p === current ? "page" : undefined}
-								onClick={() => setPage(p)}
-								className={cn(
-									"flex h-9 min-w-9 items-center justify-center rounded-md px-2 font-medium text-sm transition-colors",
-									p === current
-										? "bg-primary text-primary-foreground"
-										: "text-muted-foreground hover:bg-muted",
-								)}
-							>
-								{p}
-							</button>
-						))}
-						<button
-							type="button"
-							aria-label="다음 페이지"
-							disabled={current === totalPages}
-							onClick={() => setPage(current + 1)}
-							className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
-						>
-							<ChevronRight size={18} />
-						</button>
-					</nav>
+					<PaginationBar
+						page={current}
+						totalPages={totalPages}
+						onPageChange={setPage}
+						className="mt-7"
+					/>
 				</>
 			)}
 
@@ -214,7 +182,7 @@ function ReviewsPage() {
 					role="dialog"
 					aria-modal="true"
 					aria-label="후기 삭제 확인"
-					className="fixed inset-0 z-[100] flex items-center justify-center p-6"
+					className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
 				>
 					<button
 						type="button"

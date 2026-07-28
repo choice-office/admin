@@ -160,9 +160,9 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 		}`;
 
 	return (
-		<div className="flex h-full flex-col">
+		<div className="flex h-full flex-col overflow-y-auto lg:overflow-hidden">
 			{/* 상단 바 — 목록으로 + 작성/미리보기 모드 토글 */}
-			<div className="mb-4 flex shrink-0 items-center justify-between gap-4">
+			<div className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-2">
 				<button
 					type="button"
 					onClick={onClose}
@@ -170,7 +170,7 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 				>
 					<ArrowLeft size={17} /> 목록으로
 				</button>
-				<div className="flex items-center gap-2.5">
+				<div className="flex flex-wrap items-center gap-2">
 					<div className="inline-flex rounded-md border border-border bg-card p-0.5">
 						<button
 							type="button"
@@ -198,13 +198,13 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 			)}
 
 			{/* 좌: 작성/미리보기(길게) · 우: 발행 설정 */}
-			<div className="grid min-h-0 flex-1 gap-5 lg:grid-cols-[1fr_360px]">
+			<div className="grid gap-5 lg:min-h-0 lg:flex-1 lg:grid-cols-[1fr_360px]">
 				<div className="flex min-h-0 flex-col">
 					{/* 작성 모드 — 제목 + 리치 에디터(항상 마운트 유지: 저장 시 HTML 읽기) */}
 					<div
 						className={
 							mode === "write"
-								? "flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card"
+								? "flex min-h-[60vh] flex-col overflow-hidden rounded-md border border-border bg-card lg:min-h-0 lg:flex-1"
 								: "hidden"
 						}
 					>
@@ -212,9 +212,9 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 							value={title}
 							onChange={(e) => handleTitleChange(e.target.value)}
 							placeholder="제목을 입력하세요"
-							className="w-full border-border border-b px-6 py-5 font-bold text-2xl text-foreground tracking-[-0.02em] outline-none placeholder:text-muted-foreground"
+							className="w-full border-border border-b px-4 py-4 font-bold text-foreground text-xl tracking-[-0.02em] outline-none placeholder:text-muted-foreground sm:px-6 sm:py-5 sm:text-2xl"
 						/>
-						<div className="min-h-0 flex-1 overflow-y-auto px-6 pb-5">
+						<div className="min-h-0 flex-1 overflow-y-auto px-4 pb-5 sm:px-6">
 							<RichTextEditor
 								ref={editorRef}
 								content={post?.content ?? ""}
@@ -229,7 +229,7 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 
 					{/* 미리보기 모드 — 홈페이지 노출 모습 */}
 					{mode === "preview" && (
-						<div className="min-h-0 flex-1 overflow-y-auto rounded-md border border-border bg-card px-8 py-8">
+						<div className="min-h-[60vh] overflow-y-auto rounded-md border border-border bg-card px-4 py-6 sm:px-8 sm:py-8 lg:min-h-0 lg:flex-1">
 							<h1 className="mb-5 font-bold text-[30px] text-foreground leading-tight tracking-[-0.02em]">
 								{title || "제목을 입력하세요"}
 							</h1>
@@ -250,7 +250,7 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 				</div>
 
 				{/* 우: 발행 설정(세로 스택) */}
-				<div className="flex min-h-0 flex-col gap-4 overflow-y-auto pr-1">
+				<div className="flex flex-col gap-4 pr-1 lg:min-h-0 lg:overflow-y-auto">
 					<div className="rounded-md border border-border bg-card p-5">
 						<div className="mb-3 font-bold text-foreground text-sm">기본</div>
 						<div className="mb-4">

@@ -53,7 +53,7 @@ function LoginPage() {
 	};
 
 	return (
-		<div className="flex min-h-screen items-center justify-center bg-muted p-6">
+		<div className="flex min-h-screen items-center justify-center bg-muted p-4 sm:p-6">
 			<div className="w-full max-w-[430px]">
 				<div className="mb-[26px] text-center">
 					<div className="mb-3 font-medium text-[var(--color-accent)] text-xs tracking-[0.22em]">
@@ -64,7 +64,7 @@ function LoginPage() {
 					</div>
 				</div>
 
-				<Card className="p-8">
+				<Card className="p-6 sm:p-8">
 					<h1 className="m-0 mb-1.5 font-bold text-[21px] text-foreground tracking-[-0.02em]">
 						관리자 로그인
 					</h1>
