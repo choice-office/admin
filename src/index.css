@@ -283,18 +283,23 @@ body {
 
 /* ── RichTextEditor(tool 레포 이식) 본문 스타일 — 네이버 블로그형(사진 + 글 스텝) ── */
 .rich-content {
-	font-size: 0.95rem;
-	line-height: 1.7;
+	font-size: 15px;
+	line-height: 1.85;
+	word-break: keep-all;
 }
 .rich-content h2 {
-	font-size: 1.4rem;
-	font-weight: 600;
-	margin: 1.2rem 0 0.5rem;
+	font-size: 1.5em;
+	font-weight: 700;
+	line-height: 1.35;
+	color: var(--text-heading);
+	margin: 1.9em 0 0.7em;
 }
 .rich-content h3 {
-	font-size: 1.15rem;
-	font-weight: 600;
-	margin: 0.9rem 0 0.4rem;
+	font-size: 1.25em;
+	font-weight: 700;
+	line-height: 1.4;
+	color: var(--text-heading);
+	margin: 1.6em 0 0.6em;
 }
 .rich-content ul {
 	list-style: disc;
@@ -326,20 +331,116 @@ body {
 	margin: 0;
 }
 .rich-content blockquote {
-	border-left: 3px solid var(--border);
-	padding-left: 0.8rem;
-	color: var(--muted-foreground);
-	margin: 0.5rem 0;
+	margin: 1.6em 0;
+	padding: 4px 20px;
+	border-left: 3px solid var(--color-primary);
+	background: var(--surface-subtle);
+	border-radius: 0 var(--radius) var(--radius) 0;
+	color: var(--text-muted);
 }
-/* 중앙 큰따옴표 인용(❝) — 에디터 본문·미리보기 모두 홈페이지 .prose .quote-center 와 동일하게 */
+/* ── 네이버 원문/에디터 인용·본문 클래스 — 발행본(.prose)과 동일 (작성·미리보기 공통 WYSIWYG) ── */
+/* 본문 가운데 정렬(네이버 기본) */
+.blog-preview .se-t,
+.rich-content .se-t {
+	text-align: center;
+	line-height: 1.9;
+	margin: 1.5em 0;
+	color: var(--text-body);
+}
+.blog-preview .se-q,
+.rich-content .se-q {
+	color: var(--text-heading);
+}
+/* 인용 - 밑줄형(좌측, 여는 따옴표, 하단 구분선) */
+.blog-preview .se-q-u,
+.rich-content .se-q-u {
+	margin: 2.6em 0 1.4em;
+	padding-bottom: 0.55em;
+	border-bottom: 1px solid var(--border-default);
+	font-size: 1.4em;
+	font-weight: 500;
+	line-height: 1.5;
+}
+.blog-preview .se-q-u::before,
+.rich-content .se-q-u::before {
+	content: "\201C";
+	display: block;
+	font-family: Georgia, "Times New Roman", serif;
+	font-size: 1.7em;
+	line-height: 0.5;
+	color: #c4c4c4;
+	margin-bottom: 0.1em;
+}
+/* 인용 - 가운데 큰따옴표형(se-q-c) */
+.blog-preview blockquote.se-q-c,
+.rich-content blockquote.se-q-c {
+	margin: 2.8em 0;
+	padding: 0;
+	border: none;
+	background: none;
+	border-radius: 0;
+	text-align: center;
+	font-size: 1.3em;
+	font-weight: 500;
+	line-height: 1.75;
+	color: var(--text-heading);
+}
+.blog-preview .se-q-c::before,
+.blog-preview .se-q-c::after,
+.rich-content .se-q-c::before,
+.rich-content .se-q-c::after {
+	content: "\201C";
+	display: block;
+	font-family: Georgia, "Times New Roman", serif;
+	font-size: 1.9em;
+	line-height: 0.4;
+	color: #c4c4c4;
+}
+.blog-preview .se-q-c::before,
+.rich-content .se-q-c::before {
+	margin-bottom: 0.35em;
+}
+.blog-preview .se-q-c::after,
+.rich-content .se-q-c::after {
+	content: "\201D";
+	margin-top: 0.4em;
+}
+/* 표 - 네이버 기본표(좌측 라벨열 회색) */
+.blog-preview table,
+.rich-content table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 1.5em 0;
+	font-size: 0.88em;
+}
+.blog-preview table th,
+.blog-preview table td,
+.rich-content table th,
+.rich-content table td {
+	border: 1px solid var(--border-default);
+	padding: 8px 13px;
+	text-align: left;
+	vertical-align: middle;
+	line-height: 1.5;
+}
+.blog-preview table th,
+.rich-content table th {
+	background: var(--surface-subtle);
+	font-weight: 700;
+	color: var(--text-heading);
+	width: 24%;
+	white-space: nowrap;
+}
+/* 가운데 큰따옴표 인용(quote-center, 에디터 툴바 인용 버튼) — 발행본과 동일 */
 .rich-content blockquote.quote-center,
 .blog-preview blockquote.quote-center {
+	margin: 1.8em 0;
 	border-left: none;
 	background: transparent;
 	border-radius: 0;
 	padding: 8px 0;
 	text-align: center;
-	color: inherit;
+	color: var(--text-body);
 }
 .rich-content blockquote.quote-center::before,
 .blog-preview blockquote.quote-center::before {
@@ -350,13 +451,24 @@ body {
 	color: var(--color-primary, var(--primary));
 	margin-bottom: 6px;
 }
+.blog-preview blockquote.quote-center p,
+.rich-content blockquote.quote-center p {
+	margin: 0.4em 0;
+}
+/* 짧은 가운데 구분선(hr.soft) */
+.blog-preview hr.soft,
+.rich-content hr.soft {
+	width: 120px;
+	margin-left: auto;
+	margin-right: auto;
+}
 .rich-content hr {
 	border: none;
 	border-top: 1px solid var(--border);
 	margin: 1.25rem 0;
 }
 .rich-content p {
-	margin: 0.5rem 0;
+	margin: 1.1em 0;
 }
 .rich-content a {
 	color: var(--color-primary);
@@ -410,8 +522,8 @@ body {
 
 /* ── 블로그 분할 미리보기 — 홈페이지 .prose 타이포그래피와 동일 톤(WYSIWYG) ── */
 .blog-preview {
-	font-size: 17px;
-	line-height: 1.8;
+	font-size: 15px;
+	line-height: 1.85;
 	color: var(--text-body);
 	word-break: keep-all;
 }
@@ -462,7 +574,7 @@ body {
 	margin: 1.6em 0;
 	padding: 4px 20px;
 	border-left: 3px solid var(--color-primary);
-	background: color-mix(in oklch, var(--color-primary) 6%, transparent);
+	background: var(--surface-subtle);
 	border-radius: 0 var(--radius) var(--radius) 0;
 	color: var(--text-muted);
 }

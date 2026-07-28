@@ -6,6 +6,13 @@ import { InquiryDetailModal } from "@/components/admin/inquiry-detail-modal";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { Input } from "@/components/ui/ds";
 import { PaginationBar } from "@/components/ui/pagination-bar";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { useContacts } from "@/hooks/use-contacts";
 import { consultLabel, STATUS_META, STATUS_ORDER } from "@/lib/contacts";
 import { formatDateCompact } from "@/lib/format";
@@ -112,20 +119,24 @@ function InquiriesPage() {
 					})}
 				</div>
 				<div className="flex-1" />
-				<select
+				<Select
 					value={period}
-					onChange={(e) => {
-						setPeriod(e.target.value as PeriodKey);
+					onValueChange={(v) => {
+						setPeriod((v ?? "all") as PeriodKey);
 						resetPage();
 					}}
-					className="h-[42px] rounded-md border border-border bg-card px-3 text-[var(--text-body)] text-sm"
 				>
-					{PERIODS.map((p) => (
-						<option key={p.key} value={p.key}>
-							{p.label}
-						</option>
-					))}
-				</select>
+					<SelectTrigger className="text-[var(--text-body)]" style={{ height: 42, width: 136 }}>
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						{PERIODS.map((p) => (
+							<SelectItem key={p.key} value={p.key}>
+								{p.label}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
 				<div className="relative w-full sm:w-60">
 					<span className="absolute top-1/2 left-3 flex -translate-y-1/2 text-muted-foreground">
 						<Search size={17} />

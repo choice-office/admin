@@ -4,7 +4,14 @@ import {
 	RichTextEditor,
 	type RichTextEditorHandle,
 } from "@/components/common/editor/RichTextEditor";
-import { Button, Input, Label, Select, Textarea } from "@/components/ui/ds";
+import { Button, Input, Label, Textarea } from "@/components/ui/ds";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import {
 	createPost,
 	htmlToText,
@@ -255,17 +262,17 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 						<div className="mb-3 font-bold text-foreground text-sm">기본</div>
 						<div className="mb-4">
 							<Label htmlFor="be-cat">카테고리</Label>
-							<Select
-								id="be-cat"
-								value={categoryId}
-								onChange={(e) => setCategoryId(e.target.value)}
-							>
-								<option value="">선택하세요</option>
-								{categories.map((c) => (
-									<option key={c.id} value={c.id}>
-										{c.name}
-									</option>
-								))}
+							<Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? "")}>
+								<SelectTrigger id="be-cat" className="w-full">
+									<SelectValue placeholder="선택하세요" />
+								</SelectTrigger>
+								<SelectContent>
+									{categories.map((c) => (
+										<SelectItem key={c.id} value={c.id}>
+											{c.name}
+										</SelectItem>
+									))}
+								</SelectContent>
 							</Select>
 						</div>
 						<div className="mb-4">
