@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Pencil, Plus, Star, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Plus, Search, Star, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { BlogEditor } from "@/components/admin/blog-editor";
-import { Badge, Button } from "@/components/ui/ds";
+import { Badge, Button, Input } from "@/components/ui/ds";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { deletePost, getAuthors, getCategories, listPosts, setFeatured } from "@/lib/blog";
 import { formatDateCompact } from "@/lib/format";
@@ -35,6 +35,10 @@ function BlogPage() {
 	const [editing, setEditing] = useState<BlogPost | null>(null);
 	const [isEditorOpen, setIsEditorOpen] = useState(false);
 	const [confirmId, setConfirmId] = useState<string | null>(null);
+	// 검색 — 입력값(searchInput)과 적용값(query) 분리: "조회"를 눌러야 실제 검색 실행
+	const [searchInput, setSearchInput] = useState("");
+	const [query, setQuery] = useState("");
+	const [isSearching, setIsSearching] = useState(false);
 	const navigate = useNavigate({ from: Route.fullPath });
 	const { page } = Route.useSearch();
 	const goPage = (n: number) => navigate({ search: { page: n } });
@@ -69,10 +73,33 @@ function BlogPage() {
 		if (await setFeatured(post.id, !post.is_featured, nextOrder)) await refetch();
 	};
 
-	// 페이지네이션(클라이언트) — 목록 삭제로 페이지가 줄면 safePage로 보정
-	const totalPages = Math.max(1, Math.ceil(posts.length / PAGE_SIZE));
+	// 검색 필터(적용값 query 기준) — 제목·slug·카테고리명 대상. "조회" 클릭 시에만 갱신.
+	const q = query.trim().toLowerCase();
+	const filtered = q
+		? posts.filter((p) =>
+				`${p.title} ${p.slug} ${categoryName(p.category_id)}`.toLowerCase().includes(q),
+			)
+		: posts;
+
+	// 페이지네이션(클라이언트) — 목록/검색으로 페이지가 줄면 safePage로 보정
+	const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
 	const safePage = Math.min(page, totalPages);
-	const pagePosts = posts.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+	const pagePosts = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+	// "조회" 클릭 → 짧은 로딩 후 검색 적용(1페이지로 이동). Enter 로도 실행.
+	const runSearch = () => {
+		setIsSearching(true);
+		setTimeout(() => {
+			setQuery(searchInput.trim());
+			goPage(1);
+			setIsSearching(false);
+		}, 300);
+	};
+	const resetSearch = () => {
+		setSearchInput("");
+		setQuery("");
+		goPage(1);
+	};
 
 	const openEditor = (post: BlogPost | null) => {
 		setEditing(post);
@@ -111,6 +138,32 @@ function BlogPage() {
 				</Button>
 			</div>
 
+			{/* 검색 — "조회" 버튼(또는 Enter)으로만 실행 */}
+			<div className="mb-4 flex items-center gap-2">
+				<div className="relative w-full sm:max-w-xs">
+					<span className="absolute top-1/2 left-3 flex -translate-y-1/2 text-muted-foreground">
+						<Search size={17} />
+					</span>
+					<Input
+						value={searchInput}
+						onChange={(e) => setSearchInput(e.target.value)}
+						onKeyDown={(e) => {
+							if (e.key === "Enter") runSearch();
+						}}
+						placeholder="제목·카테고리 검색"
+						className="pl-[38px]"
+					/>
+				</div>
+				<Button variant="primary" onClick={runSearch} disabled={isSearching}>
+					{isSearching ? "조회 중…" : "조회"}
+				</Button>
+				{query && (
+					<Button variant="outline" onClick={resetSearch} disabled={isSearching}>
+						초기화
+					</Button>
+				)}
+			</div>
+
 			<div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
 				<div
 					className={cn(
@@ -127,13 +180,20 @@ function BlogPage() {
 				</div>
 
 				<div className="min-h-0 flex-1 overflow-y-auto">
-					{isLoading ? (
-						<div className="px-5 py-14 text-center text-muted-foreground text-sm">불러오는 중…</div>
-					) : posts.length === 0 ? (
+					{isLoading || isSearching ? (
+						<div className="flex items-center justify-center gap-2 px-5 py-14 text-center text-muted-foreground text-sm">
+							<Loader2 size={16} className="animate-spin" />
+							{isSearching ? "검색 중…" : "불러오는 중…"}
+						</div>
+					) : filtered.length === 0 ? (
 						<div className="px-5 py-14 text-center">
-							<div className="font-medium text-[15px] text-foreground">작성된 글이 없습니다</div>
+							<div className="font-medium text-[15px] text-foreground">
+								{query ? "검색 결과가 없습니다" : "작성된 글이 없습니다"}
+							</div>
 							<div className="mt-1.5 text-muted-foreground text-sm">
-								"새 글" 버튼으로 첫 글을 작성해 보세요.
+								{query
+									? "다른 검색어로 다시 시도해 보세요."
+									: '"새 글" 버튼으로 첫 글을 작성해 보세요.'}
 							</div>
 						</div>
 					) : (
