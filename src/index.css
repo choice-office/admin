@@ -330,13 +330,33 @@ body {
 .rich-content ul[data-type="taskList"] li > div > p {
 	margin: 0;
 }
+/* 인용구 기본형 — 발행본(.prose blockquote)과 동일한 네이버 밑줄형 디자인 */
 .rich-content blockquote {
-	margin: 1.6em 0;
-	padding: 4px 20px;
-	border-left: 3px solid var(--color-primary);
-	background: var(--surface-subtle);
-	border-radius: 0 var(--radius) var(--radius) 0;
-	color: var(--text-muted);
+	margin: 2.6em 0 1.4em;
+	padding: 0 0 0.55em;
+	border: none;
+	border-bottom: 1px solid var(--border-default);
+	background: none;
+	border-radius: 0;
+	color: var(--text-heading);
+	font-size: 1.4em;
+	font-weight: 500;
+	line-height: 1.5;
+}
+.rich-content blockquote::before {
+	content: "\201C";
+	display: block;
+	font-family: Georgia, "Times New Roman", serif;
+	font-size: 1.7em;
+	line-height: 0.5;
+	color: #c4c4c4;
+	margin-bottom: 0.1em;
+}
+.rich-content blockquote p {
+	margin: 0;
+}
+.rich-content blockquote p + p {
+	margin-top: 0.4em;
 }
 /* ── 네이버 원문/에디터 인용·본문 클래스 — 발행본(.prose)과 동일 (작성·미리보기 공통 WYSIWYG) ── */
 /* 본문 가운데 정렬(네이버 기본) */
@@ -435,17 +455,21 @@ body {
 .rich-content blockquote.quote-center,
 .blog-preview blockquote.quote-center {
 	margin: 1.8em 0;
-	border-left: none;
+	border: none;
 	background: transparent;
 	border-radius: 0;
 	padding: 8px 0;
 	text-align: center;
 	color: var(--text-body);
+	font-size: 1em;
+	font-weight: 400;
+	line-height: inherit;
 }
 .rich-content blockquote.quote-center::before,
 .blog-preview blockquote.quote-center::before {
 	content: "\201C";
 	display: block;
+	font-family: inherit;
 	font-size: 40px;
 	line-height: 1;
 	color: var(--color-primary, var(--primary));
@@ -571,15 +595,31 @@ body {
 	color: var(--text-heading);
 }
 .blog-preview blockquote {
-	margin: 1.6em 0;
-	padding: 4px 20px;
-	border-left: 3px solid var(--color-primary);
-	background: var(--surface-subtle);
-	border-radius: 0 var(--radius) var(--radius) 0;
-	color: var(--text-muted);
+	margin: 2.6em 0 1.4em;
+	padding: 0 0 0.55em;
+	border: none;
+	border-bottom: 1px solid var(--border-default);
+	background: none;
+	border-radius: 0;
+	color: var(--text-heading);
+	font-size: 1.4em;
+	font-weight: 500;
+	line-height: 1.5;
+}
+.blog-preview blockquote::before {
+	content: "\201C";
+	display: block;
+	font-family: Georgia, "Times New Roman", serif;
+	font-size: 1.7em;
+	line-height: 0.5;
+	color: #c4c4c4;
+	margin-bottom: 0.1em;
 }
 .blog-preview blockquote p {
-	margin: 0.6em 0;
+	margin: 0;
+}
+.blog-preview blockquote p + p {
+	margin-top: 0.4em;
 }
 .blog-preview hr {
 	border: none;
