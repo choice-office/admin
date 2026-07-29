@@ -30,8 +30,8 @@ function ReviewsPage() {
 	const pageItems = images.slice(start, start + REVIEWS_PER_PAGE);
 
 	return (
-		<div>
-			<div className="mb-5 flex items-start justify-between gap-4">
+		<div className="flex h-full flex-col">
+			<div className="mb-5 flex flex-shrink-0 items-start justify-between gap-4">
 				<div>
 					<h2 className="m-0 mb-1.5 font-bold text-2xl text-foreground tracking-[-0.02em]">
 						의뢰인 후기 관리
@@ -63,102 +63,105 @@ function ReviewsPage() {
 				</div>
 			) : (
 				<>
-					<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-						{pageItems.map((r) => (
-							<div
-								key={r.id}
-								className={cn(
-									"flex flex-col overflow-hidden rounded-md border border-border transition",
-									!r.is_published && "opacity-60",
-								)}
-								style={{ background: "#fbfaf7", borderTop: "2px solid var(--color-accent)" }}
-							>
-								{/* 업무분야 뱃지 */}
-								<div className="flex items-center gap-1.5 px-3 pt-2.5 font-semibold text-[11px] text-[var(--color-accent)]">
-									<span aria-hidden>❝</span>
-									<span className="truncate">{r.tag || "—"}</span>
-								</div>
-
-								{/* 이미지 창 — 카드 축소를 위해 높이 낮춤(4/4.4) + 하단 페이드 */}
+					{/* 카드 영역만 스크롤 — 페이지네이션은 항상 화면 최하단 고정 */}
+					<div className="min-h-0 flex-1 overflow-y-auto">
+						<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+							{pageItems.map((r) => (
 								<div
-									className="relative mx-3 mt-2 overflow-hidden border border-border"
-									style={{ aspectRatio: "4 / 4.4", background: "#e9edf1" }}
+									key={r.id}
+									className={cn(
+										"flex flex-col overflow-hidden rounded-md border border-border transition",
+										!r.is_published && "opacity-60",
+									)}
+									style={{ background: "#fbfaf7", borderTop: "2px solid var(--color-accent)" }}
 								>
-									<img
-										src={r.src}
-										alt={r.quote}
-										className="h-full w-full object-cover object-top"
-									/>
-									<span
-										className="pointer-events-none absolute inset-x-0 bottom-0 h-[44%]"
-										style={{
-											background:
-												"linear-gradient(to bottom, rgba(251,250,247,0) 0%, rgba(251,250,247,0.94) 90%)",
-										}}
-									/>
-								</div>
-
-								{/* 한마디 */}
-								<p
-									className="px-3 pt-2.5 font-semibold text-[13px] text-[var(--text-heading)] leading-snug"
-									style={{ wordBreak: "keep-all" }}
-								>
-									"{r.quote}"
-								</p>
-								{/* 작성자 */}
-								<p className="px-3 pt-1 pb-1 text-[11px] text-muted-foreground">
-									— {r.meta || "익명"}
-								</p>
-
-								{/* 관리 푸터 */}
-								<div className="mt-auto flex items-center justify-between gap-2 border-border border-t px-3.5 py-2">
-									<div className="flex items-center gap-2">
-										{r.is_published ? (
-											<Badge variant="primary">노출</Badge>
-										) : (
-											<Badge variant="outline">숨김</Badge>
-										)}
-										<span className="text-[12px] text-muted-foreground">
-											{formatDateCompact(r.created_at)}
-										</span>
+									{/* 업무분야 뱃지 */}
+									<div className="flex items-center gap-1.5 px-3 pt-2.5 font-semibold text-[11px] text-[var(--color-accent)]">
+										<span aria-hidden>❝</span>
+										<span className="truncate">{r.tag || "—"}</span>
 									</div>
-									<div className="flex items-center gap-0.5">
-										<button
-											type="button"
-											title={r.is_published ? "숨기기" : "노출하기"}
-											onClick={() => updateReview(r.id, { is_published: !r.is_published })}
-											className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
-										>
-											{r.is_published ? <EyeOff size={17} /> : <Eye size={17} />}
-										</button>
-										<button
-											type="button"
-											title="수정"
-											onClick={() => setEditing(r)}
-											className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
-										>
-											<Pencil size={16} />
-										</button>
-										<button
-											type="button"
-											title="삭제"
-											onClick={() => setConfirmId(r.id)}
-											className="flex h-9 w-9 items-center justify-center rounded-md text-destructive hover:bg-destructive/10"
-										>
-											<Trash2 size={16} />
-										</button>
+
+									{/* 이미지 창 — 카드 축소를 위해 높이 낮춤(4/4.4) + 하단 페이드 */}
+									<div
+										className="relative mx-3 mt-2 overflow-hidden border border-border"
+										style={{ aspectRatio: "4 / 4.4", background: "#e9edf1" }}
+									>
+										<img
+											src={r.src}
+											alt={r.quote}
+											className="h-full w-full object-cover object-top"
+										/>
+										<span
+											className="pointer-events-none absolute inset-x-0 bottom-0 h-[44%]"
+											style={{
+												background:
+													"linear-gradient(to bottom, rgba(251,250,247,0) 0%, rgba(251,250,247,0.94) 90%)",
+											}}
+										/>
+									</div>
+
+									{/* 한마디 */}
+									<p
+										className="px-3 pt-2.5 font-semibold text-[13px] text-[var(--text-heading)] leading-snug"
+										style={{ wordBreak: "keep-all" }}
+									>
+										"{r.quote}"
+									</p>
+									{/* 작성자 */}
+									<p className="px-3 pt-1 pb-1 text-[11px] text-muted-foreground">
+										— {r.meta || "익명"}
+									</p>
+
+									{/* 관리 푸터 */}
+									<div className="mt-auto flex items-center justify-between gap-2 border-border border-t px-3.5 py-2">
+										<div className="flex items-center gap-2">
+											{r.is_published ? (
+												<Badge variant="primary">노출</Badge>
+											) : (
+												<Badge variant="outline">숨김</Badge>
+											)}
+											<span className="text-[12px] text-muted-foreground">
+												{formatDateCompact(r.created_at)}
+											</span>
+										</div>
+										<div className="flex items-center gap-0.5">
+											<button
+												type="button"
+												title={r.is_published ? "숨기기" : "노출하기"}
+												onClick={() => updateReview(r.id, { is_published: !r.is_published })}
+												className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
+											>
+												{r.is_published ? <EyeOff size={17} /> : <Eye size={17} />}
+											</button>
+											<button
+												type="button"
+												title="수정"
+												onClick={() => setEditing(r)}
+												className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
+											>
+												<Pencil size={16} />
+											</button>
+											<button
+												type="button"
+												title="삭제"
+												onClick={() => setConfirmId(r.id)}
+												className="flex h-9 w-9 items-center justify-center rounded-md text-destructive hover:bg-destructive/10"
+											>
+												<Trash2 size={16} />
+											</button>
+										</div>
 									</div>
 								</div>
-							</div>
-						))}
+							))}
+						</div>
 					</div>
 
-					{/* 페이지네이션 — 1페이지여도 표시 */}
+					{/* 페이지네이션 — 1페이지여도 표시(화면 최하단 고정) */}
 					<PaginationBar
 						page={current}
 						totalPages={totalPages}
 						onPageChange={setPage}
-						className="mt-7"
+						className="mt-4 flex-shrink-0"
 					/>
 				</>
 			)}
