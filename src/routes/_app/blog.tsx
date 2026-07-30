@@ -3,7 +3,14 @@ import { Loader2, Pencil, Plus, Search, Star, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Badge, Button, Input } from "@/components/ui/ds";
 import { PaginationBar } from "@/components/ui/pagination-bar";
-import { deletePost, getCategories, listPosts, purgeExpiredDrafts, setFeatured } from "@/lib/blog";
+import {
+	deletePost,
+	featureLatestPosts,
+	getCategories,
+	listPosts,
+	purgeExpiredDrafts,
+	setFeatured,
+} from "@/lib/blog";
 import { formatDateCompact } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { BlogCategory, BlogPost, PostStatus } from "@/types/database";
@@ -32,6 +39,7 @@ function BlogPage() {
 	const [categories, setCategories] = useState<BlogCategory[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [confirmId, setConfirmId] = useState<string | null>(null);
+	const [isFeaturingLatest, setIsFeaturingLatest] = useState(false);
 	// 검색 — 입력값(searchInput)과 적용값(query) 분리: "조회"를 눌러야 실제 검색 실행
 	const [searchInput, setSearchInput] = useState("");
 	const [query, setQuery] = useState("");
@@ -101,6 +109,21 @@ function BlogPage() {
 		goPage(1);
 	};
 
+	// 대표글을 최신 발행글 4개로 재설정 — 홈페이지 정렬 기준(published_at)과 동일
+	const handleFeatureLatest = async () => {
+		if (
+			!confirm(
+				`현재 대표글 지정을 모두 해제하고, 최신 발행글 ${MAX_FEATURED}개를 대표글로 지정합니다. 계속할까요?`,
+			)
+		)
+			return;
+		setIsFeaturingLatest(true);
+		const n = await featureLatestPosts(MAX_FEATURED);
+		await refetch();
+		setIsFeaturingLatest(false);
+		if (n === 0) alert("대표글 지정에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+	};
+
 	// 작성/수정은 별도 URL — 새로고침해도 화면이 유지된다. page 는 "목록으로" 복귀용.
 	const openNew = () => navigate({ to: "/blog/new", search: { page: safePage } });
 	const openEdit = (post: BlogPost) =>
@@ -147,6 +170,16 @@ function BlogPage() {
 						초기화
 					</Button>
 				)}
+				<Button
+					variant="outline"
+					iconStart={<Star size={15} />}
+					onClick={handleFeatureLatest}
+					disabled={isFeaturingLatest}
+					className="ml-auto"
+					title={`홈 화면 ${MAX_FEATURED}칸을 최신 발행글로 다시 채웁니다`}
+				>
+					{isFeaturingLatest ? "지정 중…" : `최신 ${MAX_FEATURED}개로 지정`}
+				</Button>
 				<button
 					type="button"
 					onClick={() => {
@@ -154,7 +187,7 @@ function BlogPage() {
 						goPage(1);
 					}}
 					className={cn(
-						"ml-auto flex h-10 shrink-0 items-center gap-1.5 rounded-md border px-3 text-sm transition-colors",
+						"flex h-10 shrink-0 items-center gap-1.5 rounded-md border px-3 text-sm transition-colors",
 						featuredOnly
 							? "border-primary bg-primary font-bold text-primary-foreground"
 							: "border-border bg-card font-medium text-foreground hover:bg-muted",

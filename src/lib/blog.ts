@@ -159,6 +159,39 @@ export const setFeatured = async (
 	return true;
 };
 
+// 대표글을 "최신 발행글 N개"로 다시 지정 — 홈페이지와 같은 기준(published_at 최신순)으로 맞춘다.
+// 기존 지정은 모두 해제한 뒤 순서(featured_order 1..N)를 부여한다.
+export const featureLatestPosts = async (count: number): Promise<number> => {
+	const cleared = await supabase
+		.from("blog_posts")
+		.update({ is_featured: false, featured_order: null })
+		.eq("is_featured", true);
+	if (cleared.error) {
+		console.error("대표글 해제 실패:", cleared.error.message);
+		return 0;
+	}
+	const { data, error } = await supabase
+		.from("blog_posts")
+		.select("id")
+		.eq("status", "published")
+		.order("published_at", { ascending: false })
+		.limit(count);
+	if (error) {
+		console.error("최신 발행글 조회 실패:", error.message);
+		return 0;
+	}
+	let done = 0;
+	for (const [i, row] of (data ?? []).entries()) {
+		const { error: e } = await supabase
+			.from("blog_posts")
+			.update({ is_featured: true, featured_order: i + 1 })
+			.eq("id", (row as { id: string }).id);
+		if (e) console.error("대표글 지정 실패:", e.message);
+		else done++;
+	}
+	return done;
+};
+
 export const deletePost = async (id: string): Promise<boolean> => {
 	const { error } = await supabase.from("blog_posts").delete().eq("id", id);
 	if (error) {
