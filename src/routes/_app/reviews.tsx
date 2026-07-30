@@ -65,7 +65,7 @@ function ReviewsPage() {
 				<>
 					{/* 카드 영역만 스크롤 — 페이지네이션은 항상 화면 최하단 고정 */}
 					<div className="min-h-0 flex-1 overflow-y-auto">
-						<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+						<div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
 							{pageItems.map((r) => (
 								<div
 									key={r.id}
@@ -107,14 +107,17 @@ function ReviewsPage() {
 									>
 										"{r.quote}"
 									</p>
-									{/* 작성자 */}
-									<p className="px-3 pt-1 pb-1 text-[11px] text-muted-foreground">
-										— {r.meta || "익명"}
-									</p>
+									{/* 작성자 · 등록일 — 한 줄 유지(작성자만 줄임표) */}
+									<div className="flex items-baseline gap-2 px-3 pt-1 pb-1 text-[11px] text-muted-foreground">
+										<span className="min-w-0 truncate">— {r.meta || "익명"}</span>
+										<span className="ml-auto whitespace-nowrap">
+											{formatDateCompact(r.created_at)}
+										</span>
+									</div>
 
 									{/* 관리 푸터 */}
-									<div className="mt-auto flex items-center justify-between gap-2 border-border border-t px-3.5 py-2">
-										<div className="flex items-center gap-2">
+									<div className="mt-auto flex flex-nowrap items-center justify-between gap-2 border-border border-t px-3.5 py-2">
+										<div className="flex min-w-0 flex-nowrap items-center gap-2">
 											{r.is_published ? (
 												<Badge variant="primary">노출</Badge>
 											) : (
@@ -124,16 +127,13 @@ function ReviewsPage() {
 											{(!r.consent_confirmed || !r.masked_confirmed) && (
 												<span
 													title="게시 동의·마스킹 확인 기록이 없습니다. 수정에서 확인해 주세요."
-													className="font-semibold text-[11px] text-destructive"
+													className="whitespace-nowrap font-semibold text-[11px] text-destructive"
 												>
 													확인 필요
 												</span>
 											)}
-											<span className="text-[12px] text-muted-foreground">
-												{formatDateCompact(r.created_at)}
-											</span>
 										</div>
-										<div className="flex items-center gap-0.5">
+										<div className="flex shrink-0 items-center gap-0.5">
 											<button
 												type="button"
 												title={r.is_published ? "숨기기" : "노출하기"}

@@ -2,12 +2,13 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import dayjs from "dayjs";
 import { FileText, MessageSquare, Star, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
+import { InquiryDetailModal } from "@/components/admin/inquiry-detail-modal";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { Badge, Card } from "@/components/ui/ds";
 import { consultLabel } from "@/lib/contacts";
-import { formatDateCompact } from "@/lib/format";
+import { formatDateCompact, formatDateFull } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
-import type { Contact } from "@/types/database";
+import type { Contact, ContactStatus } from "@/types/database";
 
 export const Route = createFileRoute("/_app/dashboard")({
 	component: DashboardPage,
@@ -40,6 +41,22 @@ function DashboardPage() {
 	const [stats, setStats] = useState<Stats | null>(null);
 	const [recent, setRecent] = useState<Contact[]>([]);
 	const [recentPosts, setRecentPosts] = useState<RecentPost[]>([]);
+	const [selectedId, setSelectedId] = useState<string | null>(null);
+
+	const selected = recent.find((c) => c.id === selectedId) ?? null;
+
+	// 상세 모달 저장 — 문의 목록(useContacts)과 같은 방식(상태·메모만 수정)
+	const handleSaveContact = async (
+		id: string,
+		patch: { status: ContactStatus; memo: string | null },
+	) => {
+		const { error } = await supabase.from("contacts").update(patch).eq("id", id);
+		if (error) {
+			console.error("문의 수정 실패:", error.message);
+			return;
+		}
+		setRecent((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+	};
 
 	useEffect(() => {
 		(async () => {
@@ -146,7 +163,7 @@ function DashboardPage() {
 							<button
 								type="button"
 								key={c.id}
-								onClick={() => navigate({ to: "/inquiries" })}
+								onClick={() => setSelectedId(c.id)}
 								className="flex w-full items-center gap-3 border-border border-b px-5 py-3.5 text-left transition-colors last:border-b-0 hover:bg-muted"
 							>
 								<div className="min-w-0 flex-1">
@@ -156,8 +173,8 @@ function DashboardPage() {
 									</div>
 								</div>
 								<StatusBadge status={c.status} />
-								<span className="w-[68px] text-right text-[13px] text-muted-foreground">
-									{formatDateCompact(c.created_at)}
+								<span className="shrink-0 whitespace-nowrap text-right text-[13px] text-muted-foreground">
+									{formatDateFull(c.created_at)}
 								</span>
 							</button>
 						))
@@ -207,6 +224,15 @@ function DashboardPage() {
 					</div>
 				)}
 			</div>
+
+			{/* 행 클릭 → 상담 상세(문의 목록과 동일 모달). 저장하면 목록 값도 즉시 갱신 */}
+			{selected && (
+				<InquiryDetailModal
+					contact={selected}
+					onClose={() => setSelectedId(null)}
+					onSave={handleSaveContact}
+				/>
+			)}
 		</div>
 	);
 }

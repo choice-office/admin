@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { useContacts } from "@/hooks/use-contacts";
 import { consultLabel, STATUS_META, STATUS_ORDER } from "@/lib/contacts";
-import { formatDateCompact } from "@/lib/format";
+import { formatDateFull } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { ContactStatus } from "@/types/database";
 
@@ -209,8 +209,8 @@ function InquiriesPage() {
 								<div className="hidden md:block">
 									<StatusBadge status={c.status} />
 								</div>
-								<div className="text-[13px] text-muted-foreground md:text-sm">
-									{formatDateCompact(c.created_at)}
+								<div className="whitespace-nowrap text-[13px] text-muted-foreground md:text-sm">
+									{formatDateFull(c.created_at)}
 								</div>
 							</button>
 						))

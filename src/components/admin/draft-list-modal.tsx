@@ -57,7 +57,7 @@ export const DraftListModal = ({ currentPostId, onClose, onOpen }: Props) => {
 				onClick={onClose}
 				className="absolute inset-0 cursor-default border-none bg-[rgba(34,29,22,0.45)] p-0"
 			/>
-			<div className="relative z-[1] flex max-h-[88vh] w-full max-w-[560px] flex-col overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-md)]">
+			<div className="relative z-[1] flex h-[min(78vh,620px)] w-full max-w-[600px] flex-col overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-md)]">
 				<div className="flex items-start justify-between gap-3 border-border border-b px-4 py-4 sm:px-6 sm:py-5">
 					<div>
 						<h3 className="m-0 font-bold text-foreground text-xl tracking-[-0.02em]">

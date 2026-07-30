@@ -14,8 +14,8 @@ type Props = {
 
 const InfoRow = ({ label, value }: { label: string; value: string }) => (
 	<div className="flex gap-3 py-[7px] text-sm">
-		<span className="flex-[0_0_96px] text-muted-foreground">{label}</span>
-		<span className="font-medium text-foreground">{value}</span>
+		<span className="flex-[0_0_84px] text-muted-foreground">{label}</span>
+		<span className="min-w-0 break-all font-medium text-foreground">{value}</span>
 	</div>
 );
 
@@ -52,7 +52,7 @@ export const InquiryDetailModal = ({ contact, onClose, onSave }: Props) => {
 				onClick={onClose}
 				className="absolute inset-0 cursor-default border-none bg-[rgba(34,29,22,0.45)] p-0"
 			/>
-			<div className="relative z-[1] max-h-[88vh] w-full max-w-[560px] overflow-y-auto rounded-lg border border-border bg-card shadow-[var(--shadow-md)]">
+			<div className="relative z-[1] max-h-[88vh] w-full max-w-[680px] overflow-y-auto rounded-lg border border-border bg-card shadow-[var(--shadow-md)]">
 				<div className="sticky top-0 flex items-center justify-between gap-3 border-border border-b bg-card px-4 py-4 sm:px-6 sm:py-5">
 					<div>
 						<h3 className="m-0 font-bold text-foreground text-xl tracking-[-0.02em]">상담 상세</h3>
@@ -71,7 +71,7 @@ export const InquiryDetailModal = ({ contact, onClose, onSave }: Props) => {
 				</div>
 
 				<div className="px-4 py-5 sm:px-6">
-					<div className="mb-[18px] border-border border-b pb-2">
+					<div className="mb-[18px] grid grid-cols-1 gap-x-7 border-border border-b pb-2 sm:grid-cols-2">
 						<InfoRow label="의뢰인" value={contact.name} />
 						<InfoRow label="연락처" value={contact.phone} />
 						<InfoRow label="이메일" value={contact.email ?? "—"} />
@@ -82,7 +82,8 @@ export const InquiryDetailModal = ({ contact, onClose, onSave }: Props) => {
 
 					<div className="mb-[18px]">
 						<div className="mb-2 text-[13px] text-muted-foreground">문의 내용</div>
-						<div className="min-h-16 whitespace-pre-wrap rounded-md border border-border bg-muted px-4 py-3.5 text-[15px] text-[var(--text-body)] leading-relaxed">
+						{/* 내용이 길어도 이 영역 안에서만 스크롤된다(모달 전체가 늘어나지 않음) */}
+						<div className="h-[200px] overflow-y-auto overscroll-contain whitespace-pre-wrap rounded-md border border-border bg-muted px-4 py-3.5 text-[15px] text-[var(--text-body)] leading-relaxed">
 							{contact.message?.trim() || "문의 내용이 없습니다."}
 						</div>
 					</div>
