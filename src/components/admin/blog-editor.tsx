@@ -1,5 +1,6 @@
-import { ArrowLeft, Plus, Trash2, X } from "lucide-react";
-import { type KeyboardEvent, useRef, useState } from "react";
+import { ArrowLeft, FileClock, Plus, Trash2, X } from "lucide-react";
+import { type KeyboardEvent, useEffect, useRef, useState } from "react";
+import { DraftListModal } from "@/components/admin/draft-list-modal";
 import {
 	RichTextEditor,
 	type RichTextEditorHandle,
@@ -14,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import {
 	createPost,
+	DRAFT_RETENTION_DAYS,
 	htmlToText,
 	slugify,
 	updatePost,
@@ -31,10 +33,46 @@ type Props = {
 	categories: BlogCategory[];
 	authors: BlogAuthor[];
 	onClose: () => void;
-	onSaved: () => void;
+	onOpenPost: (postId: string) => void; // 임시저장 목록에서 다른 글 이어서 작성
 };
 
-export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Props) => {
+// 본문이 사실상 비었는지(빈 문단만 있는지) — 이탈 경고 판정에서 "안 쓴 것"으로 취급
+const isBodyEmpty = (html: string): boolean =>
+	!html
+		.replace(/<[^>]*>/g, "")
+		.replace(/&nbsp;/g, " ")
+		.trim() && !/<(img|figure|table|iframe|hr)\b/i.test(html);
+
+type EditableFields = {
+	title: string;
+	slug: string;
+	categoryId: string;
+	coverUrl: string;
+	coverAlt: string;
+	tldr: string;
+	metaTitle: string;
+	metaDescription: string;
+	tags: string[];
+	faq: { q: string; a: string }[];
+	sources: { label: string; href: string }[];
+	content: string;
+};
+
+// 저장 대상 값들의 스냅샷 — 초기값과 비교해 "작성 중" 여부를 판정한다.
+const snapshotOf = (f: EditableFields): string =>
+	JSON.stringify({
+		...f,
+		title: f.title.trim(),
+		slug: f.slug.trim(),
+		coverUrl: f.coverUrl.trim(),
+		coverAlt: f.coverAlt.trim(),
+		tldr: f.tldr.trim(),
+		metaTitle: f.metaTitle.trim(),
+		metaDescription: f.metaDescription.trim(),
+		content: isBodyEmpty(f.content) ? "" : f.content.replace(/\s+/g, " ").trim(),
+	});
+
+export const BlogEditor = ({ post, categories, authors, onClose, onOpenPost }: Props) => {
 	const [title, setTitle] = useState(post?.title ?? "");
 	const [slug, setSlug] = useState(post?.slug ?? "");
 	const [slugTouched, setSlugTouched] = useState(Boolean(post));
@@ -59,8 +97,57 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 	const [coverUploading, setCoverUploading] = useState(false);
 	// 작성/미리보기 모드 — 미리보기는 홈페이지 노출 모습을 그대로 렌더
 	const [mode, setMode] = useState<"write" | "preview">("write");
+	const [isDraftListOpen, setIsDraftListOpen] = useState(false);
 	const [previewHtml, setPreviewHtml] = useState(post?.content ?? "");
 	const editorRef = useRef<RichTextEditorHandle>(null);
+
+	// 이탈 경고 — 새로고침/탭 닫기(beforeunload)와 "목록으로"에서 저장 안 된 작업을 한 번 막는다.
+	const initialSnapshot = useRef(
+		snapshotOf({
+			title: post?.title ?? "",
+			slug: post?.slug ?? "",
+			categoryId: post?.category_id ?? "",
+			coverUrl: post?.cover_url ?? "",
+			coverAlt: post?.cover_alt ?? "",
+			tldr: post?.tldr ?? "",
+			metaTitle: post?.meta_title ?? "",
+			metaDescription: post?.meta_description ?? "",
+			tags: post?.tags ?? [],
+			faq: (post?.faq ?? []).map((f) => ({ q: f.q, a: f.a })),
+			sources: (post?.sources ?? []).map((s) => ({ label: s.label, href: s.href })),
+			content: post?.content ?? "",
+		}),
+	);
+	const isDirty =
+		snapshotOf({
+			title,
+			slug,
+			categoryId,
+			coverUrl,
+			coverAlt,
+			tldr,
+			metaTitle,
+			metaDescription,
+			tags,
+			faq: faq.map((f) => ({ q: f.q, a: f.a })),
+			sources: sources.map((s) => ({ label: s.label, href: s.href })),
+			content: previewHtml,
+		}) !== initialSnapshot.current;
+
+	useEffect(() => {
+		if (!isDirty) return;
+		const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+			e.preventDefault();
+			e.returnValue = ""; // 일부 브라우저는 returnValue 가 있어야 확인창을 띄운다
+		};
+		window.addEventListener("beforeunload", handleBeforeUnload);
+		return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+	}, [isDirty]);
+
+	const handleClose = () => {
+		if (isDirty && !confirm("작성 중인 내용이 있습니다. 저장하지 않고 목록으로 나갈까요?")) return;
+		onClose();
+	};
 
 	const handleTitleChange = (value: string) => {
 		setTitle(value);
@@ -157,7 +244,6 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 			setError("저장에 실패했습니다. 다시 시도해 주세요.");
 			return;
 		}
-		onSaved();
 		onClose();
 	};
 
@@ -172,7 +258,7 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 			<div className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-2">
 				<button
 					type="button"
-					onClick={onClose}
+					onClick={handleClose}
 					className="flex items-center gap-1.5 font-medium text-muted-foreground text-sm hover:text-foreground"
 				>
 					<ArrowLeft size={17} /> 목록으로
@@ -190,12 +276,28 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 							미리보기
 						</button>
 					</div>
-					<Button variant="outline" onClick={() => save("draft")} disabled={saving}>
+					<Button
+						variant="outline"
+						iconStart={<FileClock size={16} />}
+						onClick={() => setIsDraftListOpen(true)}
+					>
+						임시저장 목록
+					</Button>
+					<Button
+						variant="outline"
+						onClick={() => save("draft")}
+						disabled={saving}
+						title={`임시저장 글은 ${DRAFT_RETENTION_DAYS}일간 보관됩니다`}
+					>
 						임시저장
 					</Button>
 					<Button variant="primary" onClick={() => save("published")} disabled={saving}>
 						{saving ? "저장 중…" : "발행"}
 					</Button>
+				</div>
+				<div className="w-full text-[12px] text-muted-foreground sm:text-right">
+					임시저장 글은 마지막 저장일로부터 {DRAFT_RETENTION_DAYS}일간 보관되고, 이후 자동
+					삭제됩니다.
 				</div>
 			</div>
 			{error && (
@@ -262,7 +364,12 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 						<div className="mb-3 font-bold text-foreground text-sm">기본</div>
 						<div className="mb-4">
 							<Label htmlFor="be-cat">카테고리</Label>
-							<Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? "")}>
+							{/* items 를 넘겨야 트리거에 id 대신 카테고리 이름이 표시된다(Base UI) */}
+							<Select
+								items={categories.map((c) => ({ value: c.id, label: c.name }))}
+								value={categoryId}
+								onValueChange={(v) => setCategoryId(v ?? "")}
+							>
 								<SelectTrigger id="be-cat" className="w-full">
 									<SelectValue placeholder="선택하세요" />
 								</SelectTrigger>
@@ -514,6 +621,22 @@ export const BlogEditor = ({ post, categories, authors, onClose, onSaved }: Prop
 					</div>
 				</div>
 			</div>
+
+			{isDraftListOpen && (
+				<DraftListModal
+					currentPostId={post?.id}
+					onClose={() => setIsDraftListOpen(false)}
+					onOpen={(postId) => {
+						if (
+							isDirty &&
+							!confirm("작성 중인 내용이 있습니다. 저장하지 않고 다른 글로 이동할까요?")
+						)
+							return;
+						setIsDraftListOpen(false);
+						onOpenPost(postId);
+					}}
+				/>
+			)}
 		</div>
 	);
 };

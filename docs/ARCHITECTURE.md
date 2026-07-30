@@ -5,8 +5,8 @@
 ## 무엇인가
 초이스 행정사 사무소 **운영 관리자(SPA)**. 홈페이지(`choice-homepage`)와 **같은 Supabase 프로젝트**(`pohfmrzgtoxdbwdsrckt`)를 공유한다.
 - 상담 문의(홈 문의폼 → contacts) 확인·상태/메모 관리
-- 후기 등록·노출 관리(reviews) — *구현 예정*
-- 블로그/공지 작성·발행(blog_posts) — *구현 예정*
+- 후기 등록·노출 관리(review_images) — 구현됨
+- 블로그 작성·발행(blog_posts) — 구현됨(Tiptap 에디터 + 임시저장 30일 보관)
 
 ## 스택
 - **Vite + React 19 + TypeScript** (Next.js 아님 — SSR/Server Action/next-image 없음)
@@ -26,7 +26,9 @@ src/
     _app/dashboard.tsx         # 대시보드
     _app/inquiries.tsx         # 상담 문의 관리(필터·테이블·페이지네이션·상세모달)
     _app/reviews.tsx           # 후기 관리(CRUD·노출 토글)
-    _app/blog.tsx              # 블로그·공지 목록 + 작성기(인페이지 에디터 토글)
+    _app/blog.tsx              # 블로그 목록(검색·대표글·페이지네이션) — 작성/수정은 아래 별도 URL로 이동
+    _app/blog_.new.tsx         # /blog/new — 새 글 작성(새로고침에도 유지)
+    _app/blog_.$postId.tsx     # /blog/{id} — 글 수정(새로고침에도 유지)
     _app/settings.tsx          # 설정 [구현 예정]
   components/
     admin/                     # 화면 전용 컴포넌트
@@ -54,6 +56,7 @@ design/                        # Claude Design 산출물(토큰 CSS + 어드민 
 ## 라우팅 · 인증
 - 파일 기반. **`_app.tsx`(pathless 레이아웃)** 가 인증 영역을 감싼다: `beforeLoad`에서 `supabase.auth.getSession()` 확인, 미인증 → `throw redirect({ to: "/login" })`. URL은 `_app` 접두사 없이 `/dashboard` 등으로 노출.
 - 새 인증 화면은 `src/routes/_app/<name>.tsx` 로 추가하면 자동으로 레이아웃·가드 적용 + 사이드바 활성표시(경로 prefix).
+- **하위 URL을 부모 화면 안에 넣지 않을 때는 파일명에 `_` 접미사**(`blog_.new.tsx` → `/blog/new`). `blog.tsx`가 Outlet 없는 leaf라서 `blog.new.tsx`로 두면 렌더되지 않는다. 작성/수정 화면이 이 방식(→ 새로고침해도 화면 유지, "목록으로"는 `?page=`로 보던 페이지 복귀).
 - `isMockMode`(env 없을 때) 면 가드 통과(미리보기).
 - **로그인 아이디**: 폼은 "아이디" 입력 → `ADMIN_ALIASES`(login.tsx)로 한글 아이디(`최서연`)를 실제 이메일(`seoyeon@kvisa1345.com`)로 매핑 후 `signInWithPassword`. 관리자 추가 시 alias 한 줄 추가.
 - routeTree.gen.ts는 **TanStackRouterVite 플러그인이 빌드/dev 시 자동 생성**. 라우트 추가 후 타입이 안 잡히면 `npx vite build` 한 번으로 재생성(아래 검증 참고).
@@ -63,6 +66,9 @@ design/                        # Claude Design 산출물(토큰 CSS + 어드민 
 - 테이블(관리자 관점):
   - **contacts**(홈 문의폼 적재) — 컬럼: name·phone·email·nationality·current_visa·consult_field·message·privacy_consent·source·status·memo·created_at·updated_at. `status ∈ (new,in_progress,done,hold)`. RLS: **authenticated SELECT/UPDATE 허용**, INSERT는 홈페이지가 service_role로. 관리자는 상태·메모만 수정.
   - **blog_posts / blog_categories / blog_authors**(홈페이지 블로그) — 관리자가 Tiptap 에디터로 작성·발행. RLS: 공개 SELECT는 published만, **authenticated는 전체 SELECT(초안 포함)+INSERT/UPDATE/DELETE**. status ∈ (draft, published, archived).
+    - **임시저장(draft) 보관 30일** — `updated_at` 기준. `purgeExpiredDrafts()`(lib/blog.ts)가 `status=draft AND updated_at < now-30d`만 삭제하고, **블로그 목록 진입 시 + 임시저장 목록 모달 열 때** 실행된다(DB 크론 아님 → 접속이 없으면 그 사이엔 남아 있고 다음 접속에 정리). 기간은 `DRAFT_RETENTION_DAYS` 단일 출처.
+    - 발행글을 "임시저장"으로 다시 저장하면 `published_at`이 null이 되어 홈페이지에서 내려간다(발행 취소).
+    - 미구현: 글 삭제·만료 시 `blog` 버킷의 업로드 이미지는 남는다(스토리지 정리 없음).
   - **reviews** — 후기(tag·country·initial·flag·title·body·is_published·sort_order). RLS: anon은 is_published만 SELECT, authenticated CRUD. 홈페이지가 노출 후기를 ISR로 읽음.
   - **storage bucket `blog`**(공개 읽기) — 본문·커버 이미지. 업로드/수정/삭제는 authenticated(`uploads/` 경로).
   - **auth.users** — 관리자 계정(예: seoyeon@kvisa1345.com).

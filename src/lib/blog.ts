@@ -40,6 +40,50 @@ export const getPost = async (id: string): Promise<BlogPost | null> => {
 	return (data as unknown as BlogPost) ?? null;
 };
 
+// 임시저장 보관 기간 — 마지막 수정일 기준. 지나면 purgeExpiredDrafts()가 삭제한다.
+export const DRAFT_RETENTION_DAYS = 30;
+
+const retentionCutoff = (): string =>
+	new Date(Date.now() - DRAFT_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
+// 남은 보관 일수(0이면 오늘 지남) — 목록에서 "n일 남음" 표시용
+export const draftDaysLeft = (updatedAt: string): number => {
+	const elapsedDays = (Date.now() - new Date(updatedAt).getTime()) / (24 * 60 * 60 * 1000);
+	return Math.max(0, Math.ceil(DRAFT_RETENTION_DAYS - elapsedDays));
+};
+
+export const listDraftPosts = async (): Promise<BlogPost[]> => {
+	const run = (select: string) =>
+		supabase
+			.from("blog_posts")
+			.select(select)
+			.eq("status", "draft")
+			.order("updated_at", { ascending: false });
+	let { data, error } = await run(POST_SELECT);
+	if (error) ({ data, error } = await run(POST_SELECT_BASE));
+	if (error) {
+		console.error("임시저장 목록 조회 실패:", error.message);
+		return [];
+	}
+	return (data ?? []) as unknown as BlogPost[];
+};
+
+// 보관 기간이 지난 임시저장 글 자동 삭제. 관리자가 블로그 화면에 들어올 때 실행된다.
+// (발행·보관 글은 대상이 아니며, updated_at 이 없는 행은 조건에 걸리지 않아 남는다)
+export const purgeExpiredDrafts = async (): Promise<number> => {
+	const { data, error } = await supabase
+		.from("blog_posts")
+		.delete()
+		.eq("status", "draft")
+		.lt("updated_at", retentionCutoff())
+		.select("id");
+	if (error) {
+		console.error("만료 임시저장 삭제 실패:", error.message);
+		return 0;
+	}
+	return data?.length ?? 0;
+};
+
 export const getCategories = async (): Promise<BlogCategory[]> => {
 	const { data, error } = await supabase.from("blog_categories").select("id,name").order("name");
 	if (error) {

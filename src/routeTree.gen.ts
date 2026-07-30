@@ -17,6 +17,8 @@ import { Route as AppReviewsRouteImport } from './routes/_app/reviews'
 import { Route as AppInquiriesRouteImport } from './routes/_app/inquiries'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppBlogRouteImport } from './routes/_app/blog'
+import { Route as AppBlogNewRouteImport } from './routes/_app/blog_.new'
+import { Route as AppBlogPostIdRouteImport } from './routes/_app/blog_.$postId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -57,6 +59,16 @@ const AppBlogRoute = AppBlogRouteImport.update({
   path: '/blog',
   getParentRoute: () => AppRoute,
 } as any)
+const AppBlogNewRoute = AppBlogNewRouteImport.update({
+  id: '/blog_/new',
+  path: '/blog/new',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBlogPostIdRoute = AppBlogPostIdRouteImport.update({
+  id: '/blog_/$postId',
+  path: '/blog/$postId',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -66,6 +78,8 @@ export interface FileRoutesByFullPath {
   '/inquiries': typeof AppInquiriesRoute
   '/reviews': typeof AppReviewsRoute
   '/settings': typeof AppSettingsRoute
+  '/blog/$postId': typeof AppBlogPostIdRoute
+  '/blog/new': typeof AppBlogNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -75,6 +89,8 @@ export interface FileRoutesByTo {
   '/inquiries': typeof AppInquiriesRoute
   '/reviews': typeof AppReviewsRoute
   '/settings': typeof AppSettingsRoute
+  '/blog/$postId': typeof AppBlogPostIdRoute
+  '/blog/new': typeof AppBlogNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -86,6 +102,8 @@ export interface FileRoutesById {
   '/_app/inquiries': typeof AppInquiriesRoute
   '/_app/reviews': typeof AppReviewsRoute
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/blog_/$postId': typeof AppBlogPostIdRoute
+  '/_app/blog_/new': typeof AppBlogNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -97,6 +115,8 @@ export interface FileRouteTypes {
     | '/inquiries'
     | '/reviews'
     | '/settings'
+    | '/blog/$postId'
+    | '/blog/new'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -106,6 +126,8 @@ export interface FileRouteTypes {
     | '/inquiries'
     | '/reviews'
     | '/settings'
+    | '/blog/$postId'
+    | '/blog/new'
   id:
     | '__root__'
     | '/'
@@ -116,6 +138,8 @@ export interface FileRouteTypes {
     | '/_app/inquiries'
     | '/_app/reviews'
     | '/_app/settings'
+    | '/_app/blog_/$postId'
+    | '/_app/blog_/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -182,6 +206,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBlogRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/blog_/new': {
+      id: '/_app/blog_/new'
+      path: '/blog/new'
+      fullPath: '/blog/new'
+      preLoaderRoute: typeof AppBlogNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/blog_/$postId': {
+      id: '/_app/blog_/$postId'
+      path: '/blog/$postId'
+      fullPath: '/blog/$postId'
+      preLoaderRoute: typeof AppBlogPostIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -191,6 +229,8 @@ interface AppRouteChildren {
   AppInquiriesRoute: typeof AppInquiriesRoute
   AppReviewsRoute: typeof AppReviewsRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppBlogPostIdRoute: typeof AppBlogPostIdRoute
+  AppBlogNewRoute: typeof AppBlogNewRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -199,6 +239,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppInquiriesRoute: AppInquiriesRoute,
   AppReviewsRoute: AppReviewsRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppBlogPostIdRoute: AppBlogPostIdRoute,
+  AppBlogNewRoute: AppBlogNewRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

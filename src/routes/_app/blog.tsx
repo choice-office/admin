@@ -1,13 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Loader2, Pencil, Plus, Search, Star, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { BlogEditor } from "@/components/admin/blog-editor";
 import { Badge, Button, Input } from "@/components/ui/ds";
 import { PaginationBar } from "@/components/ui/pagination-bar";
-import { deletePost, getAuthors, getCategories, listPosts, setFeatured } from "@/lib/blog";
+import { deletePost, getCategories, listPosts, purgeExpiredDrafts, setFeatured } from "@/lib/blog";
 import { formatDateCompact } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { BlogAuthor, BlogCategory, BlogPost, PostStatus } from "@/types/database";
+import type { BlogCategory, BlogPost, PostStatus } from "@/types/database";
 
 export const Route = createFileRoute("/_app/blog")({
 	component: BlogPage,
@@ -31,10 +30,7 @@ const STATUS_LABEL: Record<PostStatus, string> = {
 function BlogPage() {
 	const [posts, setPosts] = useState<BlogPost[]>([]);
 	const [categories, setCategories] = useState<BlogCategory[]>([]);
-	const [authors, setAuthors] = useState<BlogAuthor[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
-	const [editing, setEditing] = useState<BlogPost | null>(null);
-	const [isEditorOpen, setIsEditorOpen] = useState(false);
 	const [confirmId, setConfirmId] = useState<string | null>(null);
 	// 검색 — 입력값(searchInput)과 적용값(query) 분리: "조회"를 눌러야 실제 검색 실행
 	const [searchInput, setSearchInput] = useState("");
@@ -47,10 +43,11 @@ function BlogPage() {
 
 	const refetch = useCallback(async () => {
 		setIsLoading(true);
-		const [p, c, a] = await Promise.all([listPosts(), getCategories(), getAuthors()]);
+		// 보관 기간(30일) 지난 임시저장 글을 먼저 정리한 뒤 목록을 읽는다
+		await purgeExpiredDrafts();
+		const [p, c] = await Promise.all([listPosts(), getCategories()]);
 		setPosts(p);
 		setCategories(c);
-		setAuthors(a);
 		setIsLoading(false);
 	}, []);
 
@@ -104,25 +101,10 @@ function BlogPage() {
 		goPage(1);
 	};
 
-	const openEditor = (post: BlogPost | null) => {
-		setEditing(post);
-		setIsEditorOpen(true);
-	};
-
-	if (isEditorOpen) {
-		return (
-			<BlogEditor
-				post={editing}
-				categories={categories}
-				authors={authors}
-				onClose={() => {
-					setIsEditorOpen(false);
-					setEditing(null);
-				}}
-				onSaved={refetch}
-			/>
-		);
-	}
+	// 작성/수정은 별도 URL — 새로고침해도 화면이 유지된다. page 는 "목록으로" 복귀용.
+	const openNew = () => navigate({ to: "/blog/new", search: { page: safePage } });
+	const openEdit = (post: BlogPost) =>
+		navigate({ to: "/blog/$postId", params: { postId: post.id }, search: { page: safePage } });
 
 	return (
 		<div className="flex h-full flex-col">
@@ -136,7 +118,7 @@ function BlogPage() {
 						4개가 홈 화면에 보입니다. 지정한 개수가 부족하면 최신글로 자동 채워집니다.
 					</p>
 				</div>
-				<Button variant="primary" iconStart={<Plus size={18} />} onClick={() => openEditor(null)}>
+				<Button variant="primary" iconStart={<Plus size={18} />} onClick={openNew}>
 					새 글
 				</Button>
 			</div>
@@ -276,7 +258,7 @@ function BlogPage() {
 										<button
 											type="button"
 											title="수정"
-											onClick={() => openEditor(p)}
+											onClick={() => openEdit(p)}
 											className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
 										>
 											<Pencil size={16} />

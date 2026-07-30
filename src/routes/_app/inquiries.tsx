@@ -120,6 +120,7 @@ function InquiriesPage() {
 				</div>
 				<div className="flex-1" />
 				<Select
+					items={PERIODS.map((p) => ({ value: p.key, label: p.label }))}
 					value={period}
 					onValueChange={(v) => {
 						setPeriod((v ?? "all") as PeriodKey);
