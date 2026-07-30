@@ -61,6 +61,9 @@ export type Database = {
 					meta: string;
 					is_published: boolean;
 					sort_order: number;
+					consent_confirmed: boolean;
+					masked_confirmed: boolean;
+					consent_note: string | null;
 				};
 				Insert: {
 					id?: string;
@@ -72,6 +75,9 @@ export type Database = {
 					meta: string;
 					is_published?: boolean;
 					sort_order?: number;
+					consent_confirmed?: boolean;
+					masked_confirmed?: boolean;
+					consent_note?: string | null;
 				};
 				Update: {
 					src?: string;
@@ -82,6 +88,9 @@ export type Database = {
 					meta?: string;
 					is_published?: boolean;
 					sort_order?: number;
+					consent_confirmed?: boolean;
+					masked_confirmed?: boolean;
+					consent_note?: string | null;
 				};
 				Relationships: [];
 			};

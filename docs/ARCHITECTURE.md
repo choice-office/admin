@@ -90,6 +90,8 @@ design/                        # Claude Design 산출물(토큰 CSS + 어드민 
 - anon 은 public 스키마 전체에서 INSERT/UPDATE/DELETE 권한이 회수됨(RLS 와 이중 방어).
 - **contacts**: 이전에는 `authenticated` 에 테이블 권한이 아예 없어 관리자 문의 화면이 42501 로 비어 보였다 → SELECT + (status, memo) UPDATE 만 부여해 복구.
 - `contact_throttle`: 문의 폼 레이트리밋용(IP 해시). service_role 전용.
+- **개인정보 보관기간**: 문의는 홈페이지 Vercel Cron(`/api/cron/retention`, 매일)이 "처리 완료 후 3년" 기준으로 삭제한다. 어드민에는 문의 삭제 기능·권한이 없다(DELETE 미부여).
+- **후기 게시 동의·마스킹 기록**: `review_images.consent_confirmed` · `masked_confirmed` · `consent_note`. 후기 저장 시 두 체크가 필수이고, 기록이 없는 후기는 목록에 "확인 필요"로 표시된다(기존 17건 포함 — 수정 화면에서 확인하면 사라진다).
 
 ## 검증 · 배포
 - **타입검사 = `pnpm build`**(`tsc -b && vite build`). 별도 check-types 스크립트 없음. (`pnpm lint`/`lint:fix`/`format` = Biome)

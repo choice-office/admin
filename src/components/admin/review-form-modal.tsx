@@ -19,6 +19,9 @@ const emptyDraft: ReviewImageInsert = {
 	meta: "",
 	is_published: true,
 	sort_order: 0,
+	consent_confirmed: false,
+	masked_confirmed: false,
+	consent_note: "",
 };
 
 export const ReviewFormModal = ({ review, onClose, onSubmit }: Props) => {
@@ -33,6 +36,9 @@ export const ReviewFormModal = ({ review, onClose, onSubmit }: Props) => {
 					meta: review.meta,
 					is_published: review.is_published,
 					sort_order: review.sort_order,
+					consent_confirmed: review.consent_confirmed,
+					masked_confirmed: review.masked_confirmed,
+					consent_note: review.consent_note ?? "",
 				}
 			: emptyDraft,
 	);
@@ -82,6 +88,15 @@ export const ReviewFormModal = ({ review, onClose, onSubmit }: Props) => {
 			setError("한마디를 입력해 주세요.");
 			return;
 		}
+		// 제3자(의뢰인) 개인정보가 담긴 캡처라 게시 동의·마스킹 확인을 받아야 저장된다
+		if (!draft.consent_confirmed) {
+			setError("의뢰인에게 게시 동의를 받았는지 확인해 주세요.");
+			return;
+		}
+		if (!draft.masked_confirmed) {
+			setError("개인정보 마스킹을 확인해 주세요.");
+			return;
+		}
 		setError(null);
 		setSaving(true);
 		await onSubmit({
@@ -89,6 +104,7 @@ export const ReviewFormModal = ({ review, onClose, onSubmit }: Props) => {
 			tag: draft.tag?.trim() ?? "",
 			quote: draft.quote.trim(),
 			meta: draft.meta?.trim() ?? "",
+			consent_note: draft.consent_note?.trim() || null,
 		});
 		setSaving(false);
 		onClose();
@@ -194,6 +210,41 @@ export const ReviewFormModal = ({ review, onClose, onSubmit }: Props) => {
 							/>
 							홈페이지 노출
 						</label>
+					</div>
+
+					{/* 개인정보 확인 — 의뢰인(제3자) 캡처라 게시 동의와 마스킹을 기록으로 남긴다 */}
+					<div className="mb-4 rounded-md border border-border bg-muted px-4 py-3.5">
+						<div className="mb-1 font-bold text-[13px] text-foreground">개인정보 확인 (필수)</div>
+						<p className="m-0 mb-2.5 text-[12.5px] text-muted-foreground leading-relaxed">
+							캡처에서 <b>이름·전화번호·이메일·주소·여권/등록번호·계좌</b>가 가려졌는지 확인해
+							주세요. 두 항목을 체크해야 저장됩니다.
+						</p>
+						<label className="flex cursor-pointer items-start gap-2.5 py-1 text-[13.5px] text-foreground">
+							<input
+								type="checkbox"
+								checked={draft.masked_confirmed ?? false}
+								onChange={(e) => set("masked_confirmed", e.target.checked)}
+								className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-primary)]"
+							/>
+							개인식별정보가 가려진 것을 확인했습니다
+						</label>
+						<label className="flex cursor-pointer items-start gap-2.5 py-1 text-[13.5px] text-foreground">
+							<input
+								type="checkbox"
+								checked={draft.consent_confirmed ?? false}
+								onChange={(e) => set("consent_confirmed", e.target.checked)}
+								className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-primary)]"
+							/>
+							의뢰인에게 홈페이지 게시 동의를 받았습니다
+						</label>
+						<div className="mt-2">
+							<Input
+								value={draft.consent_note ?? ""}
+								onChange={(e) => set("consent_note", e.target.value)}
+								placeholder="동의 받은 방법·시점 (예: 2026-07-12 카톡으로 동의)"
+								className="h-10"
+							/>
+						</div>
 					</div>
 
 					{error && <div className="mb-3.5 text-destructive text-sm">{error}</div>}

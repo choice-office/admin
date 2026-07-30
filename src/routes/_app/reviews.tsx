@@ -120,6 +120,15 @@ function ReviewsPage() {
 											) : (
 												<Badge variant="outline">숨김</Badge>
 											)}
+											{/* 게시 동의·마스킹 기록이 없는 후기 — 수정 화면에서 확인하면 사라진다 */}
+											{(!r.consent_confirmed || !r.masked_confirmed) && (
+												<span
+													title="게시 동의·마스킹 확인 기록이 없습니다. 수정에서 확인해 주세요."
+													className="font-semibold text-[11px] text-destructive"
+												>
+													확인 필요
+												</span>
+											)}
 											<span className="text-[12px] text-muted-foreground">
 												{formatDateCompact(r.created_at)}
 											</span>
