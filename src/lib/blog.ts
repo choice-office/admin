@@ -1,5 +1,6 @@
 import { resizeImage } from "@/lib/resize-image";
 import { supabase } from "@/lib/supabase";
+import { checkUpload } from "@/lib/upload-guard";
 import type {
 	BlogAuthor,
 	BlogCategory,
@@ -169,6 +170,9 @@ export const deletePost = async (id: string): Promise<boolean> => {
 
 // 이미지 업로드 → (축소·WebP 압축) → storage(blog 버킷) → 공개 URL. 핫링크 깨짐 방지(재호스팅).
 export const uploadBlogImage = async (file: File): Promise<string | null> => {
+	// 형식·용량 검증 실패는 예외로 알린다(호출부가 사유를 그대로 보여줄 수 있게)
+	const rejected = checkUpload(file, "image");
+	if (rejected) throw new Error(rejected);
 	const optimized = await resizeImage(file);
 	const ext = optimized.name.split(".").pop()?.toLowerCase() || "webp";
 	const rand = crypto.randomUUID().slice(0, 8);
@@ -188,6 +192,8 @@ export const uploadBlogImage = async (file: File): Promise<string | null> => {
 export const uploadBlogFile = async (
 	file: File,
 ): Promise<{ url: string; name: string; mime: string }> => {
+	const rejected = checkUpload(file, "file");
+	if (rejected) throw new Error(rejected);
 	const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
 	const rand = crypto.randomUUID().slice(0, 8);
 	const path = `files/${rand}.${ext}`;

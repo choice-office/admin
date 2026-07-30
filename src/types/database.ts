@@ -17,7 +17,7 @@ export type Database = {
 					updated_at: string;
 					name: string;
 					phone: string;
-					email: string;
+					email: string | null;
 					nationality: string | null;
 					current_visa: string | null;
 					consult_field: string | null;

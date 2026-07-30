@@ -1,7 +1,10 @@
 import { supabase } from "@/lib/supabase";
+import { checkUpload } from "@/lib/upload-guard";
 
 // 후기 이미지 업로드 → storage(reviews 버킷) → 공개 URL. 핫링크 깨짐 방지(재호스팅).
 export const uploadReviewImage = async (file: File): Promise<string | null> => {
+	const rejected = checkUpload(file, "image");
+	if (rejected) throw new Error(rejected);
 	const ext = file.name.split(".").pop()?.toLowerCase() || "png";
 	const rand = crypto.randomUUID().slice(0, 8);
 	const path = `uploads/${rand}.${ext}`;

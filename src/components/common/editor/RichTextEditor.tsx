@@ -285,8 +285,9 @@ export const RichTextEditor = ({
 					toast.warning("이미지 설명(alt)이 비어 있습니다. 검색·접근성을 위해 추가를 권장합니다.");
 				editorRef.current?.chain().focus().setImage({ src: url, alt }).run();
 			}
-		} catch {
-			toast.error("이미지 업로드에 실패했습니다.");
+		} catch (e) {
+			// 형식·용량 차단 사유를 그대로 노출(그 외 예외는 일반 메시지)
+			toast.error(e instanceof Error && e.message ? e.message : "이미지 업로드에 실패했습니다.");
 		} finally {
 			uploadingRef.current = false;
 			setUploading(false);
@@ -304,8 +305,8 @@ export const RichTextEditor = ({
 				const { url, name, mime } = await up(file);
 				editorRef.current?.chain().focus().setFileEmbed({ href: url, name, mime }).run();
 			}
-		} catch {
-			toast.error("파일 첨부에 실패했습니다.");
+		} catch (e) {
+			toast.error(e instanceof Error && e.message ? e.message : "파일 첨부에 실패했습니다.");
 		} finally {
 			uploadingRef.current = false;
 			setUploading(false);

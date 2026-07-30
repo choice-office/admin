@@ -55,16 +55,22 @@ export const ReviewFormModal = ({ review, onClose, onSubmit }: Props) => {
 		const file = e.target.files?.[0];
 		if (!file) return;
 		setUploading(true);
-		const [url, dimensions] = await Promise.all([
-			uploadReviewImage(file),
-			getImageDimensions(file),
-		]);
-		setUploading(false);
-		if (!url) {
-			setError("이미지 업로드에 실패했습니다.");
-			return;
+		try {
+			const [url, dimensions] = await Promise.all([
+				uploadReviewImage(file),
+				getImageDimensions(file),
+			]);
+			if (!url) {
+				setError("이미지 업로드에 실패했습니다.");
+				return;
+			}
+			setDraft((prev) => ({ ...prev, src: url, w: dimensions.w, h: dimensions.h }));
+		} catch (e) {
+			// 형식·용량 차단 사유를 그대로 안내
+			setError(e instanceof Error && e.message ? e.message : "이미지 업로드에 실패했습니다.");
+		} finally {
+			setUploading(false);
 		}
-		setDraft((prev) => ({ ...prev, src: url, w: dimensions.w, h: dimensions.h }));
 	};
 
 	const handleSave = async () => {

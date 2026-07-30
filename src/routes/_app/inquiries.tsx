@@ -57,7 +57,7 @@ function InquiriesPage() {
 			if (periodStart && dayjs(c.created_at).isBefore(periodStart)) return false;
 			if (q) {
 				const hay =
-					`${c.name} ${c.phone} ${c.email} ${consultLabel(c.consult_field)}`.toLowerCase();
+					`${c.name} ${c.phone} ${c.email ?? ""} ${consultLabel(c.consult_field)}`.toLowerCase();
 				if (!hay.includes(q)) return false;
 			}
 			return true;

@@ -9,44 +9,34 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AppSettingsRouteImport } from './routes/_app/settings'
-import { Route as AppReviewsRouteImport } from './routes/_app/reviews'
-import { Route as AppInquiriesRouteImport } from './routes/_app/inquiries'
-import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppBlogRouteImport } from './routes/_app/blog'
-import { Route as AppBlogNewRouteImport } from './routes/_app/blog_.new'
+import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppInquiriesRouteImport } from './routes/_app/inquiries'
+import { Route as AppReviewsRouteImport } from './routes/_app/reviews'
+import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppBlogPostIdRouteImport } from './routes/_app/blog_.$postId'
+import { Route as AppBlogNewRouteImport } from './routes/_app/blog_.new'
 
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppSettingsRoute = AppSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppReviewsRoute = AppReviewsRouteImport.update({
-  id: '/reviews',
-  path: '/reviews',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppInquiriesRoute = AppInquiriesRouteImport.update({
-  id: '/inquiries',
-  path: '/inquiries',
+const AppBlogRoute = AppBlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
@@ -54,19 +44,29 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
-const AppBlogRoute = AppBlogRouteImport.update({
-  id: '/blog',
-  path: '/blog',
+const AppInquiriesRoute = AppInquiriesRouteImport.update({
+  id: '/inquiries',
+  path: '/inquiries',
   getParentRoute: () => AppRoute,
 } as any)
-const AppBlogNewRoute = AppBlogNewRouteImport.update({
-  id: '/blog_/new',
-  path: '/blog/new',
+const AppReviewsRoute = AppReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
 const AppBlogPostIdRoute = AppBlogPostIdRouteImport.update({
   id: '/blog_/$postId',
   path: '/blog/$postId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBlogNewRoute = AppBlogNewRouteImport.update({
+  id: '/blog_/new',
+  path: '/blog/new',
   getParentRoute: () => AppRoute,
 } as any)
 
@@ -150,11 +150,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app': {
@@ -164,32 +164,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/settings': {
-      id: '/_app/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AppSettingsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/reviews': {
-      id: '/_app/reviews'
-      path: '/reviews'
-      fullPath: '/reviews'
-      preLoaderRoute: typeof AppReviewsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/inquiries': {
-      id: '/_app/inquiries'
-      path: '/inquiries'
-      fullPath: '/inquiries'
-      preLoaderRoute: typeof AppInquiriesRouteImport
+    '/_app/blog': {
+      id: '/_app/blog'
+      path: '/blog'
+      fullPath: '/blog'
+      preLoaderRoute: typeof AppBlogRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/dashboard': {
@@ -199,18 +185,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/blog': {
-      id: '/_app/blog'
-      path: '/blog'
-      fullPath: '/blog'
-      preLoaderRoute: typeof AppBlogRouteImport
+    '/_app/inquiries': {
+      id: '/_app/inquiries'
+      path: '/inquiries'
+      fullPath: '/inquiries'
+      preLoaderRoute: typeof AppInquiriesRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/blog_/new': {
-      id: '/_app/blog_/new'
-      path: '/blog/new'
-      fullPath: '/blog/new'
-      preLoaderRoute: typeof AppBlogNewRouteImport
+    '/_app/reviews': {
+      id: '/_app/reviews'
+      path: '/reviews'
+      fullPath: '/reviews'
+      preLoaderRoute: typeof AppReviewsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/blog_/$postId': {
@@ -218,6 +211,13 @@ declare module '@tanstack/react-router' {
       path: '/blog/$postId'
       fullPath: '/blog/$postId'
       preLoaderRoute: typeof AppBlogPostIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/blog_/new': {
+      id: '/_app/blog_/new'
+      path: '/blog/new'
+      fullPath: '/blog/new'
+      preLoaderRoute: typeof AppBlogNewRouteImport
       parentRoute: typeof AppRoute
     }
   }

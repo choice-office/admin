@@ -174,13 +174,21 @@ export const BlogEditor = ({ post, categories, authors, onClose, onOpenPost }: P
 			const file = input.files?.[0];
 			if (!file) return;
 			setCoverUploading(true);
-			const url = await uploadBlogImage(file);
-			setCoverUploading(false);
-			if (!url) {
-				setError("커버 이미지 업로드에 실패했습니다.");
-				return;
+			try {
+				const url = await uploadBlogImage(file);
+				if (!url) {
+					setError("커버 이미지 업로드에 실패했습니다.");
+					return;
+				}
+				setCoverUrl(url);
+			} catch (e) {
+				// 형식·용량 차단 사유를 그대로 안내
+				setError(
+					e instanceof Error && e.message ? e.message : "커버 이미지 업로드에 실패했습니다.",
+				);
+			} finally {
+				setCoverUploading(false);
 			}
-			setCoverUrl(url);
 		};
 		input.click();
 	};

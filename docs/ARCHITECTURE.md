@@ -65,14 +65,31 @@ design/                        # Claude Design 산출물(토큰 CSS + 어드민 
 - 클라이언트: **anon 키**(`VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`). 로그인하면 세션이 붙어 **authenticated** 권한으로 동작 → RLS가 접근을 통제.
 - 테이블(관리자 관점):
   - **contacts**(홈 문의폼 적재) — 컬럼: name·phone·email·nationality·current_visa·consult_field·message·privacy_consent·source·status·memo·created_at·updated_at. `status ∈ (new,in_progress,done,hold)`. RLS: **authenticated SELECT/UPDATE 허용**, INSERT는 홈페이지가 service_role로. 관리자는 상태·메모만 수정.
-  - **blog_posts / blog_categories / blog_authors**(홈페이지 블로그) — 관리자가 Tiptap 에디터로 작성·발행. RLS: 공개 SELECT는 published만, **authenticated는 전체 SELECT(초안 포함)+INSERT/UPDATE/DELETE**. status ∈ (draft, published, archived).
+  - **blog_posts / blog_categories / blog_authors**(홈페이지 블로그) — 관리자가 Tiptap 에디터로 작성·발행. RLS: 공개(anon) SELECT는 published만, **관리 작업은 `public.is_admin()` 통과한 계정만**(2026-07-30 권한 정리). status ∈ (draft, published, archived).
     - **임시저장(draft) 보관 30일** — `updated_at` 기준. `purgeExpiredDrafts()`(lib/blog.ts)가 `status=draft AND updated_at < now-30d`만 삭제하고, **블로그 목록 진입 시 + 임시저장 목록 모달 열 때** 실행된다(DB 크론 아님 → 접속이 없으면 그 사이엔 남아 있고 다음 접속에 정리). 기간은 `DRAFT_RETENTION_DAYS` 단일 출처.
     - 발행글을 "임시저장"으로 다시 저장하면 `published_at`이 null이 되어 홈페이지에서 내려간다(발행 취소).
     - 미구현: 글 삭제·만료 시 `blog` 버킷의 업로드 이미지는 남는다(스토리지 정리 없음).
   - **reviews** — 후기(tag·country·initial·flag·title·body·is_published·sort_order). RLS: anon은 is_published만 SELECT, authenticated CRUD. 홈페이지가 노출 후기를 ISR로 읽음.
+
   - **storage bucket `blog`**(공개 읽기) — 본문·커버 이미지. 업로드/수정/삭제는 authenticated(`uploads/` 경로).
   - **auth.users** — 관리자 계정(예: seoyeon@kvisa1345.com).
 - 스키마 변경은 Supabase Management API/SQL로 하고 `types/database.ts`를 함께 갱신.
+
+### 권한 모델 (2026-07-30 정리 — `docs/sql/2026-07-30-authz-hardening.sql`)
+`authenticated` 라는 이유만으로 권한을 주지 않는다. **`public.admins` 화이트리스트 + `public.is_admin()`** 이 단일 판정 지점이다.
+
+| 역할 | blog_posts | categories·authors | review_images | contacts | storage(blog·reviews) |
+|---|---|---|---|---|---|
+| anon(방문자) | published SELECT | SELECT | is_published SELECT | 접근 불가 | 공개 읽기만 |
+| authenticated + admins 등록 | 전체 CRUD | SELECT | 전체 CRUD | SELECT + status·memo UPDATE | 업로드·수정·삭제 |
+| authenticated 미등록 | 전부 거부 | 거부 | 거부 | 거부 | 거부 |
+| service_role(홈페이지 서버액션) | — | — | — | INSERT(문의 접수) | — |
+
+- **회원가입 차단**: Supabase Auth `disable_signup = true`(외부인이 계정을 만들어 authenticated 가 되는 경로 차단), 비밀번호 최소 12자.
+- **관리자 추가**: `insert into admins(user_id, email) select id, email from auth.users where email = '...';` (계정 생성은 대시보드에서 초대)
+- anon 은 public 스키마 전체에서 INSERT/UPDATE/DELETE 권한이 회수됨(RLS 와 이중 방어).
+- **contacts**: 이전에는 `authenticated` 에 테이블 권한이 아예 없어 관리자 문의 화면이 42501 로 비어 보였다 → SELECT + (status, memo) UPDATE 만 부여해 복구.
+- `contact_throttle`: 문의 폼 레이트리밋용(IP 해시). service_role 전용.
 
 ## 검증 · 배포
 - **타입검사 = `pnpm build`**(`tsc -b && vite build`). 별도 check-types 스크립트 없음. (`pnpm lint`/`lint:fix`/`format` = Biome)

@@ -74,7 +74,7 @@ export const InquiryDetailModal = ({ contact, onClose, onSave }: Props) => {
 					<div className="mb-[18px] border-border border-b pb-2">
 						<InfoRow label="의뢰인" value={contact.name} />
 						<InfoRow label="연락처" value={contact.phone} />
-						<InfoRow label="이메일" value={contact.email} />
+						<InfoRow label="이메일" value={contact.email ?? "—"} />
 						<InfoRow label="국적" value={contact.nationality ?? "—"} />
 						<InfoRow label="현재 체류자격" value={contact.current_visa ?? "—"} />
 						<InfoRow label="업무분야" value={consultLabel(contact.consult_field)} />
