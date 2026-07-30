@@ -68,6 +68,11 @@ design/                        # Claude Design 산출물(토큰 CSS + 어드민 
   - **blog_posts / blog_categories / blog_authors**(홈페이지 블로그) — 관리자가 Tiptap 에디터로 작성·발행. RLS: 공개(anon) SELECT는 published만, **관리 작업은 `public.is_admin()` 통과한 계정만**(2026-07-30 권한 정리). status ∈ (draft, published, archived).
     - **임시저장(draft) 보관 30일** — `updated_at` 기준. `purgeExpiredDrafts()`(lib/blog.ts)가 `status=draft AND updated_at < now-30d`만 삭제하고, **블로그 목록 진입 시 + 임시저장 목록 모달 열 때** 실행된다(DB 크론 아님 → 접속이 없으면 그 사이엔 남아 있고 다음 접속에 정리). 기간은 `DRAFT_RETENTION_DAYS` 단일 출처.
     - 발행글을 "임시저장"으로 다시 저장하면 `published_at`이 null이 되어 홈페이지에서 내려간다(발행 취소).
+    - **★ 대표글 지정은 수정일(`updated_at`)을 바꾸지 않는다** — `set_updated_at` 트리거 규칙(docs/sql/2026-07-30-featured-keeps-updated-at.sql):
+      ① `updated_at` 을 명시적으로 지정한 UPDATE 는 그 값을 존중 ② `is_featured`/`featured_order` 만 바뀌면 수정일 유지
+      ③ 그 외 실제 수정은 `now()`. → 목록 정렬과 공개 JSON-LD `dateModified` 가 ★ 조작으로 흔들리지 않는다.
+    - 대표글은 수동 지정이고 4개 미만이면 홈이 최신글로 자동 채운다. 목록의 "최신 4개로 지정" 버튼은
+      `featureLatestPosts()` 로 기존 지정을 해제한 뒤 `published_at` 최신순 4개에 순서 1..4 를 부여한다(홈 정렬 기준과 동일).
     - 미구현: 글 삭제·만료 시 `blog` 버킷의 업로드 이미지는 남는다(스토리지 정리 없음).
   - **reviews** — 후기(tag·country·initial·flag·title·body·is_published·sort_order). RLS: anon은 is_published만 SELECT, authenticated CRUD. 홈페이지가 노출 후기를 ISR로 읽음.
 
