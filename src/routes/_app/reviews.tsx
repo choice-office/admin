@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Eye, EyeOff, Pencil, Plus, Trash2 } from "lucide-react";
+import { Eye, EyeOff, Pencil, Plus, Star, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { ReviewFormModal } from "@/components/admin/review-form-modal";
 import { Badge, Button } from "@/components/ui/ds";
@@ -15,6 +15,8 @@ export const Route = createFileRoute("/_app/reviews")({
 
 // 관리자 후기 목록 — 페이지당 8개(1페이지여도 페이저 표시)
 const REVIEWS_PER_PAGE = 8;
+// 홈 후기 섹션에 올릴 대표 후기 상한. 마퀴가 무한 반복이라 너무 많으면 한 바퀴가 길어진다.
+const MAX_FEATURED = 10;
 
 function ReviewsPage() {
 	const { images, isLoading, createReview, updateReview, deleteReview } = useReviews();
@@ -22,12 +24,26 @@ function ReviewsPage() {
 	const [isCreating, setIsCreating] = useState(false);
 	const [confirmId, setConfirmId] = useState<string | null>(null);
 	const [page, setPage] = useState(1);
+	const [featuredOnly, setFeaturedOnly] = useState(false); // 홈 대표 후기만 보기
 
 	const publishedCount = images.filter((r) => r.is_published).length;
-	const totalPages = Math.max(1, Math.ceil(images.length / REVIEWS_PER_PAGE));
+	const featuredCount = images.filter((r) => r.is_featured).length;
+	// 대표 지정/해제 — 상한을 넘기면 먼저 해제하도록 안내한다(블로그 대표글과 같은 규칙).
+	const handleToggleFeatured = (r: ReviewImage) => {
+		if (!r.is_featured && featuredCount >= MAX_FEATURED) {
+			alert(
+				`홈 대표 후기는 최대 ${MAX_FEATURED}개까지 선택할 수 있습니다. 다른 후기를 먼저 해제해 주세요.`,
+			);
+			return;
+		}
+		updateReview(r.id, { is_featured: !r.is_featured });
+	};
+	// 홈 후기 섹션은 대표(별표)만 흘린다. 대표가 0건이면 홈페이지가 노출본 전체로 폴백한다.
+	const shown = featuredOnly ? images.filter((r) => r.is_featured) : images;
+	const totalPages = Math.max(1, Math.ceil(shown.length / REVIEWS_PER_PAGE));
 	const current = Math.min(page, totalPages);
 	const start = (current - 1) * REVIEWS_PER_PAGE;
-	const pageItems = images.slice(start, start + REVIEWS_PER_PAGE);
+	const pageItems = shown.slice(start, start + REVIEWS_PER_PAGE);
 
 	return (
 		<div className="flex h-full flex-col">
@@ -37,28 +53,50 @@ function ReviewsPage() {
 						의뢰인 후기 관리
 					</h2>
 					<p className="m-0 text-[15px] text-muted-foreground">
-						홈페이지 후기 갤러리에 노출되는 카드입니다. 노출 중 {publishedCount}건 / 전체{" "}
-						{images.length}건
+						후기 목록(/reviews)에는 '노출' 카드가 모두 나오고, 홈 화면 후기 섹션에는 별표로 고른
+						대표 후기만 나옵니다. 노출 중 {publishedCount}건 · 홈 대표 {featuredCount}/
+						{MAX_FEATURED}건 / 전체 {images.length}건
 					</p>
 				</div>
-				<Button
-					variant="primary"
-					iconStart={<Plus size={18} />}
-					onClick={() => setIsCreating(true)}
-				>
-					새 후기
-				</Button>
+				<div className="flex shrink-0 items-center gap-2">
+					<button
+						type="button"
+						onClick={() => {
+							setFeaturedOnly((v) => !v);
+							setPage(1);
+						}}
+						className={cn(
+							"flex h-10 shrink-0 items-center gap-1.5 rounded-md border px-3 text-sm transition-colors",
+							featuredOnly
+								? "border-primary bg-primary font-bold text-primary-foreground"
+								: "border-border bg-card font-medium text-foreground hover:bg-muted",
+						)}
+					>
+						<Star size={15} fill={featuredOnly ? "currentColor" : "none"} />홈 대표만
+					</button>
+					<Button
+						variant="primary"
+						iconStart={<Plus size={18} />}
+						onClick={() => setIsCreating(true)}
+					>
+						새 후기
+					</Button>
+				</div>
 			</div>
 
 			{isLoading ? (
 				<div className="rounded-md border border-border bg-card px-5 py-16 text-center text-muted-foreground text-sm">
 					불러오는 중…
 				</div>
-			) : images.length === 0 ? (
+			) : shown.length === 0 ? (
 				<div className="rounded-md border border-border bg-card px-5 py-16 text-center">
-					<div className="font-medium text-[15px] text-foreground">등록된 후기가 없습니다</div>
+					<div className="font-medium text-[15px] text-foreground">
+						{featuredOnly ? "홈 대표로 지정한 후기가 없습니다" : "등록된 후기가 없습니다"}
+					</div>
 					<div className="mt-1.5 text-muted-foreground text-sm">
-						"새 후기" 버튼으로 후기를 추가해 보세요.
+						{featuredOnly
+							? "카드의 별표를 눌러 홈 화면에 올릴 후기를 골라 주세요."
+							: '"새 후기" 버튼으로 후기를 추가해 보세요.'}
 					</div>
 				</div>
 			) : (
@@ -134,6 +172,21 @@ function ReviewsPage() {
 											)}
 										</div>
 										<div className="flex shrink-0 items-center gap-0.5">
+											<button
+												type="button"
+												title={
+													r.is_featured ? "홈 대표 해제" : `홈 대표로 선택 (최대 ${MAX_FEATURED}개)`
+												}
+												onClick={() => handleToggleFeatured(r)}
+												className={cn(
+													"flex h-9 w-9 items-center justify-center rounded-md",
+													r.is_featured
+														? "text-[var(--color-primary)]"
+														: "text-muted-foreground hover:bg-muted",
+												)}
+											>
+												<Star size={17} fill={r.is_featured ? "currentColor" : "none"} />
+											</button>
 											<button
 												type="button"
 												title={r.is_published ? "숨기기" : "노출하기"}

@@ -60,6 +60,7 @@ export type Database = {
 					quote: string;
 					meta: string;
 					is_published: boolean;
+					is_featured: boolean;
 					sort_order: number;
 					consent_confirmed: boolean;
 					masked_confirmed: boolean;
@@ -74,6 +75,7 @@ export type Database = {
 					quote: string;
 					meta: string;
 					is_published?: boolean;
+					is_featured?: boolean;
 					sort_order?: number;
 					consent_confirmed?: boolean;
 					masked_confirmed?: boolean;
@@ -87,6 +89,7 @@ export type Database = {
 					quote?: string;
 					meta?: string;
 					is_published?: boolean;
+					is_featured?: boolean;
 					sort_order?: number;
 					consent_confirmed?: boolean;
 					masked_confirmed?: boolean;

@@ -190,18 +190,10 @@ export const ReviewFormModal = ({ review, onClose, onSubmit }: Props) => {
 						/>
 					</div>
 
+					{/* 정렬 순서 입력은 두지 않는다 — 새 후기는 기본값(0)으로 목록 앞에 붙고,
+					    홈 노출은 목록의 별표(홈 대표)로 고른다. 기존 정렬값은 DB에 그대로 유지. */}
 					<div className="mb-[22px] flex items-center gap-4">
-						<div className="flex-1">
-							<Label htmlFor="rv-order">정렬 순서</Label>
-							<Input
-								id="rv-order"
-								type="number"
-								min={1}
-								value={String((draft.sort_order ?? 0) + 1)}
-								onChange={(e) => set("sort_order", Math.max(0, (Number(e.target.value) || 1) - 1))}
-							/>
-						</div>
-						<label className="flex cursor-pointer items-center gap-2.5 pt-6 text-foreground text-sm">
+						<label className="flex cursor-pointer items-center gap-2.5 text-foreground text-sm">
 							<input
 								type="checkbox"
 								checked={draft.is_published ?? true}
