@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Eye, EyeOff, Pencil, Plus, Star, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { ReviewFormModal } from "@/components/admin/review-form-modal";
+import { ReviewLightbox } from "@/components/admin/review-lightbox";
 import { Badge, Button } from "@/components/ui/ds";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { useReviews } from "@/hooks/use-reviews";
@@ -25,6 +26,7 @@ function ReviewsPage() {
 	const [confirmId, setConfirmId] = useState<string | null>(null);
 	const [page, setPage] = useState(1);
 	const [featuredOnly, setFeaturedOnly] = useState(false); // 홈 대표 후기만 보기
+	const [zoomed, setZoomed] = useState<ReviewImage | null>(null); // 이미지 크게 보기
 
 	const publishedCount = images.filter((r) => r.is_published).length;
 	const featuredCount = images.filter((r) => r.is_featured).length;
@@ -120,8 +122,11 @@ function ReviewsPage() {
 									</div>
 
 									{/* 이미지 창 — 카드 축소를 위해 높이 낮춤(4/4.4) + 하단 페이드 */}
-									<div
-										className="relative mx-3 mt-2 overflow-hidden border border-border"
+									<button
+										type="button"
+										title="이미지 크게 보기"
+										onClick={() => setZoomed(r)}
+										className="relative mx-3 mt-2 block cursor-zoom-in overflow-hidden border border-border p-0"
 										style={{ aspectRatio: "4 / 4.4", background: "#e9edf1" }}
 									>
 										<img
@@ -136,7 +141,7 @@ function ReviewsPage() {
 													"linear-gradient(to bottom, rgba(251,250,247,0) 0%, rgba(251,250,247,0.94) 90%)",
 											}}
 										/>
-									</div>
+									</button>
 
 									{/* 한마디 */}
 									<p
@@ -227,6 +232,8 @@ function ReviewsPage() {
 					/>
 				</>
 			)}
+
+			{zoomed && <ReviewLightbox review={zoomed} onClose={() => setZoomed(null)} />}
 
 			{(isCreating || editing) && (
 				<ReviewFormModal
