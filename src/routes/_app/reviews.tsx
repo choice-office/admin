@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_app/reviews")({
 // 관리자 후기 목록 — 페이지당 8개(1페이지여도 페이저 표시)
 const REVIEWS_PER_PAGE = 8;
 // 홈 후기 섹션에 올릴 대표 후기 상한. 마퀴가 무한 반복이라 너무 많으면 한 바퀴가 길어진다.
-const MAX_FEATURED = 10;
+const MAX_FEATURED = 12;
 
 function ReviewsPage() {
 	const { images, isLoading, createReview, updateReview, deleteReview } = useReviews();
