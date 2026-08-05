@@ -5,9 +5,15 @@ import { FeaturedSlots } from "@/components/admin/featured-slots";
 import { Badge, Button, Input } from "@/components/ui/ds";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import {
 	clearFeatured,
 	deletePost,
-	featureLatestPosts,
 	getCategories,
 	listPosts,
 	purgeExpiredDrafts,
@@ -41,12 +47,13 @@ function BlogPage() {
 	const [categories, setCategories] = useState<BlogCategory[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [confirmId, setConfirmId] = useState<string | null>(null);
-	const [isFeaturingLatest, setIsFeaturingLatest] = useState(false);
+	const [isApplying, setIsApplying] = useState(false); // 대표글 변경 중
 	// 검색 — 입력값(searchInput)과 적용값(query) 분리: "조회"를 눌러야 실제 검색 실행
 	const [searchInput, setSearchInput] = useState("");
 	const [query, setQuery] = useState("");
 	const [isSearching, setIsSearching] = useState(false);
 	const [featuredOnly, setFeaturedOnly] = useState(false); // 대표글만 보기
+	const [categoryId, setCategoryId] = useState("all"); // 카테고리 필터(선택 즉시 적용)
 	const navigate = useNavigate({ from: Route.fullPath });
 	const { page } = Route.useSearch();
 	const goPage = (n: number) => navigate({ search: { page: n } });
@@ -68,6 +75,19 @@ function BlogPage() {
 	const categoryName = (id: string | null): string =>
 		categories.find((c) => c.id === id)?.name ?? "—";
 
+	// 카테고리 선택 목록 — 전체 글 기준 개수를 함께 보여주고, 글이 있는 분류만 노출한다.
+	const categoryOptions = [
+		{ value: "all", label: `전체 카테고리 (${posts.length})` },
+		...categories
+			.map((c) => ({
+				value: c.id,
+				count: posts.filter((p) => p.category_id === c.id).length,
+				name: c.name,
+			}))
+			.filter((c) => c.count > 0)
+			.map((c) => ({ value: c.value, label: `${c.name} (${c.count})` })),
+	];
+
 	// ── 홈 대표글 ────────────────────────────────────────────────────────────
 	// 모드는 데이터에서 유도한다: 지정 0개 = 자동(홈이 최신 발행글 4개를 보여줌),
 	// 1~4개 = 직접 지정(부족분은 홈이 최신글로 채움). 별도 설정 테이블이 필요 없다.
@@ -88,10 +108,10 @@ function BlogPage() {
 	);
 
 	const applyFeatured = async (ids: string[]) => {
-		setIsFeaturingLatest(true);
+		setIsApplying(true);
 		const ok = await setFeaturedPosts(ids);
 		await refetch();
-		setIsFeaturingLatest(false);
+		setIsApplying(false);
 		if (!ok) alert("대표글 설정에 실패했습니다. 잠시 후 다시 시도해 주세요.");
 	};
 
@@ -104,10 +124,10 @@ function BlogPage() {
 			)
 		)
 			return;
-		setIsFeaturingLatest(true);
+		setIsApplying(true);
 		const ok = await clearFeatured();
 		await refetch();
-		setIsFeaturingLatest(false);
+		setIsApplying(false);
 		if (!ok) alert("자동으로 바꾸지 못했습니다. 잠시 후 다시 시도해 주세요.");
 	};
 	const switchToManual = async () =>
@@ -155,6 +175,7 @@ function BlogPage() {
 		filtered = filtered.filter((p) =>
 			`${p.title} ${p.slug} ${categoryName(p.category_id)}`.toLowerCase().includes(q),
 		);
+	if (categoryId !== "all") filtered = filtered.filter((p) => p.category_id === categoryId);
 	if (featuredOnly) filtered = filtered.filter((p) => p.is_featured);
 
 	// 페이지네이션(클라이언트) — 목록/검색으로 페이지가 줄면 safePage로 보정
@@ -177,17 +198,6 @@ function BlogPage() {
 		goPage(1);
 	};
 
-	// 직접 지정 모드 보조 — 슬롯을 지금의 최신 발행글 4개로 다시 채운다.
-	const handleFeatureLatest = async () => {
-		if (!confirm(`슬롯 ${MAX_FEATURED}칸을 지금의 최신 발행글로 다시 채웁니다. 계속할까요?`))
-			return;
-		setIsFeaturingLatest(true);
-		const n = await featureLatestPosts(MAX_FEATURED);
-		await refetch();
-		setIsFeaturingLatest(false);
-		if (n === 0) alert("대표글 지정에 실패했습니다. 잠시 후 다시 시도해 주세요.");
-	};
-
 	// 작성/수정은 별도 URL — 새로고침해도 화면이 유지된다. page 는 "목록으로" 복귀용.
 	const openNew = () => navigate({ to: "/blog/new", search: { page: safePage } });
 	const openEdit = (post: BlogPost) =>
@@ -195,14 +205,13 @@ function BlogPage() {
 
 	return (
 		<div className="flex h-full flex-col">
-			<div className="mb-5 flex items-start justify-between gap-4">
+			<div className="mb-4 flex items-start justify-between gap-4">
 				<div>
 					<h2 className="m-0 mb-1.5 font-bold text-2xl text-foreground tracking-[-0.02em]">
 						블로그 관리
 					</h2>
 					<p className="m-0 text-[15px] text-muted-foreground">
-						글을 작성하고 발행합니다. 발행한 글은 홈페이지 블로그에 노출되고, 홈 화면 첫 페이지에는
-						아래 4칸이 그대로 보입니다.
+						발행한 글은 홈페이지 블로그에 노출되고, 홈 화면에는 아래 4칸이 보입니다.
 					</p>
 				</div>
 				<Button variant="primary" iconStart={<Plus size={18} />} onClick={openNew}>
@@ -210,63 +219,70 @@ function BlogPage() {
 				</Button>
 			</div>
 
-			{/* 홈 대표글 — 모드 전환 + 실제로 홈에 나가는 4칸 */}
-			<div className="mb-3 flex flex-wrap items-center gap-2">
-				<span className="font-semibold text-[13px] text-muted-foreground">홈 대표글</span>
-				<div className="inline-flex overflow-hidden rounded-md border border-border">
-					<button
-						type="button"
-						onClick={isAuto ? undefined : switchToAuto}
-						disabled={isFeaturingLatest}
-						title="글을 발행하면 홈 4칸이 최신 발행글로 저절로 갱신됩니다"
-						className={cn(
-							"h-9 px-3 text-sm transition-colors disabled:opacity-50",
-							isAuto
-								? "bg-primary font-bold text-primary-foreground"
-								: "bg-card font-medium text-foreground hover:bg-muted",
-						)}
-					>
-						자동 · 최신 {MAX_FEATURED}개
-					</button>
-					<button
-						type="button"
-						onClick={isAuto ? switchToManual : undefined}
-						disabled={isFeaturingLatest}
-						title="직접 고른 글을 홈 4칸에 고정합니다"
-						className={cn(
-							"h-9 border-border border-l px-3 text-sm transition-colors disabled:opacity-50",
-							isAuto
-								? "bg-card font-medium text-foreground hover:bg-muted"
-								: "bg-primary font-bold text-primary-foreground",
-						)}
-					>
-						직접 지정
-					</button>
-				</div>
-				{!isAuto && (
-					<Button
-						variant="outline"
-						iconStart={<Star size={15} />}
-						onClick={handleFeatureLatest}
-						disabled={isFeaturingLatest}
-						title={`슬롯 ${MAX_FEATURED}칸을 지금의 최신 발행글로 다시 채웁니다`}
-					>
-						{isFeaturingLatest ? "적용 중…" : "최신글로 다시 채우기"}
-					</Button>
-				)}
-			</div>
+			{/* 홈 대표글 — 모드 전환 + 실제로 홈에 나가는 4칸(세로 공간을 아끼려고 한 블록에 합친다) */}
 			<FeaturedSlots
+				modeToggle={
+					<div className="inline-flex overflow-hidden rounded-md border border-border">
+						<button
+							type="button"
+							onClick={isAuto ? undefined : switchToAuto}
+							disabled={isApplying}
+							title="글을 발행하면 홈 4칸이 최신 발행글로 저절로 갱신됩니다"
+							className={cn(
+								"h-9 px-3 text-sm transition-colors disabled:opacity-50",
+								isAuto
+									? "bg-primary font-bold text-primary-foreground"
+									: "bg-card font-medium text-foreground hover:bg-muted",
+							)}
+						>
+							자동 · 최신 {MAX_FEATURED}개
+						</button>
+						<button
+							type="button"
+							onClick={isAuto ? switchToManual : undefined}
+							disabled={isApplying}
+							title="직접 고른 글을 홈 4칸에 고정합니다"
+							className={cn(
+								"h-9 border-border border-l px-3 text-sm transition-colors disabled:opacity-50",
+								isAuto
+									? "bg-card font-medium text-foreground hover:bg-muted"
+									: "bg-primary font-bold text-primary-foreground",
+							)}
+						>
+							직접 지정
+						</button>
+					</div>
+				}
 				picked={picked}
 				autoFill={autoFill}
 				max={MAX_FEATURED}
 				isAuto={isAuto}
-				busy={isFeaturingLatest}
+				busy={isApplying}
 				onRemove={handleToggleFeatured}
 				onMove={handleMoveSlot}
 			/>
 
-			{/* 검색 — "조회" 버튼(또는 Enter)으로만 실행 */}
-			<div className="mb-4 flex items-center gap-2">
+			{/* 필터·검색 — 카테고리 선택은 즉시 적용, 검색은 "조회" 버튼(또는 Enter) */}
+			<div className="mb-3 flex flex-wrap items-center gap-2">
+				<Select
+					items={categoryOptions}
+					value={categoryId}
+					onValueChange={(v) => {
+						setCategoryId(v ?? "all");
+						goPage(1);
+					}}
+				>
+					<SelectTrigger className="text-[var(--text-body)]" style={{ height: 42, width: 190 }}>
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						{categoryOptions.map((o) => (
+							<SelectItem key={o.value} value={o.value}>
+								{o.label}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
 				<div className="relative w-full sm:max-w-xs">
 					<span className="absolute top-1/2 left-3 flex -translate-y-1/2 text-muted-foreground">
 						<Search size={17} />
@@ -318,7 +334,7 @@ function BlogPage() {
 					<div>카테고리</div>
 					<div className="md:text-center">상태</div>
 					<div className="md:text-center">대표</div>
-					<div className="md:text-center">수정일</div>
+					<div className="md:text-center">발행일</div>
 					<div className="md:text-center">관리</div>
 				</div>
 
@@ -331,10 +347,12 @@ function BlogPage() {
 					) : filtered.length === 0 ? (
 						<div className="px-5 py-14 text-center">
 							<div className="font-medium text-[15px] text-foreground">
-								{query || featuredOnly ? "조건에 맞는 글이 없습니다" : "작성된 글이 없습니다"}
+								{query || featuredOnly || categoryId !== "all"
+									? "조건에 맞는 글이 없습니다"
+									: "작성된 글이 없습니다"}
 							</div>
 							<div className="mt-1.5 text-muted-foreground text-sm">
-								{query || featuredOnly
+								{query || featuredOnly || categoryId !== "all"
 									? "검색어나 필터를 바꿔 다시 시도해 보세요."
 									: '"새 글" 버튼으로 첫 글을 작성해 보세요.'}
 							</div>
@@ -389,7 +407,7 @@ function BlogPage() {
 													? "홈 대표글에서 빼기"
 													: "홈 대표글로 넣기"
 										}
-										disabled={isFeaturingLatest}
+										disabled={isApplying}
 										onClick={() => handleToggleFeatured(p)}
 										className={cn(
 											"flex h-8 items-center gap-1 rounded-md px-2 text-sm disabled:opacity-40 md:justify-self-center",
@@ -408,7 +426,7 @@ function BlogPage() {
 										) : null}
 									</button>
 									<div className="text-[13px] text-muted-foreground md:text-center md:text-sm">
-										{formatDateCompact(p.updated_at)}
+										{p.published_at ? formatDateCompact(p.published_at) : "—"}
 									</div>
 									<div className="flex items-center justify-end gap-1 md:justify-center">
 										<button
@@ -440,7 +458,7 @@ function BlogPage() {
 				page={safePage}
 				totalPages={totalPages}
 				onPageChange={goPage}
-				className="mt-4"
+				className="mt-3"
 			/>
 
 			{confirmId && (

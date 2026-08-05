@@ -17,9 +17,15 @@ const POST_SELECT_BASE =
 // tags 컬럼은 마이그레이션 후에만 존재 → 포함 조회 실패 시 base로 폴백(마이그레이션 전에도 목록 정상)
 const POST_SELECT = `${POST_SELECT_BASE},tags`;
 
+// 목록 정렬 = 발행일 최신순(홈페이지 노출 순서와 같은 기준).
+// 발행일이 없는 임시저장 글은 맨 위에 모아 둔다(작업 중인 글을 찾기 쉽게) — 같은 그룹 안에서는 최근 수정순.
 export const listPosts = async (): Promise<BlogPost[]> => {
 	const run = (select: string) =>
-		supabase.from("blog_posts").select(select).order("updated_at", { ascending: false });
+		supabase
+			.from("blog_posts")
+			.select(select)
+			.order("published_at", { ascending: false, nullsFirst: true })
+			.order("updated_at", { ascending: false });
 	let { data, error } = await run(POST_SELECT);
 	if (error) ({ data, error } = await run(POST_SELECT_BASE));
 	if (error) {
@@ -142,23 +148,6 @@ export const updatePost = async (id: string, patch: BlogPostUpdate): Promise<boo
 	return true;
 };
 
-// 홈 대표글 지정/해제 — updated_at은 건드리지 않아(목록 정렬 유지) 별도 함수로 둔다. 최대 3개는 UI에서 제어.
-export const setFeatured = async (
-	id: string,
-	isFeatured: boolean,
-	featuredOrder: number | null,
-): Promise<boolean> => {
-	const { error } = await supabase
-		.from("blog_posts")
-		.update({ is_featured: isFeatured, featured_order: featuredOrder })
-		.eq("id", id);
-	if (error) {
-		console.error("대표글 설정 실패:", error.message);
-		return false;
-	}
-	return true;
-};
-
 // 대표글 전체 해제 — 지정이 0개면 홈은 "자동(최신 발행글 4개)"으로 동작한다.
 export const clearFeatured = async (): Promise<boolean> => {
 	const { error } = await supabase
@@ -187,22 +176,6 @@ export const setFeaturedPosts = async (ids: string[]): Promise<boolean> => {
 		}
 	}
 	return true;
-};
-
-// 대표글을 "최신 발행글 N개"로 다시 지정 — 홈페이지와 같은 기준(published_at 최신순)으로 맞춘다.
-export const featureLatestPosts = async (count: number): Promise<number> => {
-	const { data, error } = await supabase
-		.from("blog_posts")
-		.select("id")
-		.eq("status", "published")
-		.order("published_at", { ascending: false })
-		.limit(count);
-	if (error) {
-		console.error("최신 발행글 조회 실패:", error.message);
-		return 0;
-	}
-	const ids = (data ?? []).map((r) => (r as { id: string }).id);
-	return (await setFeaturedPosts(ids)) ? ids.length : 0;
 };
 
 export const deletePost = async (id: string): Promise<boolean> => {

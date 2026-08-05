@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight, Star, X } from "lucide-react";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import type { BlogPost } from "@/types/database";
 
@@ -15,12 +16,14 @@ type FeaturedSlotsProps = {
 	/** 자동 모드(지정 0개) 여부 — 안내 문구가 달라진다. */
 	isAuto: boolean;
 	busy?: boolean;
+	/** 자동/직접 지정 모드 전환 컨트롤 — 헤더 한 줄에 같이 놓아 세로 공간을 아낀다. */
+	modeToggle?: ReactNode;
 	onRemove: (post: BlogPost) => void;
 	onMove: (post: BlogPost, direction: -1 | 1) => void;
 };
 
 const SLOT_BASE =
-	"relative flex min-h-[92px] flex-col gap-1.5 rounded-md p-3 text-left transition-colors";
+	"relative flex min-h-[70px] flex-col gap-1 rounded-md p-2.5 text-left transition-colors";
 
 export const FeaturedSlots = ({
 	picked,
@@ -28,6 +31,7 @@ export const FeaturedSlots = ({
 	max,
 	isAuto,
 	busy = false,
+	modeToggle,
 	onRemove,
 	onMove,
 }: FeaturedSlotsProps) => {
@@ -38,9 +42,10 @@ export const FeaturedSlots = ({
 	});
 
 	return (
-		<div className="mb-4 rounded-md border border-border bg-muted/40 p-3">
-			<div className="mb-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 px-0.5">
+		<div className="mb-3 rounded-md border border-border bg-muted/40 p-2.5">
+			<div className="mb-2 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 px-0.5">
 				<span className="font-semibold text-[13px] text-foreground">홈 화면에 나가는 4칸</span>
+				{modeToggle}
 				<span className="text-[12.5px] text-muted-foreground">
 					{isAuto
 						? "지금은 자동 — 글을 발행하면 최신 4개로 저절로 바뀝니다."
