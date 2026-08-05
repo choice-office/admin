@@ -40,10 +40,12 @@ src/
     ui/                        # 공용 UI
       ds.tsx                   # ★ DS 컴포넌트: Button/Card/Badge/Input/Label/Textarea (홈페이지와 동일)
       button/calendar/pagination/popover.tsx  # shadcn(base-nova/neutral). 사이트는 주로 ds.tsx 사용
+      pagination-bar.tsx       # 공용 페이지네이션(문의·후기·블로그 공통) — 규칙은 lib/pagination.ts
   lib/
     supabase.ts                # Supabase 클라이언트(싱글톤) + isMockMode
     contacts.ts                # 상태 메타(STATUS_META/ORDER) + consult_field 라벨
     format.ts                  # dayjs 날짜 포맷(KST)
+    pagination.ts              # ★ 10개 블록 규칙 buildPageBlock — 홈페이지 src/lib/pagination.ts 와 동일
     utils.ts                   # cn()
   hooks/
     use-contacts.ts            # 상담문의 조회 + 상태/메모 수정(낙관적)
@@ -97,6 +99,12 @@ design/                        # Claude Design 산출물(토큰 CSS + 어드민 
 - `contact_throttle`: 문의 폼 레이트리밋용(IP 해시). service_role 전용.
 - **개인정보 보관기간**: 문의는 홈페이지 Vercel Cron(`/api/cron/retention`, 매일)이 "처리 완료 후 3년" 기준으로 삭제한다. 어드민에는 문의 삭제 기능·권한이 없다(DELETE 미부여).
 - **후기 게시 동의·마스킹 기록**: `review_images.consent_confirmed` · `masked_confirmed` · `consent_note`. 후기 저장 시 두 체크가 필수이고, 기록이 없는 후기는 목록에 "확인 필요"로 표시된다(기존 17건 포함 — 수정 화면에서 확인하면 사라진다).
+
+## 페이지네이션 (문의·후기·블로그 공통)
+- `PaginationBar` 하나만 쓴다. 규칙은 `lib/pagination.ts` 의 `buildPageBlock` — **10개씩 묶는 블록 방식**(11페이지면 11–20 이 통째로, 10에서 `›` 누르면 블록 넘어감).
+- `«` 이전 블록 있을 때 · `‹` 2페이지부터 · `›` 마지막 아닐 때 · `»` 다음 블록 있을 때. 안 쓰이는 버튼은 비활성이 아니라 **감춘다**. 1페이지뿐이면 숫자 `1` 만 남아 자리(높이)는 유지된다.
+- 좁은 화면(≤640px)은 `isMobilePage()` 로 현재 페이지가 속한 **5개만** 남긴다(`max-sm:hidden`).
+- **홈페이지(choice-homepage) `src/lib/pagination.ts` 와 같은 파일 내용**이다. 규칙을 바꿀 땐 두 저장소를 함께 고친다.
 
 ## 검증 · 배포
 - **타입검사 = `pnpm build`**(`tsc -b && vite build`). 별도 check-types 스크립트 없음. (`pnpm lint`/`lint:fix`/`format` = Biome)
