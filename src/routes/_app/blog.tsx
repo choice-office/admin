@@ -1,15 +1,17 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Loader2, Pencil, Plus, Search, Star, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { FeaturedSlots } from "@/components/admin/featured-slots";
 import { Badge, Button, Input } from "@/components/ui/ds";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import {
+	clearFeatured,
 	deletePost,
 	featureLatestPosts,
 	getCategories,
 	listPosts,
 	purgeExpiredDrafts,
-	setFeatured,
+	setFeaturedPosts,
 } from "@/lib/blog";
 import { formatDateCompact } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -66,18 +68,84 @@ function BlogPage() {
 	const categoryName = (id: string | null): string =>
 		categories.find((c) => c.id === id)?.name ?? "—";
 
-	// 홈 대표글(최대 3개) 지정/해제. 지정 시 featured_order = 기존 최대 +1.
-	const featuredCount = posts.filter((p) => p.is_featured).length;
+	// ── 홈 대표글 ────────────────────────────────────────────────────────────
+	// 모드는 데이터에서 유도한다: 지정 0개 = 자동(홈이 최신 발행글 4개를 보여줌),
+	// 1~4개 = 직접 지정(부족분은 홈이 최신글로 채움). 별도 설정 테이블이 필요 없다.
+	// 모든 변경은 setFeaturedPosts(순서 배열) 한 경로로만 → featured_order 가 항상 1..N.
+	const picked = posts
+		.filter((p) => p.is_featured)
+		.sort((a, b) => (a.featured_order ?? 0) - (b.featured_order ?? 0));
+	const isAuto = picked.length === 0;
+	// 홈이 빈 칸을 채울 순서 = 발행일 최신순(홈페이지 getFeaturedPosts 와 같은 기준)
+	const latestPublished = posts
+		.filter((p) => p.status === "published")
+		.sort((a, b) => (b.published_at ?? "").localeCompare(a.published_at ?? ""));
+	const pickedIds = new Set(picked.map((p) => p.id));
+	const autoFill = latestPublished.filter((p) => !pickedIds.has(p.id)).slice(0, MAX_FEATURED);
+	// 홈에 실제로 나가는 4개(자동 채움 포함) — 목록에서 "자동" 배지를 달아 보여준다.
+	const homeIds = new Map(
+		[...picked, ...autoFill].slice(0, MAX_FEATURED).map((p, i) => [p.id, i + 1] as const),
+	);
+
+	const applyFeatured = async (ids: string[]) => {
+		setIsFeaturingLatest(true);
+		const ok = await setFeaturedPosts(ids);
+		await refetch();
+		setIsFeaturingLatest(false);
+		if (!ok) alert("대표글 설정에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+	};
+
+	// 자동 ↔ 직접 지정 전환. 직접 지정으로 갈 때는 "지금 홈에 있는 4개"를 슬롯에 채워
+	// 전환만으로 홈이 바뀌지 않게 한다(그 뒤 원하는 칸만 교체).
+	const switchToAuto = async () => {
+		if (
+			!confirm(
+				`직접 지정한 ${picked.length}개를 해제하고 자동으로 바꿉니다.\n앞으로 글을 발행하면 홈 4칸이 최신 발행글로 저절로 갱신됩니다.`,
+			)
+		)
+			return;
+		setIsFeaturingLatest(true);
+		const ok = await clearFeatured();
+		await refetch();
+		setIsFeaturingLatest(false);
+		if (!ok) alert("자동으로 바꾸지 못했습니다. 잠시 후 다시 시도해 주세요.");
+	};
+	const switchToManual = async () =>
+		applyFeatured(latestPublished.slice(0, MAX_FEATURED).map((p) => p.id));
+
 	const handleToggleFeatured = async (post: BlogPost) => {
-		if (!post.is_featured && featuredCount >= MAX_FEATURED) {
+		// 자동 모드에서 별을 누르면 → 이 글을 1번으로 고정하고 나머지는 최신글로 채운 뒤 직접 지정으로 전환
+		if (isAuto) {
+			if (
+				!confirm(
+					`직접 지정으로 바꾸고 이 글을 1번 칸에 넣습니다.\n나머지 ${MAX_FEATURED - 1}칸은 최신 발행글로 채워집니다.`,
+				)
+			)
+				return;
+			const rest = latestPublished.filter((p) => p.id !== post.id).slice(0, MAX_FEATURED - 1);
+			await applyFeatured([post.id, ...rest.map((p) => p.id)]);
+			return;
+		}
+		if (post.is_featured) {
+			await applyFeatured(picked.filter((p) => p.id !== post.id).map((p) => p.id));
+			return;
+		}
+		if (picked.length >= MAX_FEATURED) {
 			alert(
-				`홈 대표글은 최대 ${MAX_FEATURED}개까지 선택할 수 있습니다. 다른 글을 먼저 해제해 주세요.`,
+				`홈 대표글은 최대 ${MAX_FEATURED}개입니다. 위 슬롯에서 한 칸을 비우고 다시 선택해 주세요.`,
 			);
 			return;
 		}
-		const orders = posts.filter((p) => p.is_featured).map((p) => p.featured_order ?? 0);
-		const nextOrder = post.is_featured ? null : Math.max(0, ...orders) + 1;
-		if (await setFeatured(post.id, !post.is_featured, nextOrder)) await refetch();
+		await applyFeatured([...picked.map((p) => p.id), post.id]);
+	};
+
+	const handleMoveSlot = async (post: BlogPost, direction: -1 | 1) => {
+		const from = picked.findIndex((p) => p.id === post.id);
+		const to = from + direction;
+		if (from < 0 || to < 0 || to >= picked.length) return;
+		const next = [...picked];
+		[next[from], next[to]] = [next[to], next[from]];
+		await applyFeatured(next.map((p) => p.id));
 	};
 
 	// 필터 — 검색(적용값 query, "조회" 클릭 시 갱신) + 대표글만 보기.
@@ -109,13 +177,9 @@ function BlogPage() {
 		goPage(1);
 	};
 
-	// 대표글을 최신 발행글 4개로 재설정 — 홈페이지 정렬 기준(published_at)과 동일
+	// 직접 지정 모드 보조 — 슬롯을 지금의 최신 발행글 4개로 다시 채운다.
 	const handleFeatureLatest = async () => {
-		if (
-			!confirm(
-				`현재 대표글 지정을 모두 해제하고, 최신 발행글 ${MAX_FEATURED}개를 대표글로 지정합니다. 계속할까요?`,
-			)
-		)
+		if (!confirm(`슬롯 ${MAX_FEATURED}칸을 지금의 최신 발행글로 다시 채웁니다. 계속할까요?`))
 			return;
 		setIsFeaturingLatest(true);
 		const n = await featureLatestPosts(MAX_FEATURED);
@@ -137,14 +201,69 @@ function BlogPage() {
 						블로그 관리
 					</h2>
 					<p className="m-0 text-[15px] text-muted-foreground">
-						글을 작성하고 발행합니다. 발행한 글은 홈페이지 블로그에 노출되고, ★로 지정한 대표글 최대
-						4개가 홈 화면에 보입니다. 지정한 개수가 부족하면 최신글로 자동 채워집니다.
+						글을 작성하고 발행합니다. 발행한 글은 홈페이지 블로그에 노출되고, 홈 화면 첫 페이지에는
+						아래 4칸이 그대로 보입니다.
 					</p>
 				</div>
 				<Button variant="primary" iconStart={<Plus size={18} />} onClick={openNew}>
 					새 글
 				</Button>
 			</div>
+
+			{/* 홈 대표글 — 모드 전환 + 실제로 홈에 나가는 4칸 */}
+			<div className="mb-3 flex flex-wrap items-center gap-2">
+				<span className="font-semibold text-[13px] text-muted-foreground">홈 대표글</span>
+				<div className="inline-flex overflow-hidden rounded-md border border-border">
+					<button
+						type="button"
+						onClick={isAuto ? undefined : switchToAuto}
+						disabled={isFeaturingLatest}
+						title="글을 발행하면 홈 4칸이 최신 발행글로 저절로 갱신됩니다"
+						className={cn(
+							"h-9 px-3 text-sm transition-colors disabled:opacity-50",
+							isAuto
+								? "bg-primary font-bold text-primary-foreground"
+								: "bg-card font-medium text-foreground hover:bg-muted",
+						)}
+					>
+						자동 · 최신 {MAX_FEATURED}개
+					</button>
+					<button
+						type="button"
+						onClick={isAuto ? switchToManual : undefined}
+						disabled={isFeaturingLatest}
+						title="직접 고른 글을 홈 4칸에 고정합니다"
+						className={cn(
+							"h-9 border-border border-l px-3 text-sm transition-colors disabled:opacity-50",
+							isAuto
+								? "bg-card font-medium text-foreground hover:bg-muted"
+								: "bg-primary font-bold text-primary-foreground",
+						)}
+					>
+						직접 지정
+					</button>
+				</div>
+				{!isAuto && (
+					<Button
+						variant="outline"
+						iconStart={<Star size={15} />}
+						onClick={handleFeatureLatest}
+						disabled={isFeaturingLatest}
+						title={`슬롯 ${MAX_FEATURED}칸을 지금의 최신 발행글로 다시 채웁니다`}
+					>
+						{isFeaturingLatest ? "적용 중…" : "최신글로 다시 채우기"}
+					</Button>
+				)}
+			</div>
+			<FeaturedSlots
+				picked={picked}
+				autoFill={autoFill}
+				max={MAX_FEATURED}
+				isAuto={isAuto}
+				busy={isFeaturingLatest}
+				onRemove={handleToggleFeatured}
+				onMove={handleMoveSlot}
+			/>
 
 			{/* 검색 — "조회" 버튼(또는 Enter)으로만 실행 */}
 			<div className="mb-4 flex items-center gap-2">
@@ -170,16 +289,6 @@ function BlogPage() {
 						초기화
 					</Button>
 				)}
-				<Button
-					variant="outline"
-					iconStart={<Star size={15} />}
-					onClick={handleFeatureLatest}
-					disabled={isFeaturingLatest}
-					className="ml-auto"
-					title={`홈 화면 ${MAX_FEATURED}칸을 최신 발행글로 다시 채웁니다`}
-				>
-					{isFeaturingLatest ? "지정 중…" : `최신 ${MAX_FEATURED}개로 지정`}
-				</Button>
 				<button
 					type="button"
 					onClick={() => {
@@ -187,7 +296,7 @@ function BlogPage() {
 						goPage(1);
 					}}
 					className={cn(
-						"flex h-10 shrink-0 items-center gap-1.5 rounded-md border px-3 text-sm transition-colors",
+						"ml-auto flex h-10 shrink-0 items-center gap-1.5 rounded-md border px-3 text-sm transition-colors",
 						featuredOnly
 							? "border-primary bg-primary font-bold text-primary-foreground"
 							: "border-border bg-card font-medium text-foreground hover:bg-muted",
@@ -270,19 +379,33 @@ function BlogPage() {
 								</div>
 								{/* 대표 · 수정일 · 관리 (모바일: 한 줄 푸터 / 데스크탑: 개별 열) */}
 								<div className="flex items-center justify-between gap-2 md:contents">
+									{/* 자동 모드에서도 홈에 실제로 나가는 4개를 "자동 n" 으로 보여준다 */}
 									<button
 										type="button"
-										title={p.is_featured ? "홈 대표글 해제" : "홈 대표글로 선택"}
+										title={
+											isAuto
+												? "직접 지정으로 바꾸고 이 글을 1번 칸에 넣기"
+												: p.is_featured
+													? "홈 대표글에서 빼기"
+													: "홈 대표글로 넣기"
+										}
+										disabled={isFeaturingLatest}
 										onClick={() => handleToggleFeatured(p)}
 										className={cn(
-											"flex h-8 items-center gap-1 rounded-md px-2 text-sm md:justify-self-center",
+											"flex h-8 items-center gap-1 rounded-md px-2 text-sm disabled:opacity-40 md:justify-self-center",
 											p.is_featured
 												? "font-semibold text-primary"
 												: "text-muted-foreground hover:bg-muted",
 										)}
 									>
 										<Star size={16} fill={p.is_featured ? "currentColor" : "none"} />
-										{p.is_featured && p.featured_order ? <span>{p.featured_order}</span> : null}
+										{p.is_featured && p.featured_order ? (
+											<span>{p.featured_order}</span>
+										) : isAuto && homeIds.has(p.id) ? (
+											<span className="rounded-sm bg-muted px-1.5 py-0.5 font-semibold text-[10.5px] text-muted-foreground">
+												자동 {homeIds.get(p.id)}
+											</span>
+										) : null}
 									</button>
 									<div className="text-[13px] text-muted-foreground md:text-center md:text-sm">
 										{formatDateCompact(p.updated_at)}
