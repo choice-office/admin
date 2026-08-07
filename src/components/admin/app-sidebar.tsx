@@ -10,6 +10,7 @@ import {
 	Settings,
 	Star,
 } from "lucide-react";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
@@ -35,6 +36,7 @@ type AppSidebarProps = {
 export const AppSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: AppSidebarProps) => {
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
 	const navigate = useNavigate();
+	const { name, email } = useCurrentUser();
 
 	const handleLogout = async () => {
 		await supabase.auth.signOut();
@@ -114,11 +116,11 @@ export const AppSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: A
 				<div className="border-border border-t p-3">
 					<div className={cn("flex items-center gap-2.5", collapsed && "md:flex-col")}>
 						<span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-accent font-bold text-[15px] text-accent-foreground">
-							관
+							{name.slice(0, 1)}
 						</span>
 						<div className={cn("min-w-0 flex-1", collapsed && "md:hidden")}>
-							<div className="truncate font-medium text-foreground text-sm">관리자</div>
-							<div className="truncate text-[12px] text-muted-foreground">admin@kvisa1345.com</div>
+							<div className="truncate font-medium text-foreground text-sm">{name}</div>
+							<div className="truncate text-[12px] text-muted-foreground">{email}</div>
 						</div>
 						<button
 							type="button"

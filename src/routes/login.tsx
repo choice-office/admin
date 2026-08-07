@@ -1,14 +1,10 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { type FormEvent, useState } from "react";
 import { Button, Card, Input, Label } from "@/components/ui/ds";
+// 관리자 아이디 → 로그인 이메일 변환(한글 아이디 지원). 매핑은 @/lib/admin-user 단일 출처 —
+// 사이드바 표시 이름이 같은 매핑을 반대로 사용한다.
+import { resolveLoginEmail } from "@/lib/admin-user";
 import { isMockMode, supabase } from "@/lib/supabase";
-
-// 관리자 아이디 → Supabase 로그인 이메일 매핑(한글 아이디 지원).
-// Supabase Auth는 이메일 기반이라, 표시용 아이디를 실제 계정 이메일로 변환한다.
-const ADMIN_ALIASES: Record<string, string> = {
-	최서연: "seoyeon@kvisa1345.com",
-};
-const resolveLoginEmail = (id: string): string => ADMIN_ALIASES[id.trim()] ?? id.trim();
 
 export const Route = createFileRoute("/login")({
 	beforeLoad: async () => {
