@@ -110,7 +110,12 @@ design/                        # Claude Design 산출물(토큰 CSS + 어드민 
 
 ### ① 영상으로 보는 비자 정보 (유튜브 쇼츠)
 - 데이터: `home_shorts(slot 1~4, youtube_id)` — 홈페이지 `supabase/migrations/0004_home_shorts.sql`. 훅 `hooks/use-home-shorts.ts`.
-- 링크를 붙여넣으면 `parseYoutubeId()` 가 11자 ID 만 뽑아 저장한다(shorts/youtu.be/watch?v=/embed 모두 인식). 썸네일은 저장하지 않고 `i.ytimg.com` 에서 가져온다.
+- 링크를 붙여넣으면 `parseYoutubeId()` 가 11자 ID 만 뽑아 저장한다(shorts/youtu.be/watch?v=/embed 모두 인식). 썸네일은 저장하지 않고 `i.ytimg.com` 에서 가져온다. **칸에는 전체 링크를 보여준다**(저장은 ID) — 붙여넣은 것과 보이는 것이 달라 혼란스러웠고, ID 만 보이면 오타를 알아채기 어렵다.
+- **저장 전 `videoExists()` 로 확인한다.** 형식(11자)만 맞고 실제로 없는 영상이면 홈에서 그 칸만 조용히 빈다 — ID 를 한 글자만 잘못 고쳐도 형식은 그대로다. 확인 URL 은 `i.ytimg.com/vi/{id}/oardefault.jpg`(홈 카드가 쓰는 것과 동일):
+  - `oardefault` 는 **쇼츠에만 있고 일반 영상은 404** → "존재 + 쇼츠"를 한 번에 검증한다. 일반 영상 링크도 여기서 막힌다.
+  - ★ **i.ytimg.com 은 404 에도 120×90 회색 대체 이미지를 함께 보낸다** → `<img>` 의 `onerror` 가 뜨지 않아 "로드됐으니 존재한다"는 판정은 틀린다(실제로 이 함정에 걸려 오타가 저장됐다). `fetch` 상태코드로 판정하고(CSP `connect-src` 에 `i.ytimg.com` 필요), 막히면 이미지 크기(`isPlaceholderThumbnail`)로 폴백한다.
+- 입력을 바꾸면 칸 이름 옆에 **`저장 안 됨`** 배지가 뜨고(누르지 않으면 반영 안 됨), 미리보기에는 **`쇼츠를 찾을 수 없음`** 경고가 덮인다. `↺` 로 원래 링크 복구.
+- 저장 후 영상이 삭제·비공개로 바뀌면 여기서는 막을 수 없다 → **공개 렌더가 죽은 칸을 걸러낸다**(홈페이지 `lib/home-shorts.ts` `isPlayable`).
 - **채널 최신 쇼츠 가져오기** — 홈페이지 `/api/youtube/shorts`(공개 RSS + `/shorts/{id}` 리다이렉트로 쇼츠 판별, API 키 없음, 10분 캐시)를 호출한다. 브라우저에서 유튜브 RSS 를 직접 못 부르기 때문(CORS). 베이스 URL 은 `VITE_SITE_API_BASE`(미설정 시 `https://kvisa1345.com`).
   - **한계: RSS 는 최근 업로드 15개까지만 준다.** 그보다 예전 영상은 목록에 안 뜨므로 링크를 직접 붙여넣어야 한다(화면에도 문구로 명시). 롱폼이 섞이면 걸러져서 15개보다 적게 나온다.
   - CORS 허용 오리진은 `admin.kvisa1345.com` · `*admin*.vercel.app` · `localhost:*` (route.ts `ALLOWED_ORIGIN`). **실제 관리자 도메인이 빠지면 프로덕션에서만 조용히 막힌다** — 실제로 한 번 겪었다.
