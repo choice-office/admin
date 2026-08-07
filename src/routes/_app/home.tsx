@@ -71,7 +71,7 @@ function HomePage() {
 		if (id && !(await videoExists(id))) {
 			setSaving(null);
 			alert(
-				"이 주소의 영상을 찾을 수 없습니다.\n\n주소가 한 글자라도 다르면 홈에서 영상이 보이지 않습니다.\n유튜브에서 링크를 다시 복사해 붙여넣어 주세요.",
+				"홈에 걸 수 없는 주소입니다.\n\n· 주소가 한 글자라도 다르면 영상을 찾지 못합니다\n· 쇼츠(세로 영상)만 넣을 수 있습니다 — 일반 영상은 안 됩니다\n\n유튜브에서 쇼츠 링크를 다시 복사해 붙여넣어 주세요.",
 			);
 			return;
 		}
@@ -294,7 +294,7 @@ function HomePage() {
 									{id && badIds.includes(id) && (
 										<div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-destructive/10 px-2 text-center font-semibold text-[12px] text-destructive">
 											<AlertTriangle className="h-4 w-4" />
-											영상을 찾을 수 없음
+											쇼츠를 찾을 수 없음
 										</div>
 									)}
 								</div>

@@ -23,16 +23,19 @@ export const shortsUrl = (id: string): string => `https://www.youtube.com/shorts
 
 // ★ i.ytimg.com 은 없는 영상에도 404 와 **함께 120×90 회색 대체 이미지**를 보낸다.
 //   그래서 <img> 의 onerror 는 안 뜨고 onload 가 뜬다 — "이미지가 로드됐으니 영상이 있다"는
-//   판정은 틀린다. 실제 썸네일은 hqdefault 기준 480×360 이므로 크기로 구분할 수 있다.
+//   판정은 틀린다. 실제 썸네일은 훨씬 크므로 크기로 구분할 수 있다.
 const PLACEHOLDER_MAX_WIDTH = 120;
 
-export const thumbnailUrl = (id: string): string => `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+// oardefault = 세로(9:16) 원본 썸네일. **쇼츠에만 존재하고 일반 영상은 404** 이며,
+// 홈페이지 카드가 쓰는 것과 같은 이미지다. 따라서 이걸로 확인하면
+// "없는 영상"과 "쇼츠가 아닌 일반 영상"을 한 번에 걸러내고, 미리보기도 홈과 똑같이 보인다.
+export const thumbnailUrl = (id: string): string => `https://i.ytimg.com/vi/${id}/oardefault.jpg`;
 
 /** 로드된 썸네일이 "없는 영상" 대체 이미지인지 — 미리보기에서 즉시 경고를 띄우는 데 쓴다. */
 export const isPlaceholderThumbnail = (img: HTMLImageElement): boolean =>
 	img.naturalWidth <= PLACEHOLDER_MAX_WIDTH;
 
-/** 영상이 실제로 존재하는지 확인.
+/** 홈에 걸 수 있는 영상인지 확인 — 존재하고, 쇼츠여야 한다.
  *  ID 를 한 글자만 잘못 고쳐도 11자 형식은 그대로라 검사 없이는 저장이 통과해 버리고,
  *  홈에서 그 칸만 조용히 빈다. 저장 전에 여기서 막는다.
  *
