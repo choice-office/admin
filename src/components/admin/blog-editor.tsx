@@ -406,16 +406,23 @@ export const BlogEditor = ({ post, categories, authors, onClose, onOpenPost }: P
 							<Label htmlFor="be-cover">커버 이미지</Label>
 							{coverUrl && (
 								<>
+									{/* 홈페이지 썸네일은 1:1(목록·카드 공통) — 미리보기 비율을 실제와 맞춘다.
+									    커버는 목록 썸네일과 공유(og) 이미지로만 쓰이고, 상세 상단에는 노출되지 않는다
+									    (본문 첫 이미지와 중복되므로). */}
 									<img
 										src={coverUrl}
 										alt={coverAlt || "커버 미리보기"}
-										className="aspect-[4/3] w-full rounded-md border border-border object-cover"
+										className="aspect-square w-full rounded-md border border-border object-cover"
 									/>
 									<p className="mt-1 mb-2 text-[12px] text-muted-foreground">
-										목록 카드 비율(4:3) 미리보기
+										목록 썸네일 비율(1:1) 미리보기
 									</p>
 								</>
 							)}
+							<p className="mb-2 text-[12px] text-muted-foreground">
+								정사각(1:1) 이미지 권장 · 550px 이상. 목록 썸네일과 카카오톡·검색 공유 이미지로
+								쓰입니다.
+							</p>
 							<div className="flex gap-2">
 								<Button
 									variant="outline"
