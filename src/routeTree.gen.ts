@@ -14,6 +14,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppBlogRouteImport } from './routes/_app/blog'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppHomeRouteImport } from './routes/_app/home'
 import { Route as AppInquiriesRouteImport } from './routes/_app/inquiries'
 import { Route as AppReviewsRouteImport } from './routes/_app/reviews'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
@@ -42,6 +43,11 @@ const AppBlogRoute = AppBlogRouteImport.update({
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppHomeRoute = AppHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
   getParentRoute: () => AppRoute,
 } as any)
 const AppInquiriesRoute = AppInquiriesRouteImport.update({
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/blog': typeof AppBlogRoute
   '/dashboard': typeof AppDashboardRoute
+  '/home': typeof AppHomeRoute
   '/inquiries': typeof AppInquiriesRoute
   '/reviews': typeof AppReviewsRoute
   '/settings': typeof AppSettingsRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/blog': typeof AppBlogRoute
   '/dashboard': typeof AppDashboardRoute
+  '/home': typeof AppHomeRoute
   '/inquiries': typeof AppInquiriesRoute
   '/reviews': typeof AppReviewsRoute
   '/settings': typeof AppSettingsRoute
@@ -99,6 +107,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_app/blog': typeof AppBlogRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/home': typeof AppHomeRoute
   '/_app/inquiries': typeof AppInquiriesRoute
   '/_app/reviews': typeof AppReviewsRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -112,6 +121,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/blog'
     | '/dashboard'
+    | '/home'
     | '/inquiries'
     | '/reviews'
     | '/settings'
@@ -123,6 +133,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/blog'
     | '/dashboard'
+    | '/home'
     | '/inquiries'
     | '/reviews'
     | '/settings'
@@ -135,6 +146,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/_app/blog'
     | '/_app/dashboard'
+    | '/_app/home'
     | '/_app/inquiries'
     | '/_app/reviews'
     | '/_app/settings'
@@ -185,6 +197,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/home': {
+      id: '/_app/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof AppHomeRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/inquiries': {
       id: '/_app/inquiries'
       path: '/inquiries'
@@ -226,6 +245,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppBlogRoute: typeof AppBlogRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppHomeRoute: typeof AppHomeRoute
   AppInquiriesRoute: typeof AppInquiriesRoute
   AppReviewsRoute: typeof AppReviewsRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -236,6 +256,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppBlogRoute: AppBlogRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppHomeRoute: AppHomeRoute,
   AppInquiriesRoute: AppInquiriesRoute,
   AppReviewsRoute: AppReviewsRoute,
   AppSettingsRoute: AppSettingsRoute,

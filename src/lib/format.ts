@@ -13,3 +13,6 @@ const safeFmt = (iso: string, fmt: string): string => {
 export const formatDateFull = (iso: string): string => safeFmt(iso, "YYYY. MM. DD. A hh:mm");
 
 export const formatDateCompact = (iso: string): string => safeFmt(iso, "MM. DD. A hh:mm");
+
+// 날짜만 — 발행일처럼 시각이 의미 없는 값에 쓴다(발행 시각은 전부 09:00 로 넣고 있다).
+export const formatDateOnly = (iso: string): string => safeFmt(iso, "YYYY. MM. DD.");

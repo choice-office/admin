@@ -26,7 +26,8 @@ src/
     _app/dashboard.tsx         # 대시보드
     _app/inquiries.tsx         # 상담 문의 관리(필터·테이블·페이지네이션·상세모달)
     _app/reviews.tsx           # 후기 관리(CRUD·노출 토글)
-    _app/blog.tsx              # 블로그 목록(검색·대표글·페이지네이션) — 작성/수정은 아래 별도 URL로 이동
+    _app/blog.tsx              # 블로그 목록(검색·카테고리·페이지네이션) — 작성/수정은 아래 별도 URL로 이동
+    _app/home.tsx              # 홈 노출 — 쇼츠 4칸 + 블로그 대표글 4칸(아래 "홈 노출" 절)
     _app/blog_.new.tsx         # /blog/new — 새 글 작성(새로고침에도 유지)
     _app/blog_.$postId.tsx     # /blog/{id} — 글 수정(새로고침에도 유지)
     _app/settings.tsx          # 설정 [구현 예정]
@@ -35,6 +36,8 @@ src/
       app-sidebar.tsx          # 접이식 사이드바 + NAV_ITEMS(메뉴 단일 출처)
       app-header.tsx           # 상단바(타이틀·알림·유저메뉴·로그아웃)
       inquiry-detail-modal.tsx # 상담 상세 모달(상태/메모 저장)
+      home-featured-posts.tsx  # 홈 대표글 4칸(칸별 고정/자동)
+      post-picker-modal.tsx    # 대표글 칸에 넣을 발행글 고르기(검색·카테고리·페이지네이션)
       status-badge.tsx         # 상태 배지
       screen-placeholder.tsx   # 미구현 화면 자리표시자(구현 시 교체·제거)
     ui/                        # 공용 UI
@@ -44,7 +47,7 @@ src/
   lib/
     supabase.ts                # Supabase 클라이언트(싱글톤) + isMockMode
     contacts.ts                # 상태 메타(STATUS_META/ORDER) + consult_field 라벨
-    format.ts                  # dayjs 날짜 포맷(KST)
+    format.ts                  # dayjs 날짜 포맷(KST) — Full/Compact/DateOnly
     pagination.ts              # ★ 10개 블록 규칙 buildPageBlock — 홈페이지 src/lib/pagination.ts 와 동일
     utils.ts                   # cn()
   hooks/
@@ -73,8 +76,7 @@ design/                        # Claude Design 산출물(토큰 CSS + 어드민 
     - **★ 대표글 지정은 수정일(`updated_at`)을 바꾸지 않는다** — `set_updated_at` 트리거 규칙(docs/sql/2026-07-30-featured-keeps-updated-at.sql):
       ① `updated_at` 을 명시적으로 지정한 UPDATE 는 그 값을 존중 ② `is_featured`/`featured_order` 만 바뀌면 수정일 유지
       ③ 그 외 실제 수정은 `now()`. → 목록 정렬과 공개 JSON-LD `dateModified` 가 ★ 조작으로 흔들리지 않는다.
-    - 대표글은 수동 지정이고 4개 미만이면 홈이 최신글로 자동 채운다. 목록의 "최신 4개로 지정" 버튼은
-      `featureLatestPosts()` 로 기존 지정을 해제한 뒤 `published_at` 최신순 4개에 순서 1..4 를 부여한다(홈 정렬 기준과 동일).
+    - 대표글(`is_featured`/`featured_order`)은 칸 단위 모델이다 → 아래 "홈 노출" 절.
     - 미구현: 글 삭제·만료 시 `blog` 버킷의 업로드 이미지는 남는다(스토리지 정리 없음).
   - **reviews** — 후기(tag·country·initial·flag·title·body·is_published·sort_order). RLS: anon은 is_published만 SELECT, authenticated CRUD. 홈페이지가 노출 후기를 ISR로 읽음.
 
@@ -100,16 +102,29 @@ design/                        # Claude Design 산출물(토큰 CSS + 어드민 
 - **개인정보 보관기간**: 문의는 홈페이지 Vercel Cron(`/api/cron/retention`, 매일)이 "처리 완료 후 3년" 기준으로 삭제한다. 어드민에는 문의 삭제 기능·권한이 없다(DELETE 미부여).
 - **후기 게시 동의·마스킹 기록**: `review_images.consent_confirmed` · `masked_confirmed` · `consent_note`. 후기 저장 시 두 체크가 필수이고, 기록이 없는 후기는 목록에 "확인 필요"로 표시된다(기존 17건 포함 — 수정 화면에서 확인하면 사라진다).
 
-## 홈 대표글 (블로그 관리)
-홈 화면 "비자 정보·소식" 4칸을 무엇으로 채울지 정하는 기능. **모드를 별도 설정 테이블 없이 데이터에서 유도한다.**
+## 홈 노출 (`/home`) — 쇼츠 4칸 + 대표글 4칸
+홈페이지 첫 화면에 무엇이 나갈지 정하는 화면. 두 섹션 모두 **칸(슬롯) 단위**이고 별도 설정 테이블 없이 데이터에서 상태를 유도한다.
 
-- **지정 0개 = 자동** — 홈이 최신 발행글 4개를 보여준다(`published_at` 내림차순). 글을 발행하면 저절로 갱신되고 관리자가 할 일이 없다.
-- **지정 1~4개 = 직접 지정** — 고른 글이 `featured_order` 순으로 노출되고, **모자란 칸은 홈이 최신글로 채운다**(홈은 항상 4칸).
-- 화면: 목록 위에 `[자동 · 최신 4개] [직접 지정]` 세그먼트 + **슬롯 4칸 바**(`components/admin/featured-slots.tsx`). 빈 칸에는 실제로 채워질 글 제목을 `자동 n` 으로 보여줘서 홈에 무엇이 나가는지 화면에서 바로 확인된다. 자동 모드에서는 목록의 별 자리에도 `자동 n` 배지가 붙는다.
-- 전환 규칙: **자동 → 직접**은 그 순간 홈에 있던 4개(=최신 4개)를 슬롯에 채워 시작하므로 전환만으로 홈이 바뀌지 않는다. **직접 → 자동**은 지정을 모두 해제(확인 후).
-- 모든 변경은 `setFeaturedPosts(순서 배열)` 한 경로로만 처리해 `featured_order` 를 항상 `1..N` 으로 다시 매긴다(번호에 빈틈이 생기지 않는다).
+### 공통 모델 — 칸마다 "고정" 또는 "자동"
+칸 번호가 **홈의 노출 순서와 1:1로 일치**한다. 2번 칸에 넣은 것은 홈에서도 2번째다.
+
+### ① 영상으로 보는 비자 정보 (유튜브 쇼츠)
+- 데이터: `home_shorts(slot 1~4, youtube_id)` — 홈페이지 `supabase/migrations/0004_home_shorts.sql`. 훅 `hooks/use-home-shorts.ts`.
+- 링크를 붙여넣으면 `parseYoutubeId()` 가 11자 ID 만 뽑아 저장한다(shorts/youtu.be/watch?v=/embed 모두 인식). 썸네일은 저장하지 않고 `i.ytimg.com` 에서 가져온다.
+- **채널 최신 쇼츠 가져오기** — 홈페이지 `/api/youtube/shorts`(공개 RSS + `/shorts/{id}` 리다이렉트로 쇼츠 판별, API 키 없음, 10분 캐시)를 호출한다. 브라우저에서 유튜브 RSS 를 직접 못 부르기 때문(CORS). 베이스 URL 은 `VITE_SITE_API_BASE`(미설정 시 `https://kvisa1345.com`).
+- 칸을 비우면 홈이 그 자리를 건너뛴다. 4칸 모두 비우면 홈페이지의 `SHORTS` 폴백이 나간다.
+
+### ② 비자 정보 · 소식 (블로그 대표글)
+- 데이터: `blog_posts.is_featured` + `featured_order`. **`featured_order` 는 노출 순서가 아니라 칸 번호(1~4)** 이고 빈틈이 허용된다.
+  - `[null, 2, null, null]` → 홈 `[최신1, 고정글, 최신2, 최신3]`. 자동 칸은 글을 발행하면 굴러가고(가장 오래된 것이 밀려 나감) 고정 칸은 그대로.
+  - 지정 0개면 4칸 전부 자동 = 최신 발행글 4개.
+- 불변식(칸당 1개 · 1~4 · 해제 시 null)은 **DB 제약**이 강제한다 — 홈페이지 `supabase/migrations/0005_blog_featured_slot.sql`(부분 유니크 인덱스 + CHECK).
+- 모든 변경은 `setFeaturedSlot(slot, postId | null)` 한 경로로만 처리한다. 유니크 인덱스에 걸리지 않도록 ① 그 칸의 기존 글 ② 넣을 글이 앉아 있던 다른 칸을 먼저 비운 뒤 ③ 앉힌다.
+- 화면(`components/admin/home-featured-posts.tsx`): 칸마다 1:1 썸네일 + 제목 + 발행일. **자동 칸도 "지금 그 자리에 나가는 글"** 을 점선 테두리 + 흐린 썸네일로 보여준다 → 홈에 무엇이 걸렸는지 화면에서 바로 확인된다. `[선택하기]` 로 고정, 되돌리기 아이콘으로 자동 복귀, `[전부 자동으로]` 로 일괄 해제.
+- 글 선택 모달(`components/admin/post-picker-modal.tsx`): **발행글만**(임시저장·보관은 홈에 걸 수 없다), 제목 검색 + 카테고리 + 페이지네이션(8건/페이지, 클라이언트 필터). 이미 다른 칸에 걸린 글에는 `홈 n` 배지.
+- 블로그 관리 화면에는 **조작 없이 `홈 n` 읽기 전용 배지만** 있다(고정=진하게 + 📌, 자동=흐리게). 설정은 여기서만 한다.
 - 홈 반영은 ISR 60초 + `unstable_cache` 60초 → **최대 약 2분**.
-- 공개 렌더는 홈페이지 `src/lib/blog.ts` 의 `getFeaturedPosts(4)` 가 담당한다(같은 규칙이므로 홈페이지 코드는 손대지 않는다).
+- 공개 렌더는 홈페이지 `src/lib/blog.ts` 의 `getFeaturedPosts(4)`. **규칙을 바꾸면 그 함수도 함께 고쳐야 한다**(칸 배치 로직이 양쪽에 있다).
 
 ## 페이지네이션 (문의·후기·블로그 공통)
 - `PaginationBar` 하나만 쓴다. 규칙은 `lib/pagination.ts` 의 `buildPageBlock` — **10개씩 묶는 블록 방식**(11페이지면 11–20 이 통째로, 10에서 `›` 누르면 블록 넘어감).

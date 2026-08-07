@@ -148,7 +148,17 @@ export const updatePost = async (id: string, patch: BlogPostUpdate): Promise<boo
 	return true;
 };
 
-// 대표글 전체 해제 — 지정이 0개면 홈은 "자동(최신 발행글 4개)"으로 동작한다.
+/* ── 홈 대표 블로그 4칸 ───────────────────────────────────────────────────
+ * featured_order 는 노출 순서가 아니라 **홈 4칸 중 몇 번 칸인지**(1~4)를 뜻한다.
+ * 칸마다 독립적으로 고정(is_featured=true + featured_order=칸번호) 또는
+ * 자동(지정 없음 → 홈이 그 자리를 최신 발행글로 채움)이다.
+ * 공개 렌더: choice-homepage src/lib/blog.ts getFeaturedPosts
+ * 스키마·불변식(칸당 1개·1~4): choice-homepage supabase/migrations/0005_blog_featured_slot.sql
+ */
+
+export const HOME_FEATURED_SLOTS = 4;
+
+// 대표글 전체 해제 — 지정이 0개면 홈 4칸이 모두 자동(최신 발행글)이 된다.
 export const clearFeatured = async (): Promise<boolean> => {
 	const { error } = await supabase
 		.from("blog_posts")
@@ -161,19 +171,40 @@ export const clearFeatured = async (): Promise<boolean> => {
 	return true;
 };
 
-// 대표글을 주어진 순서로 통째로 다시 설정한다 — 모든 대표글 변경(추가·해제·순서변경)의 단일 경로.
-// 기존 지정을 전부 해제한 뒤 featured_order 를 1..N 으로 다시 매겨 번호에 빈틈이 생기지 않게 한다.
-export const setFeaturedPosts = async (ids: string[]): Promise<boolean> => {
-	if (!(await clearFeatured())) return false;
-	for (const [i, id] of ids.entries()) {
-		const { error } = await supabase
-			.from("blog_posts")
-			.update({ is_featured: true, featured_order: i + 1 })
-			.eq("id", id);
-		if (error) {
-			console.error("대표글 지정 실패:", error.message);
-			return false;
-		}
+/** 한 칸을 설정한다 — postId 가 null 이면 그 칸을 자동으로 되돌린다.
+ *  모든 대표글 변경의 단일 경로. 순서가 중요하다: 유니크 인덱스(칸당 1개)에 걸리지 않게
+ *  ① 그 칸의 기존 글과 ② 그 글이 앉아 있던 다른 칸을 먼저 비운 뒤 ③ 새로 앉힌다. */
+export const setFeaturedSlot = async (slot: number, postId: string | null): Promise<boolean> => {
+	if (slot < 1 || slot > HOME_FEATURED_SLOTS) return false;
+	const release = { is_featured: false, featured_order: null };
+
+	// ① 이 칸을 쓰고 있던 글 비우기
+	const { error: e1 } = await supabase
+		.from("blog_posts")
+		.update(release)
+		.eq("is_featured", true)
+		.eq("featured_order", slot);
+	if (e1) {
+		console.error("칸 비우기 실패:", e1.message);
+		return false;
+	}
+	if (!postId) return true;
+
+	// ② 넣을 글이 다른 칸에 앉아 있었다면 그 칸도 비우기(칸 이동)
+	const { error: e2 } = await supabase.from("blog_posts").update(release).eq("id", postId);
+	if (e2) {
+		console.error("기존 지정 해제 실패:", e2.message);
+		return false;
+	}
+
+	// ③ 이 칸에 앉히기
+	const { error: e3 } = await supabase
+		.from("blog_posts")
+		.update({ is_featured: true, featured_order: slot })
+		.eq("id", postId);
+	if (e3) {
+		console.error("대표글 지정 실패:", e3.message);
+		return false;
 	}
 	return true;
 };

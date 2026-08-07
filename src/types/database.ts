@@ -180,6 +180,18 @@ export type Database = {
 				Update: { name?: string };
 				Relationships: [];
 			};
+			// 홈 "영상으로 보는 비자 정보" 4칸 — slot 1~4 고정 행. 스키마: choice-homepage/supabase/migrations/0004_home_shorts.sql
+			home_shorts: {
+				Row: {
+					slot: number;
+					youtube_id: string | null;
+					title: string | null;
+					updated_at: string;
+				};
+				Insert: { slot: number; youtube_id?: string | null; title?: string | null };
+				Update: { youtube_id?: string | null; title?: string | null };
+				Relationships: [];
+			};
 		};
 		Views: Record<string, never>;
 		Functions: Record<string, never>;
@@ -197,3 +209,4 @@ export type BlogPostInsert = Database["public"]["Tables"]["blog_posts"]["Insert"
 export type BlogPostUpdate = Database["public"]["Tables"]["blog_posts"]["Update"];
 export type BlogCategory = Database["public"]["Tables"]["blog_categories"]["Row"];
 export type BlogAuthor = Database["public"]["Tables"]["blog_authors"]["Row"];
+export type HomeShort = Database["public"]["Tables"]["home_shorts"]["Row"];
