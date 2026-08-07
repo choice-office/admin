@@ -8,14 +8,43 @@ import type { HomeShort } from "@/types/database";
 
 export const SHORT_SLOTS = [1, 2, 3, 4] as const;
 
-/** 유튜브 링크/ID 에서 11자 영상 ID 추출. 실패 시 null.
- *  지원: youtube.com/shorts/ID · youtu.be/ID · watch?v=ID · embed/ID · ID 직접 입력 */
+const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
+
+// 유튜브 주소만 받는다. 예전엔 호스트를 안 봐서 `naver.com/watch?v=abcdefghijk` 같은
+// 엉뚱한 주소도 ID 로 인식했고(뒤 검증에서 걸리긴 하지만) 안내 문구가 엉뚱하게 나왔다.
+const YOUTUBE_HOSTS = new Set([
+	"youtube.com",
+	"www.youtube.com",
+	"m.youtube.com",
+	"music.youtube.com",
+	"youtu.be",
+	"www.youtu.be",
+	"youtube-nocookie.com",
+	"www.youtube-nocookie.com",
+]);
+
+/** 유튜브 링크/ID 에서 11자 영상 ID 추출. 유튜브 주소가 아니거나 ID 를 못 찾으면 null.
+ *  지원: youtube.com/shorts/ID · youtu.be/ID · watch?v=ID · embed/ID · live/ID · ID 직접 입력
+ *  (스킴 없이 `youtube.com/shorts/ID` 로 붙여넣어도 인식한다) */
 export const parseYoutubeId = (input: string): string | null => {
 	const s = input.trim();
 	if (!s) return null;
-	if (/^[A-Za-z0-9_-]{11}$/.test(s)) return s;
-	const m = s.match(/(?:shorts\/|youtu\.be\/|[?&]v=|embed\/|live\/)([A-Za-z0-9_-]{11})/);
-	return m ? m[1] : null;
+	if (VIDEO_ID.test(s)) return s;
+
+	let url: URL;
+	try {
+		url = new URL(/^https?:\/\//i.test(s) ? s : `https://${s}`);
+	} catch {
+		return null;
+	}
+	if (!YOUTUBE_HOSTS.has(url.hostname.toLowerCase())) return null;
+
+	// watch?v=ID (부가 파라미터가 붙어도 무관)
+	const v = url.searchParams.get("v");
+	if (v && VIDEO_ID.test(v)) return v;
+	// /shorts/ID · /embed/ID · /live/ID · youtu.be/ID
+	const last = url.pathname.split("/").filter(Boolean).at(-1) ?? "";
+	return VIDEO_ID.test(last) ? last : null;
 };
 
 /** 칸에 보여줄 주소 — 저장은 11자 ID 로 하지만 화면에는 붙여넣은 것과 같은 형태로 보여준다. */

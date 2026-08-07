@@ -114,6 +114,7 @@ design/                        # Claude Design 산출물(토큰 CSS + 어드민 
 - **저장 전 `videoExists()` 로 확인한다.** 형식(11자)만 맞고 실제로 없는 영상이면 홈에서 그 칸만 조용히 빈다 — ID 를 한 글자만 잘못 고쳐도 형식은 그대로다. 확인 URL 은 `i.ytimg.com/vi/{id}/oardefault.jpg`(홈 카드가 쓰는 것과 동일):
   - `oardefault` 는 **쇼츠에만 있고 일반 영상은 404** → "존재 + 쇼츠"를 한 번에 검증한다. 일반 영상 링크도 여기서 막힌다.
   - ★ **i.ytimg.com 은 404 에도 120×90 회색 대체 이미지를 함께 보낸다** → `<img>` 의 `onerror` 가 뜨지 않아 "로드됐으니 존재한다"는 판정은 틀린다(실제로 이 함정에 걸려 오타가 저장됐다). `fetch` 상태코드로 판정하고(CSP `connect-src` 에 `i.ytimg.com` 필요), 막히면 이미지 크기(`isPlaceholderThumbnail`)로 폴백한다.
+- 입력 해석은 `parseYoutubeId()` — **유튜브 호스트만 받는다**(`YOUTUBE_HOSTS`). 예전엔 호스트를 안 봐서 `naver.com/watch?v=abcdefghijk` 같은 주소도 ID 로 인식했다(뒤 검증에서 걸리긴 하지만 안내 문구가 엉뚱해진다). 스킴 없이 `youtube.com/shorts/ID` 로 붙여넣어도 인식한다.
 - 검사는 `checkShort()` 하나로 모은다 — **① 존재 ② 임베드 재생 가능 ③ 쇼츠(세로)**. 실패 이유(`notfound`/`blocked`/`notshort`)별로 안내 문구가 다르다(`CHECK_FAIL_MESSAGE`).
   - **임베드 가능 여부는 oEmbed**(`youtube.com/oembed`)로 본다: 200=가능(제목도 옴) · 401/403=퍼가기 차단·비공개 · 400/404=없음. **썸네일만으로는 알 수 없다** — 퍼가기를 막은 영상도 썸네일은 그대로다. CORS 허용돼 브라우저에서 직접 호출한다.
   - 쇼츠 여부는 `oardefault` 썸네일 존재로 본다(일반 영상은 404).
