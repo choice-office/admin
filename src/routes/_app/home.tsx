@@ -1,14 +1,27 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Check, Download, ExternalLink, RotateCcw, Trash2, Video, X } from "lucide-react";
+import {
+	AlertTriangle,
+	Check,
+	Download,
+	ExternalLink,
+	RotateCcw,
+	Trash2,
+	Video,
+	X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { HomeFeaturedPosts } from "@/components/admin/home-featured-posts";
 import { Button, Card, CardTitle, Input } from "@/components/ui/ds";
 import {
 	fetchLatestShorts,
+	isPlaceholderThumbnail,
 	type LatestShort,
 	parseYoutubeId,
 	SHORT_SLOTS,
+	shortsUrl,
+	thumbnailUrl,
 	useHomeShorts,
+	videoExists,
 } from "@/hooks/use-home-shorts";
 import { cn } from "@/lib/utils";
 
@@ -32,11 +45,16 @@ function HomePage() {
 	const [latest, setLatest] = useState<LatestShort[] | null>(null);
 	const [latestBusy, setLatestBusy] = useState(false);
 	const [targetSlot, setTargetSlot] = useState<number>(1);
+	// 썸네일이 안 뜬 ID — 없는 영상이라는 뜻(오타 등). 칸 위에 경고를 덮는다.
+	const [badIds, setBadIds] = useState<string[]>([]);
 
-	// DB 값이 오면 입력창 초기값으로 채운다(링크가 아니라 ID 로 저장돼 있으므로 ID 를 보여준다).
+	// DB 에는 11자 ID 로 저장하지만 화면에는 전체 링크를 보여준다 —
+	// 붙여넣은 것과 보이는 것이 같아야 하고, ID 만 보이면 오타를 알아채기 어렵다.
 	useEffect(() => {
 		if (slots.length === 0) return;
-		setDrafts(Object.fromEntries(slots.map((s) => [s.slot, s.youtube_id ?? ""])));
+		setDrafts(
+			Object.fromEntries(slots.map((s) => [s.slot, s.youtube_id ? shortsUrl(s.youtube_id) : ""])),
+		);
 	}, [slots]);
 
 	const handleSave = async (slot: number) => {
@@ -49,11 +67,18 @@ function HomePage() {
 			return;
 		}
 		setSaving(slot);
+		// 형식이 맞아도 실제 없는 영상이면 홈에서 그 칸만 조용히 빈다 → 저장 전에 확인.
+		if (id && !(await videoExists(id))) {
+			setSaving(null);
+			alert(
+				"이 주소의 영상을 찾을 수 없습니다.\n\n주소가 한 글자라도 다르면 홈에서 영상이 보이지 않습니다.\n유튜브에서 링크를 다시 복사해 붙여넣어 주세요.",
+			);
+			return;
+		}
 		const ok = await saveSlot(slot, id);
 		setSaving(null);
 		if (ok) {
-			// 링크를 붙여넣었어도 저장된 ID 로 입력창을 정리해 준다(다음에 열었을 때와 같은 모습).
-			setDrafts((prev) => ({ ...prev, [slot]: id ?? "" }));
+			setDrafts((prev) => ({ ...prev, [slot]: id ? shortsUrl(id) : "" }));
 			setSaved(slot);
 			window.setTimeout(() => setSaved((s) => (s === slot ? null : s)), 2000);
 		}
@@ -82,7 +107,7 @@ function HomePage() {
 		const ok = await saveSlot(targetSlot, id);
 		setSaving(null);
 		if (ok) {
-			setDrafts((prev) => ({ ...prev, [targetSlot]: id }));
+			setDrafts((prev) => ({ ...prev, [targetSlot]: shortsUrl(id) }));
 			setSaved(targetSlot);
 			window.setTimeout(() => setSaved((s) => (s === targetSlot ? null : s)), 2000);
 			// 다음 빈 칸으로 자동 이동 — 4칸을 연달아 채우기 편하게.
@@ -212,8 +237,14 @@ function HomePage() {
 								className="flex flex-col gap-2 rounded-md border border-border bg-muted/30 p-2.5"
 							>
 								<div className="flex items-center justify-between">
-									<span className="font-semibold text-[12.5px] text-muted-foreground">
+									<span className="flex items-center gap-1.5 font-semibold text-[12.5px] text-muted-foreground">
 										{slot}번 칸
+										{/* 입력만 바꾼 상태 — 저장을 눌러야 홈에 반영된다는 걸 눈에 띄게 알린다. */}
+										{dirty && (
+											<span className="rounded-sm bg-accent px-1.5 py-0.5 font-bold text-[10.5px] text-accent-foreground">
+												저장 안 됨
+											</span>
+										)}
 									</span>
 									{row?.youtube_id && (
 										<button
@@ -230,14 +261,40 @@ function HomePage() {
 								{/* 미리보기 — 쇼츠는 9:16 이라 세로 비율로 둔다. 썸네일은 유튜브 기본 이미지. */}
 								<div className="relative aspect-[9/16] overflow-hidden rounded border border-border bg-background">
 									{id ? (
+										// 썸네일이 안 뜨면 없는 영상이다 → 저장 전에 화면에서 먼저 알아챌 수 있게 표시.
 										<img
-											src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`}
+											key={id}
+											src={thumbnailUrl(id)}
 											alt={`${slot}번 칸 미리보기`}
 											className="h-full w-full object-cover"
+											onLoad={(e) => {
+												// 404 여도 회색 대체 이미지가 실려 와 onLoad 가 뜬다 → 크기로 구분한다.
+												const bad = isPlaceholderThumbnail(e.currentTarget);
+												setBadIds((prev) =>
+													bad
+														? prev.includes(id)
+															? prev
+															: [...prev, id]
+														: prev.filter((v) => v !== id),
+												);
+											}}
+											onError={() =>
+												setBadIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
+											}
 										/>
 									) : (
-										<div className="flex h-full w-full items-center justify-center text-[12px] text-muted-foreground">
-											{isLoading ? "불러오는 중…" : "비어 있음"}
+										<div className="flex h-full w-full items-center justify-center px-2 text-center text-[12px] text-muted-foreground">
+											{isLoading
+												? "불러오는 중…"
+												: draft.trim()
+													? "주소를 알아볼 수 없음"
+													: "비어 있음"}
+										</div>
+									)}
+									{id && badIds.includes(id) && (
+										<div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-destructive/10 px-2 text-center font-semibold text-[12px] text-destructive">
+											<AlertTriangle className="h-4 w-4" />
+											영상을 찾을 수 없음
 										</div>
 									)}
 								</div>
@@ -264,7 +321,10 @@ function HomePage() {
 											size="sm"
 											title="입력 취소"
 											onClick={() =>
-												setDrafts((prev) => ({ ...prev, [slot]: row?.youtube_id ?? "" }))
+												setDrafts((prev) => ({
+													...prev,
+													[slot]: row?.youtube_id ? shortsUrl(row.youtube_id) : "",
+												}))
 											}
 										>
 											<RotateCcw className="h-3.5 w-3.5" />
