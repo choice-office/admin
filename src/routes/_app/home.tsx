@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { HomeFeaturedPosts } from "@/components/admin/home-featured-posts";
 import { Button, Card, CardTitle, Input } from "@/components/ui/ds";
 import {
+	checkShort,
 	fetchLatestShorts,
 	isPlaceholderThumbnail,
 	type LatestShort,
@@ -21,7 +22,6 @@ import {
 	shortsUrl,
 	thumbnailUrl,
 	useHomeShorts,
-	videoExists,
 } from "@/hooks/use-home-shorts";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +30,16 @@ export const Route = createFileRoute("/_app/home")({
 });
 
 const YOUTUBE_CHANNEL = "https://www.youtube.com/@kvisa1345";
+
+// 저장 거부 이유별 안내 — 무엇이 잘못됐는지 알려줘야 고칠 수 있다.
+const CHECK_FAIL_MESSAGE: Record<"notfound" | "blocked" | "notshort", string> = {
+	notfound:
+		"영상을 찾을 수 없습니다.\n\n주소가 한 글자라도 다르면 홈에서 영상이 보이지 않습니다.\n유튜브에서 쇼츠 링크를 다시 복사해 붙여넣어 주세요.",
+	blocked:
+		"이 영상은 다른 사이트에 퍼갈 수 없도록 설정돼 있습니다.\n\n홈에 넣어도 재생되지 않습니다(비공개이거나 퍼가기 차단).\n유튜브에서 영상 설정을 확인하거나 다른 영상을 넣어 주세요.",
+	notshort:
+		"쇼츠(세로 영상)만 넣을 수 있습니다.\n\n일반 가로 영상은 홈 4칸 레이아웃에 맞지 않아 넣을 수 없습니다.",
+};
 
 // 홈 노출 관리 — 홈페이지 첫 화면에 무엇이 나갈지 정하는 곳.
 // ① "영상으로 보는 비자 정보" 유튜브 쇼츠 4칸(이 파일) ② "비자 정보·소식" 블로그 4칸(HomeFeaturedPosts)
@@ -47,6 +57,9 @@ function HomePage() {
 	const [targetSlot, setTargetSlot] = useState<number>(1);
 	// 썸네일이 안 뜬 ID — 없는 영상이라는 뜻(오타 등). 칸 위에 경고를 덮는다.
 	const [badIds, setBadIds] = useState<string[]>([]);
+	// 영상 ID → 제목(oEmbed). 링크만 보면 어떤 영상인지 알 수 없어 제목을 함께 보여준다.
+	// 칸이 아니라 ID 기준이라 입력을 바꾸면 바로 그 영상의 제목으로 따라간다.
+	const [titles, setTitles] = useState<Record<string, string>>({});
 
 	// DB 에는 11자 ID 로 저장하지만 화면에는 전체 링크를 보여준다 —
 	// 붙여넣은 것과 보이는 것이 같아야 하고, ID 만 보이면 오타를 알아채기 어렵다.
@@ -56,6 +69,27 @@ function HomePage() {
 			Object.fromEntries(slots.map((s) => [s.slot, s.youtube_id ? shortsUrl(s.youtube_id) : ""])),
 		);
 	}, [slots]);
+
+	// 입력창의 링크가 가리키는 영상들의 제목을 채운다(모르는 ID 만 조회하고 결과를 캐시).
+	const draftIds = SHORT_SLOTS.map((slot) => parseYoutubeId(drafts[slot] ?? "")).filter(
+		(v): v is string => !!v,
+	);
+	const missingTitles = draftIds.filter((id) => !(id in titles)).join(",");
+	useEffect(() => {
+		if (!missingTitles) return;
+		let alive = true;
+		Promise.all(
+			missingTitles.split(",").map(async (id) => {
+				const c = await checkShort(id);
+				return [id, c.ok ? c.title : ""] as const;
+			}),
+		).then((pairs) => {
+			if (alive) setTitles((prev) => ({ ...prev, ...Object.fromEntries(pairs) }));
+		});
+		return () => {
+			alive = false;
+		};
+	}, [missingTitles]);
 
 	const handleSave = async (slot: number) => {
 		const raw = (drafts[slot] ?? "").trim();
@@ -67,13 +101,16 @@ function HomePage() {
 			return;
 		}
 		setSaving(slot);
-		// 형식이 맞아도 실제 없는 영상이면 홈에서 그 칸만 조용히 빈다 → 저장 전에 확인.
-		if (id && !(await videoExists(id))) {
-			setSaving(null);
-			alert(
-				"홈에 걸 수 없는 주소입니다.\n\n· 주소가 한 글자라도 다르면 영상을 찾지 못합니다\n· 쇼츠(세로 영상)만 넣을 수 있습니다 — 일반 영상은 안 됩니다\n\n유튜브에서 쇼츠 링크를 다시 복사해 붙여넣어 주세요.",
-			);
-			return;
+		// 형식이 맞아도 없는 영상·퍼가기 차단·일반 영상이면 홈에서 그 칸이 조용히 빈다 → 저장 전에 확인.
+		if (id) {
+			const check = await checkShort(id);
+			if (!check.ok) {
+				setSaving(null);
+				setTitles((prev) => ({ ...prev, [id]: "" }));
+				alert(CHECK_FAIL_MESSAGE[check.reason]);
+				return;
+			}
+			setTitles((prev) => ({ ...prev, [id]: check.title }));
 		}
 		const ok = await saveSlot(slot, id);
 		setSaving(null);
@@ -102,12 +139,13 @@ function HomePage() {
 	};
 
 	// 목록에서 고른 영상을 지정한 칸에 바로 저장한다(따로 저장 버튼을 누르지 않아도 되게).
-	const handlePick = async (id: string) => {
+	const handlePick = async (id: string, title: string) => {
 		setSaving(targetSlot);
 		const ok = await saveSlot(targetSlot, id);
 		setSaving(null);
 		if (ok) {
 			setDrafts((prev) => ({ ...prev, [targetSlot]: shortsUrl(id) }));
+			setTitles((prev) => ({ ...prev, [id]: title }));
 			setSaved(targetSlot);
 			window.setTimeout(() => setSaved((s) => (s === targetSlot ? null : s)), 2000);
 			// 다음 빈 칸으로 자동 이동 — 4칸을 연달아 채우기 편하게.
@@ -204,7 +242,7 @@ function HomePage() {
 									<button
 										key={v.id}
 										type="button"
-										onClick={() => handlePick(v.id)}
+										onClick={() => handlePick(v.id, v.title)}
 										title={v.title}
 										className="group overflow-hidden rounded border border-border bg-background text-left transition-colors hover:border-accent"
 									>
@@ -298,6 +336,12 @@ function HomePage() {
 										</div>
 									)}
 								</div>
+
+								{/* 어떤 영상인지 한눈에 — 링크가 잘못되면 제목이 사라져 바로 알아챌 수 있다. */}
+								<span className="line-clamp-2 min-h-[32px] break-keep text-[12px] text-muted-foreground leading-snug">
+									{(id && titles[id]) ||
+										(id && !badIds.includes(id) && !(id in titles) ? "제목 확인 중…" : "")}
+								</span>
 
 								<Input
 									value={draft}

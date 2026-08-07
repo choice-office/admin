@@ -35,14 +35,11 @@ export const thumbnailUrl = (id: string): string => `https://i.ytimg.com/vi/${id
 export const isPlaceholderThumbnail = (img: HTMLImageElement): boolean =>
 	img.naturalWidth <= PLACEHOLDER_MAX_WIDTH;
 
-/** 홈에 걸 수 있는 영상인지 확인 — 존재하고, 쇼츠여야 한다.
- *  ID 를 한 글자만 잘못 고쳐도 11자 형식은 그대로라 검사 없이는 저장이 통과해 버리고,
- *  홈에서 그 칸만 조용히 빈다. 저장 전에 여기서 막는다.
- *
+/** 썸네일이 있는지 = 쇼츠로서 존재하는지.
  *  1순위: fetch 상태코드(i.ytimg.com 은 CORS 를 허용해 404 를 그대로 읽을 수 있다).
  *  2순위: CSP·네트워크로 fetch 가 막히면 대체 이미지 크기로 판정.
  *  둘 다 실패하면 통과시킨다 — 정상 저장을 막는 쪽이 더 나쁘다. */
-export const videoExists = async (id: string): Promise<boolean> => {
+const hasShortThumbnail = async (id: string): Promise<boolean> => {
 	try {
 		const res = await fetch(thumbnailUrl(id), { cache: "no-store" });
 		return res.ok;
@@ -54,6 +51,45 @@ export const videoExists = async (id: string): Promise<boolean> => {
 			img.src = thumbnailUrl(id);
 		});
 	}
+};
+
+// oEmbed — API 키 없이 "홈에 임베드해서 재생할 수 있는가"를 유튜브가 직접 답해 준다.
+//   200 = 임베드 가능(제목도 함께 옴) · 401 = 퍼가기 차단·비공개 · 400/404 = 없는 영상
+// 썸네일만으로는 이걸 알 수 없다: 퍼가기를 막은 영상도 썸네일은 그대로 있어서
+// 홈에 카드가 나가고 눌렀을 때만 "동영상을 재생할 수 없음" 이 뜬다.
+// CORS 는 허용돼 있어 어드민 브라우저에서 바로 부를 수 있다.
+const oembedUrl = (id: string) =>
+	`https://www.youtube.com/oembed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${id}`)}&format=json`;
+
+type Embeddable = { title: string } | "blocked" | "notfound" | "unknown";
+
+const fetchEmbedInfo = async (id: string): Promise<Embeddable> => {
+	try {
+		const res = await fetch(oembedUrl(id), { cache: "no-store" });
+		if (res.status === 401 || res.status === 403) return "blocked";
+		if (!res.ok) return "notfound";
+		const data = (await res.json()) as { title?: string };
+		return { title: (data.title ?? "").trim() };
+	} catch {
+		// 네트워크·CORS 로 확인 불가 → 막지 않는다(정상 저장을 실패시키는 게 더 나쁘다).
+		return "unknown";
+	}
+};
+
+export type ShortCheck =
+	| { ok: true; title: string }
+	| { ok: false; reason: "notfound" | "blocked" | "notshort" };
+
+/** 홈에 걸 수 있는 쇼츠인지 종합 확인 — ① 존재 ② 임베드 재생 가능 ③ 쇼츠(세로).
+ *  ID 를 한 글자만 잘못 고쳐도 11자 형식은 그대로라 검사 없이는 저장이 통과해 버리고,
+ *  홈에서 그 칸만 조용히 빈다. 저장 전에 여기서 막는다. */
+export const checkShort = async (id: string): Promise<ShortCheck> => {
+	const [info, isShort] = await Promise.all([fetchEmbedInfo(id), hasShortThumbnail(id)]);
+	if (info === "blocked") return { ok: false, reason: "blocked" };
+	if (info === "notfound") return { ok: false, reason: "notfound" };
+	// 임베드는 되는데 세로 썸네일이 없으면 쇼츠가 아니다(일반 가로 영상).
+	if (!isShort) return { ok: false, reason: "notshort" };
+	return { ok: true, title: info === "unknown" ? "" : info.title };
 };
 
 export type LatestShort = { id: string; title: string; published: string };
