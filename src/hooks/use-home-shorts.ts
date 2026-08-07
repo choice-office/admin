@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import type { HomeShort } from "@/types/database";
+import type { HomeShort, YoutubeShort } from "@/types/database";
 
 // 홈 "영상으로 보는 비자 정보" 4칸 조회·수정. RLS authenticated 정책으로 접근.
 // 슬롯(1~4)은 마이그레이션에서 미리 만들어져 있어 update 만 한다(insert/delete 없음).
@@ -105,7 +105,7 @@ const fetchEmbedInfo = async (id: string): Promise<Embeddable> => {
 	}
 };
 
-export type ShortCheck =
+type ShortCheck =
 	| { ok: true; title: string }
 	| { ok: false; reason: "notfound" | "blocked" | "notshort" };
 
@@ -121,11 +121,11 @@ export const checkShort = async (id: string): Promise<ShortCheck> => {
 	return { ok: true, title: info === "unknown" ? "" : info.title };
 };
 
-export type LatestShort = { id: string; title: string; published: string };
+type LatestShort = { id: string; title: string; published: string };
 
 // 채널 최신 쇼츠 가져오기 — 홈페이지 API(/api/youtube/shorts)를 거친다.
 // 브라우저에서 유튜브 RSS 를 직접 못 부르기 때문(CORS). API 키는 쓰지 않는다.
-export const fetchLatestShorts = async (): Promise<LatestShort[]> => {
+const fetchLatestShorts = async (): Promise<LatestShort[]> => {
 	const base =
 		(import.meta.env.VITE_SITE_API_BASE as string | undefined) ?? "https://kvisa1345.com";
 	const res = await fetch(`${base.replace(/\/$/, "")}/api/youtube/shorts`);
@@ -133,6 +133,71 @@ export const fetchLatestShorts = async (): Promise<LatestShort[]> => {
 	const data = (await res.json()) as { items?: LatestShort[]; error?: string };
 	if (data.error) throw new Error(data.error);
 	return data.items ?? [];
+};
+
+/* ── 쇼츠 보관함(youtube_shorts) ───────────────────────────────────────────
+ * 채널 쇼츠 목록을 DB로 관리한다. 홈 4칸(home_shorts)은 여기서 골라 배정한다.
+ * 스키마: choice-homepage/supabase/migrations/0006_youtube_shorts.sql
+ */
+
+/** 보관함 갱신 — 채널 최신 목록을 받아 **이미 있는 건 건너뛰고 새것만** 넣는다.
+ *  youtube_id 가 PK 이고 ignoreDuplicates 로 upsert 하므로 몇 번 눌러도 중복이 안 생긴다.
+ *  반환값은 새로 추가된 개수(0이면 "새 쇼츠 없음"으로 안내). */
+export const refreshShortsLibrary = async (): Promise<number> => {
+	const latest = await fetchLatestShorts();
+	if (latest.length === 0) return 0;
+	const { data, error } = await supabase
+		.from("youtube_shorts")
+		.upsert(
+			latest.map((v) => ({
+				youtube_id: v.id,
+				title: v.title,
+				published_at: v.published || null,
+			})),
+			{ onConflict: "youtube_id", ignoreDuplicates: true },
+		)
+		.select("youtube_id");
+	if (error) throw new Error(error.message);
+	return (data ?? []).length;
+};
+
+/** 보관함에 한 건 추가 — RSS 가 주지 않는 예전 쇼츠를 링크로 넣는 경로.
+ *  이미 있으면 아무 일도 하지 않는다(중복 불가). */
+export const addShortToLibrary = async (id: string, title: string): Promise<boolean> => {
+	const { error } = await supabase
+		.from("youtube_shorts")
+		.upsert({ youtube_id: id, title }, { onConflict: "youtube_id", ignoreDuplicates: true });
+	if (error) {
+		console.error("보관함 추가 실패:", error.message);
+		return false;
+	}
+	return true;
+};
+
+export const useShortsLibrary = () => {
+	const [items, setItems] = useState<YoutubeShort[]>([]);
+	const [isLoading, setIsLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+
+	const refetch = useCallback(async () => {
+		const { data, error: e } = await supabase
+			.from("youtube_shorts")
+			.select("*")
+			.eq("is_hidden", false)
+			.order("published_at", { ascending: false, nullsFirst: false });
+		if (e) setError(e.message);
+		else {
+			setError(null);
+			setItems((data ?? []) as YoutubeShort[]);
+		}
+		setIsLoading(false);
+	}, []);
+
+	useEffect(() => {
+		refetch();
+	}, [refetch]);
+
+	return { items, isLoading, error, refetch };
 };
 
 export const useHomeShorts = () => {

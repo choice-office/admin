@@ -134,7 +134,10 @@ export const HomeFeaturedPosts = () => {
 						)}
 					>
 						<div className="flex items-center justify-between gap-1">
-							<span className="font-semibold text-[12.5px] text-muted-foreground">{slot}번 칸</span>
+							{/* 칸 번호를 눈에 띄게 — 쇼츠 섹션과 같은 표시(어느 자리인지가 핵심 정보). */}
+							<span className="flex h-6 min-w-6 items-center justify-center rounded bg-accent px-1.5 font-bold text-[12.5px] text-accent-foreground">
+								{slot}
+							</span>
 							{isPinned ? (
 								<Badge variant="outline">
 									<Pin size={11} className="mr-1" />

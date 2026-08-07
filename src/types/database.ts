@@ -192,6 +192,26 @@ export type Database = {
 				Update: { youtube_id?: string | null; title?: string | null };
 				Relationships: [];
 			};
+			// 유튜브 쇼츠 보관함 — 채널 쇼츠 목록. 홈 4칸(home_shorts)은 여기서 골라 배정한다.
+			// youtube_id 가 PK 라 중복 저장 불가. 스키마: choice-homepage/supabase/migrations/0006_youtube_shorts.sql
+			youtube_shorts: {
+				Row: {
+					youtube_id: string;
+					title: string;
+					published_at: string | null;
+					is_hidden: boolean;
+					created_at: string;
+					updated_at: string;
+				};
+				Insert: {
+					youtube_id: string;
+					title?: string;
+					published_at?: string | null;
+					is_hidden?: boolean;
+				};
+				Update: { title?: string; published_at?: string | null; is_hidden?: boolean };
+				Relationships: [];
+			};
 		};
 		Views: Record<string, never>;
 		Functions: Record<string, never>;
@@ -210,3 +230,4 @@ export type BlogPostUpdate = Database["public"]["Tables"]["blog_posts"]["Update"
 export type BlogCategory = Database["public"]["Tables"]["blog_categories"]["Row"];
 export type BlogAuthor = Database["public"]["Tables"]["blog_authors"]["Row"];
 export type HomeShort = Database["public"]["Tables"]["home_shorts"]["Row"];
+export type YoutubeShort = Database["public"]["Tables"]["youtube_shorts"]["Row"];
