@@ -138,6 +138,10 @@ function HomePage() {
 							<span className="font-semibold text-[13px] text-foreground">
 								최신 쇼츠 {latest.length}개
 							</span>
+							{/* 유튜브 공개 RSS 는 최근 업로드 15개까지만 준다 — 그보다 예전 영상은 목록에 없다. */}
+							<span className="text-[12px] text-muted-foreground">
+								최근 업로드 15개까지 · 더 예전 영상은 링크를 붙여넣어 주세요
+							</span>
 							<div className="flex items-center gap-1">
 								<span className="text-[12.5px] text-muted-foreground">넣을 칸</span>
 								{SHORT_SLOTS.map((s) => (

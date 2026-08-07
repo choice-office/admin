@@ -112,6 +112,8 @@ design/                        # Claude Design 산출물(토큰 CSS + 어드민 
 - 데이터: `home_shorts(slot 1~4, youtube_id)` — 홈페이지 `supabase/migrations/0004_home_shorts.sql`. 훅 `hooks/use-home-shorts.ts`.
 - 링크를 붙여넣으면 `parseYoutubeId()` 가 11자 ID 만 뽑아 저장한다(shorts/youtu.be/watch?v=/embed 모두 인식). 썸네일은 저장하지 않고 `i.ytimg.com` 에서 가져온다.
 - **채널 최신 쇼츠 가져오기** — 홈페이지 `/api/youtube/shorts`(공개 RSS + `/shorts/{id}` 리다이렉트로 쇼츠 판별, API 키 없음, 10분 캐시)를 호출한다. 브라우저에서 유튜브 RSS 를 직접 못 부르기 때문(CORS). 베이스 URL 은 `VITE_SITE_API_BASE`(미설정 시 `https://kvisa1345.com`).
+  - **한계: RSS 는 최근 업로드 15개까지만 준다.** 그보다 예전 영상은 목록에 안 뜨므로 링크를 직접 붙여넣어야 한다(화면에도 문구로 명시). 롱폼이 섞이면 걸러져서 15개보다 적게 나온다.
+  - CORS 허용 오리진은 `admin.kvisa1345.com` · `*admin*.vercel.app` · `localhost:*` (route.ts `ALLOWED_ORIGIN`). **실제 관리자 도메인이 빠지면 프로덕션에서만 조용히 막힌다** — 실제로 한 번 겪었다.
 - 칸을 비우면 홈이 그 자리를 건너뛴다. 4칸 모두 비우면 홈페이지의 `SHORTS` 폴백이 나간다.
 
 ### ② 비자 정보 · 소식 (블로그 대표글)
