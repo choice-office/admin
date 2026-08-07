@@ -1,7 +1,7 @@
-import { AlertTriangle, Download, ExternalLink, RotateCcw, Video } from "lucide-react";
+import { AlertTriangle, Download, ExternalLink, Pin, RotateCcw, Video } from "lucide-react";
 import { useState } from "react";
 import { ShortPickerModal } from "@/components/admin/short-picker-modal";
-import { Button, Card, CardTitle } from "@/components/ui/ds";
+import { Badge, Button, Card, CardTitle } from "@/components/ui/ds";
 import {
 	isPlaceholderThumbnail,
 	refreshShortsLibrary,
@@ -39,6 +39,20 @@ export const HomeShorts = () => {
 	const usedSlots = new Map(
 		slots.filter((s) => s.youtube_id).map((s) => [s.youtube_id as string, s.slot] as const),
 	);
+
+	// 홈은 **항상 4칸을 채운다** — 지정하지 않은 칸은 보관함 최신순으로 자동으로 들어간다.
+	// (공개 렌더 lib/home-shorts.ts 와 같은 규칙) 그래서 빈 칸에도 "실제로 나갈 영상"을 보여준다.
+	const pinnedIds = new Set(slots.map((s) => s.youtube_id).filter((v): v is string => !!v));
+	const autoQueue = items.map((v) => v.youtube_id).filter((id) => !pinnedIds.has(id));
+	let autoIndex = 0;
+	const resolved = SHORT_SLOTS.map((slot) => {
+		const pinnedId = slots.find((s) => s.slot === slot)?.youtube_id ?? null;
+		if (pinnedId) return { slot, id: pinnedId, isPinned: true as const };
+		const auto = autoQueue[autoIndex];
+		autoIndex += 1;
+		return { slot, id: auto ?? null, isPinned: false as const };
+	});
+	const pinnedCount = pinnedIds.size;
 
 	const handleRefresh = async () => {
 		setRefreshing(true);
@@ -93,8 +107,12 @@ export const HomeShorts = () => {
 				</div>
 			</div>
 			<p className="mt-1.5 text-[12.5px] text-muted-foreground">
-				보관함에 저장된 쇼츠 {items.length}개 중에서 골라 홈 4칸에 넣습니다. “보관함 갱신”을 누르면
-				채널에 새로 올라온 쇼츠만 추가됩니다(이미 있는 건 건너뜁니다).
+				보관함 {items.length}개 중에서 골라 홈 4칸에 넣습니다.{" "}
+				<b className="text-foreground">홈에는 항상 4개가 나갑니다</b> — 지정하지 않은 칸은 보관함
+				최신순으로 자동으로 채워집니다.
+				{pinnedCount > 0
+					? ` (지금 ${pinnedCount}칸 지정 · ${4 - pinnedCount}칸 자동)`
+					: " (지금 4칸 모두 자동)"}
 			</p>
 
 			{isMissingTable && (
@@ -109,16 +127,14 @@ export const HomeShorts = () => {
 			)}
 
 			<div className="mt-3.5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-				{SHORT_SLOTS.map((slot) => {
-					const row = slots.find((s) => s.slot === slot);
-					const id = row?.youtube_id ?? null;
+				{resolved.map(({ slot, id, isPinned }) => {
 					const bad = !!id && badIds.includes(id);
 					return (
 						<div
 							key={slot}
 							className={cn(
 								"flex flex-col gap-2 rounded-md p-2.5",
-								id
+								isPinned
 									? "border border-border bg-muted/30"
 									: "border border-border border-dashed bg-transparent",
 							)}
@@ -128,13 +144,24 @@ export const HomeShorts = () => {
 								<span className="flex h-6 min-w-6 items-center justify-center rounded bg-accent px-1.5 font-bold text-[12.5px] text-accent-foreground">
 									{slot}
 								</span>
-								<span className="text-[12px] text-muted-foreground">
-									{id ? "홈에 노출 중" : "비어 있음"}
-								</span>
+								{isPinned ? (
+									<Badge variant="outline">
+										<Pin size={11} className="mr-1" />
+										지정
+									</Badge>
+								) : (
+									<span className="text-[11.5px] text-muted-foreground">자동</span>
+								)}
 							</div>
 
-							{/* 미리보기 — 쇼츠는 9:16 세로. 홈 카드와 같은 썸네일(oardefault)을 쓴다. */}
-							<div className="relative aspect-[9/16] overflow-hidden rounded border border-border bg-background">
+							{/* 미리보기 — 쇼츠는 9:16 세로. 홈 카드와 같은 썸네일(oardefault)을 쓴다.
+							    자동 칸은 흐리게 = "지금 그 자리에 나가는 영상"이라는 뜻. */}
+							<div
+								className={cn(
+									"relative aspect-[9/16] overflow-hidden rounded border border-border bg-background",
+									!isPinned && "opacity-60",
+								)}
+							>
 								{id ? (
 									<img
 										key={id}
@@ -155,8 +182,8 @@ export const HomeShorts = () => {
 										onError={() => setBadIds((prev) => (prev.includes(id) ? prev : [...prev, id]))}
 									/>
 								) : (
-									<div className="flex h-full w-full items-center justify-center text-[12px] text-muted-foreground">
-										{isLoading ? "불러오는 중…" : "선택하기를 눌러 주세요"}
+									<div className="flex h-full w-full items-center justify-center px-2 text-center text-[12px] text-muted-foreground">
+										{isLoading ? "불러오는 중…" : "보관함에 쇼츠가 부족합니다"}
 									</div>
 								)}
 								{bad && (
@@ -170,7 +197,7 @@ export const HomeShorts = () => {
 							<span
 								className={cn(
 									"line-clamp-2 min-h-[34px] break-keep text-[12.5px] leading-snug",
-									id ? "font-medium text-foreground" : "text-muted-foreground",
+									isPinned ? "font-medium text-foreground" : "text-muted-foreground",
 								)}
 							>
 								{id ? titleOf(id) || "(제목 없음)" : ""}
@@ -183,13 +210,13 @@ export const HomeShorts = () => {
 									disabled={busySlot !== null}
 									onClick={() => setPickerSlot(slot)}
 								>
-									{busySlot === slot ? "저장 중…" : id ? "바꾸기" : "선택하기"}
+									{busySlot === slot ? "저장 중…" : isPinned ? "바꾸기" : "지정하기"}
 								</Button>
-								{id && (
+								{isPinned && (
 									<Button
 										variant="ghost"
 										size="sm"
-										title="이 칸 비우기"
+										title="이 칸을 자동으로 되돌리기"
 										disabled={busySlot !== null}
 										onClick={() => handleClear(slot)}
 									>
@@ -214,8 +241,8 @@ export const HomeShorts = () => {
 			</div>
 
 			<p className="mt-3.5 text-[12.5px] text-muted-foreground">
-				칸을 비우면 홈에서 그 자리를 건너뜁니다. 4칸 모두 비우면 이전 기본 영상이 나갑니다. 홈
-				반영은 최대 1분.
+				자동 칸은 채널에 새 쇼츠가 올라오면 그 영상으로 바뀝니다. 지정한 칸은 바꿀 때까지 그대로
+				유지됩니다. 홈 반영은 최대 1분.
 			</p>
 
 			{pickerSlot !== null && (
