@@ -32,6 +32,7 @@ import {
 	List,
 	ListChecks,
 	ListOrdered,
+	MapPin,
 	Minus,
 	Paperclip,
 	Plus,
@@ -63,6 +64,8 @@ import { isImeComposing } from "@/lib/ime";
 import { FileEmbed } from "./FileEmbed";
 import { Indent } from "./Indent";
 import { LineHeight } from "./LineHeight";
+import { NaverEnter } from "./NaverEnter";
+import { NaverMap, naverMapHref } from "./NaverMap";
 import { QuoteVariant } from "./QuoteVariant";
 import { ResizableImage } from "./ResizableImage";
 
@@ -265,6 +268,9 @@ export const RichTextEditor = ({
 	const uploadingRef = useRef(false);
 	const [uploading, setUploading] = useState(false);
 	const [linkOpen, setLinkOpen] = useState(false);
+	const [mapOpen, setMapOpen] = useState(false);
+	const mapNameRef = useRef<HTMLInputElement>(null);
+	const mapAddrRef = useRef<HTMLInputElement>(null);
 	// 링크 hover 미리보기 카드 (URL 노출 + 새 탭 열기)
 	const [linkHover, setLinkHover] = useState<{ href: string; x: number; y: number } | null>(null);
 
@@ -358,6 +364,8 @@ export const RichTextEditor = ({
 			FontFamily,
 			LineHeight,
 			Indent,
+			NaverEnter,
+			NaverMap,
 			QuoteVariant,
 			TaskList,
 			TaskItem.configure({ nested: true }),
@@ -424,6 +432,21 @@ export const RichTextEditor = ({
 	};
 
 	if (!editor) return null;
+
+	// 장소 카드 삽입 — 장소명은 필수(네이버 지도 검색 링크의 근거), 주소는 표시용이라 선택.
+	const applyMap = () => {
+		const name = mapNameRef.current?.value.trim() ?? "";
+		if (!name) {
+			toast.warning("장소명을 입력해 주세요.");
+			mapNameRef.current?.focus();
+			return;
+		}
+		const addr = mapAddrRef.current?.value.trim() ?? "";
+		insertNodeAfterSelection({ type: "naverMap", attrs: { name, addr, href: naverMapHref(name) } });
+		if (mapNameRef.current) mapNameRef.current.value = "";
+		if (mapAddrRef.current) mapAddrRef.current.value = "";
+		setMapOpen(false);
+	};
 
 	// 링크 적용 — URL 정규화 후, 선택영역이 비고 링크가 아니면 URL 자체를 링크 텍스트로 삽입
 	const applyLink = () => {
@@ -832,6 +855,56 @@ export const RichTextEditor = ({
 							</Button>
 						</>
 					)}
+					{/* 장소(네이버 지도) — 기존 글의 장소 첨부와 같은 카드를 넣는다 */}
+					<Popover open={mapOpen} onOpenChange={setMapOpen}>
+						<PopoverTrigger
+							render={
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon"
+									aria-label="장소"
+									title="장소(네이버 지도) 추가"
+								>
+									<MapPin className="size-4" />
+								</Button>
+							}
+						/>
+						<PopoverContent align="start" className="w-80 space-y-2 p-3">
+							<div className="font-medium text-[13px] text-foreground">장소 추가</div>
+							<input
+								ref={mapNameRef}
+								placeholder="장소명 (예: 서울출입국외국인청)"
+								onKeyDown={(e) => {
+									// 한글 조합 확정용 Enter 는 무시(조합 중 실행 방지)
+									if (isImeComposing(e)) return;
+									if (e.key === "Enter") {
+										e.preventDefault();
+										mapAddrRef.current?.focus();
+									}
+								}}
+								className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+							/>
+							<input
+								ref={mapAddrRef}
+								placeholder="주소 (예: 서울특별시 양천구 목동동로 151)"
+								onKeyDown={(e) => {
+									if (isImeComposing(e)) return;
+									if (e.key === "Enter") {
+										e.preventDefault();
+										applyMap();
+									}
+								}}
+								className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+							/>
+							<p className="m-0 text-[12px] text-muted-foreground leading-relaxed">
+								장소명으로 네이버 지도 검색 링크가 걸립니다. 주소는 비워도 됩니다.
+							</p>
+							<Button type="button" size="sm" className="w-full" onClick={applyMap}>
+								넣기
+							</Button>
+						</PopoverContent>
+					</Popover>
 					<Divider />
 					{/* 정렬 — 네이버식 드롭다운 */}
 					<Popover>

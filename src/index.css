@@ -486,25 +486,90 @@ body {
 	margin-left: auto;
 	margin-right: auto;
 }
+/* 구분선·굵게·첫 블록 — 홈페이지(.prose)와 같은 값. 미리보기(.blog-preview)에는 이미 있고
+   에디터에만 빠져 있어 편집 화면만 다르게 보였다. */
 .rich-content hr {
 	border: none;
 	border-top: 1px solid var(--border);
-	margin: 1.25rem 0;
+	margin: 2.4em 0;
 }
+.rich-content strong {
+	font-weight: 700;
+	color: var(--text-heading);
+}
+.rich-content > :first-child {
+	margin-top: 0;
+}
+/* 본문 문단 — 홈페이지 .prose p 와 같은 값(기존 네이버 이식본 .se-t 리듬).
+   에디터에서 보이는 간격이 곧 발행 후 간격이어야 한다. 바꾸려면 세 곳을 함께:
+   admin .rich-content p · admin .blog-preview p · homepage .prose p */
 .rich-content p {
-	margin: 1.1em 0;
+	margin: 1.5em 0;
+	line-height: 1.9;
+}
+/* 장소(네이버 지도) 카드 — 홈페이지 .prose .se-map 과 같은 값.
+   에디터(NaverMap 노드)·미리보기·공개 페이지가 같은 마크업을 그린다. */
+.rich-content .se-map,
+.blog-preview .se-map {
+	display: flex;
+	align-items: center;
+	gap: 11px;
+	width: fit-content;
+	max-width: 100%;
+	border: 1px solid var(--border-default);
+	border-radius: var(--radius);
+	padding: 10px 15px;
+	margin: 1.5em auto;
+	text-decoration: none;
+}
+.rich-content .se-map-pin,
+.blog-preview .se-map-pin {
+	flex: 0 0 auto;
+	display: inline-flex;
+}
+.rich-content .se-map-pin svg,
+.blog-preview .se-map-pin svg {
+	width: 17px;
+	height: 17px;
+}
+.rich-content .se-map-body,
+.blog-preview .se-map-body {
+	display: flex;
+	flex-direction: column;
+}
+.rich-content .se-map-name,
+.blog-preview .se-map-name {
+	font-size: 0.92em;
+	font-weight: 700;
+	color: var(--text-heading);
+}
+.rich-content .se-map-addr,
+.blog-preview .se-map-addr {
+	font-size: 0.8em;
+	color: var(--text-muted);
+	margin-top: 1px;
+}
+/* 인라인 코드 — 홈페이지 .prose code 와 같은 값 */
+.rich-content code,
+.blog-preview code {
+	font-family: var(--font-mono, ui-monospace, monospace);
+	font-size: 0.9em;
+	background: var(--surface-subtle);
+	padding: 0.15em 0.4em;
+	border-radius: 0;
 }
 .rich-content a {
 	color: var(--color-primary);
 	text-decoration: underline;
 }
-/* 이미지 — 블로그처럼 가운데 정렬·반응형 */
+/* 이미지 — 홈페이지(.prose > img)와 같은 폭. 위아래 여백은 노드뷰 래퍼(.manual-img-nv)가 준다
+   (여기서도 주면 두 번 겹친다). */
 .rich-content img {
 	display: block;
-	margin: 0.75rem auto;
-	max-width: 100%;
+	margin: 0 auto;
+	max-width: 86%;
 	height: auto;
-	border-radius: 0.5rem;
+	border-radius: 0;
 }
 .rich-content img.ProseMirror-selectednode,
 .rich-content img.is-selected {
@@ -513,7 +578,8 @@ body {
 /* 리사이즈 가능한 이미지 노드뷰 */
 .manual-img-nv {
 	text-align: center;
-	margin: 0.75rem 0;
+	/* 홈페이지 이미지 위아래 여백(.prose > img · figure 2em)과 같은 값 */
+	margin: 2em 0;
 }
 .manual-img-box {
 	position: relative;
@@ -551,11 +617,20 @@ body {
 	color: var(--text-body);
 	word-break: keep-all;
 }
+/* 본문 폭 — 홈페이지의 실제 글줄 폭과 같게. 폭이 다르면 줄바꿈 위치가 달라져
+   편집·미리보기에서 본 모습과 발행 결과가 어긋난다.
+   홈페이지 .blog-prose 는 max-width 760px 에 좌우 padding 24px → 본문 712px. */
+.rich-content,
+.blog-preview {
+	max-width: 712px;
+	margin-inline: auto;
+}
 .blog-preview > :first-child {
 	margin-top: 0;
 }
 .blog-preview p {
-	margin: 1.1em 0;
+	margin: 1.5em 0;
+	line-height: 1.9;
 }
 .blog-preview h2 {
 	font-size: 1.5em;
@@ -627,12 +702,14 @@ body {
 	margin: 2.4em 0;
 }
 /* 이미지 — 지정 폭 존중(홈페이지 .prose 와 동일). data-align 으로 좌/우/가운데 */
+/* 이미지 — 홈페이지(.prose > img)와 같은 폭·여백·모서리.
+   홈페이지는 --radius: 0(각진 디자인)이라 본문 이미지도 각지게 나간다. */
 .blog-preview img {
 	display: block;
-	max-width: 100%;
+	max-width: 86%;
 	height: auto;
-	margin: 1.5em auto;
-	border-radius: var(--radius);
+	margin: 2em auto;
+	border-radius: 0;
 }
 .blog-preview img[data-align="left"] {
 	margin-left: 0;
