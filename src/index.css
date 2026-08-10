@@ -691,6 +691,10 @@ body {
    홈페이지 .blog-prose 는 max-width 760px 에 좌우 padding 24px → 본문 712px. */
 .rich-content,
 .blog-preview {
+	/* width: 100% 가 반드시 있어야 한다 — flex 세로 배치(부모가 flex-col)에서 좌우 auto 마진은
+	   가로 stretch 를 해제해 버려서, 없으면 폭이 내용 기준(fit-content)으로 쪼그라들고
+	   창이 커질수록 오른쪽으로 밀린다. */
+	width: 100%;
 	max-width: 712px;
 	margin-inline: auto;
 }
