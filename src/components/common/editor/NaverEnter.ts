@@ -1,4 +1,4 @@
-import { Extension } from "@tiptap/core";
+import { type Editor, Extension } from "@tiptap/core";
 
 // Enter 를 "줄바꿈"으로 — 네이버 블로그 편집기와 같은 손버릇.
 //
@@ -9,7 +9,11 @@ import { Extension } from "@tiptap/core";
 //     <p>첫 줄</p><p>둘째 줄</p>…
 // 가 되어 줄마다 문단 여백(1.5em)이 붙는다. 글이 기존 글보다 훨씬 성기게 보이는 원인.
 //
-// 그래서 문단 안에서는 Enter = <br>, 새 문단은 Shift+Enter 로 둔다.
+// 그래서 Enter 도 Shift+Enter 도 똑같이 <br> 를 넣는다. 네이버 편집기가 그렇고,
+// 실제 기존 글 238건을 세어 보면 줄바꿈 <br> 13,639개 · 빈 줄 <br><br> 2,649개로
+// 본문은 사실상 전부 <br> 다. 문단을 나누려면 네이버에서처럼 Enter 를 두 번 눌러
+// 한 줄 띄우면 된다(= <br><br>). 별도의 "새 문단" 키는 두지 않는다.
+//
 // 목록·체크리스트·제목·코드블록에서는 Enter 가 "다음 항목/문단"이어야 하므로 손대지 않는다
 // (false 를 돌려주면 Tiptap 기본 동작이 이어서 실행된다).
 const KEEP_DEFAULT = ["listItem", "taskItem", "codeBlock", "heading"];
@@ -18,15 +22,10 @@ export const NaverEnter = Extension.create({
 	name: "naverEnter",
 
 	addKeyboardShortcuts() {
-		return {
-			Enter: ({ editor }) => {
-				if (KEEP_DEFAULT.some((n) => editor.isActive(n))) return false;
-				return editor.commands.setHardBreak();
-			},
-			"Shift-Enter": ({ editor }) => {
-				if (KEEP_DEFAULT.some((n) => editor.isActive(n))) return false;
-				return editor.commands.splitBlock();
-			},
+		const lineBreak = ({ editor }: { editor: Editor }) => {
+			if (KEEP_DEFAULT.some((n) => editor.isActive(n))) return false;
+			return editor.commands.setHardBreak();
 		};
+		return { Enter: lineBreak, "Shift-Enter": lineBreak };
 	},
 });
