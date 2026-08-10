@@ -821,6 +821,11 @@ body {
 .rich-content figure {
 	margin: 2em 0;
 }
+/* 이식본의 <figure> 안 이미지 — 홈페이지 .prose figure img 와 같은 86% 상한.
+   (에디터에서는 보통 노드뷰로 다시 그려지지만, 저장 HTML 이 그대로 들어올 때도 같게) */
+.rich-content figure img {
+	max-width: 86%;
+}
 /* 노드뷰(.manual-img-nv)를 거치지 않고 들어온 직계 이미지 — 발행본과 같은 폭·여백.
    노드뷰 이미지는 직계가 아니므로 여백이 두 번 붙지 않는다. */
 .rich-content > img {
