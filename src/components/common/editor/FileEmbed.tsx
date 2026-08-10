@@ -24,7 +24,8 @@ const FileEmbedView = ({ node }: NodeViewProps) => {
 	const image = !pdf && isImage(mime, name);
 
 	return (
-		<NodeViewWrapper className="my-3" data-drag-handle>
+		// 위아래 24px = 발행본 .prose div[data-file-embed] 의 1.6em 과 같은 값
+		<NodeViewWrapper className="my-6" data-drag-handle>
 			<div className="overflow-hidden rounded-lg border bg-card">
 				<div className="flex items-center gap-2 border-b bg-muted/40 px-3 py-2">
 					{/^application\/(zip|x-zip|x-7z|x-rar)/.test(mime) ||

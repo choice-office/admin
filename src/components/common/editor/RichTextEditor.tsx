@@ -1,3 +1,4 @@
+import CodeMark from "@tiptap/extension-code";
 import { TaskItem, TaskList } from "@tiptap/extension-list";
 import TextAlign from "@tiptap/extension-text-align";
 import {
@@ -353,7 +354,10 @@ export const RichTextEditor = ({
 		// 선택/트랜잭션마다 리렌더 — 툴바의 isActive(이미지 선택, 굵게, 색상 등) 상태를 항상 최신으로
 		shouldRerenderOnTransaction: true,
 		extensions: [
-			StarterKit.configure({ link: { openOnClick: "whenNotEditable" } }),
+			// code: false — StarterKit 기본 인라인 코드는 excludes: "_" 라 코드에 다른 서식을
+			// 못 붙인다(색·굵게·크기가 통째로 벗겨졌다). 배제를 풀어서 다시 넣는다.
+			StarterKit.configure({ code: false, link: { openOnClick: "whenNotEditable" } }),
+			CodeMark.extend({ excludes: "" }),
 			ResizableImage.configure({ inline: false, allowBase64: true }),
 			FileEmbed,
 			TextAlign.configure({ types: ["heading", "paragraph"] }),

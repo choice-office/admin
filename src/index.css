@@ -301,23 +301,48 @@ body {
 	color: var(--text-heading);
 	margin: 1.6em 0 0.6em;
 }
-.rich-content ul {
-	list-style: disc;
-	padding-left: 1.4rem;
-}
+/* 목록 — 홈페이지 .prose 와 같은 여백. 항목 간격은 li 가 주고,
+   항목 안 문단(에디터는 <li><p>…</p></li> 로 저장)은 여백을 갖지 않는다. */
+.rich-content ul,
 .rich-content ol {
+	margin: 1.1em 0;
+	padding-left: 1.4em;
+}
+.rich-content ul li {
+	list-style: disc;
+}
+.rich-content ol li {
 	list-style: decimal;
-	padding-left: 1.4rem;
+}
+.rich-content li {
+	margin: 0.4em 0;
+}
+.rich-content li > p {
+	margin: 0;
+}
+.rich-content li > p + p {
+	margin-top: 0.4em;
+}
+/* 목록 안 목록·표 셀 안 문단 — 홈페이지 .prose 와 동일 */
+.rich-content li > ul,
+.rich-content li > ol {
+	margin: 0;
+}
+.rich-content td > p,
+.rich-content th > p {
+	margin: 0;
+	line-height: inherit;
 }
 /* 체크리스트(taskList) — 체크박스 + 텍스트 한 줄 정렬 */
 .rich-content ul[data-type="taskList"] {
 	list-style: none;
-	padding-left: 0.2rem;
+	padding-left: 0.2em;
 }
 .rich-content ul[data-type="taskList"] li {
 	display: flex;
 	align-items: center; /* 체크박스와 글자 수직 중앙 정렬 */
 	gap: 0.5rem;
+	list-style: none; /* 불릿을 li 에 두므로 체크리스트에서는 꺼야 한다 */
 }
 .rich-content ul[data-type="taskList"] li > label {
 	margin: 0;
@@ -568,6 +593,26 @@ body {
 	color: var(--text-muted);
 	margin-top: 1px;
 }
+/* 첨부 카드 — 발행본(.prose div[data-file-embed])과 같은 값.
+   편집 중에는 노드뷰(FileEmbedView)가 그리지만, 저장 HTML 이 그대로 들어올 때도 같게 보이도록. */
+.rich-content div[data-file-embed] {
+	margin: 1.6em 0;
+}
+.rich-content .file-embed-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	max-width: 100%;
+	padding: 12px 16px;
+	border: 1px solid var(--border-default);
+	border-left: 3px solid var(--color-primary);
+	background: var(--surface-subtle);
+	color: var(--text-heading);
+	font-size: 14px;
+	font-weight: 600;
+	text-decoration: none;
+	word-break: break-all;
+}
 /* 인라인 코드 — 홈페이지 .prose code 와 같은 값 */
 .rich-content code,
 .blog-preview code {
@@ -589,6 +634,11 @@ body {
 	max-width: 86%;
 	height: auto;
 	border-radius: 0;
+	/* 로딩 플레이스홀더 — 홈페이지 .prose img 와 같은 값. 본문 이미지는 width/height 가 없어
+	   로드 전 박스가 0 이 된다. min-height 로 자리를 잡고 나비 마크로 "준비 중"을 알린다. */
+	min-height: 160px;
+	background:
+		var(--surface-subtle, #f4efe7) url("/brand/mark-square.png") center / 52px auto no-repeat;
 }
 .rich-content img.ProseMirror-selectednode,
 .rich-content img.is-selected {
@@ -673,6 +723,23 @@ body {
 .blog-preview li {
 	margin: 0.4em 0;
 }
+/* 목록 항목 안 문단은 여백 없음 — 홈페이지 .prose 와 동일 */
+.blog-preview li > p {
+	margin: 0;
+}
+.blog-preview li > p + p {
+	margin-top: 0.4em;
+}
+/* 목록 안 목록·표 셀 안 문단 — 홈페이지 .prose 와 동일 */
+.blog-preview li > ul,
+.blog-preview li > ol {
+	margin: 0;
+}
+.blog-preview td > p,
+.blog-preview th > p {
+	margin: 0;
+	line-height: inherit;
+}
 .blog-preview ul li {
 	list-style: disc;
 }
@@ -730,14 +797,38 @@ body {
 	margin: 2.4em 0;
 }
 /* 이미지 — 지정 폭 존중(홈페이지 .prose 와 동일). data-align 으로 좌/우/가운데 */
-/* 이미지 — 홈페이지(.prose > img)와 같은 폭·여백·모서리.
-   홈페이지는 --radius: 0(각진 디자인)이라 본문 이미지도 각지게 나간다. */
+/* 이미지 — 홈페이지(.prose)와 같은 구조. figure(네이버 이식본)와 직계 <img>(에디터 저장분)의
+   여백이 겹치지 않도록 홈페이지와 똑같이 나눠 준다. */
 .blog-preview img {
 	display: block;
-	max-width: 86%;
+	max-width: 100%;
 	height: auto;
-	margin: 2em auto;
+	margin-inline: auto;
 	border-radius: 0;
+	/* 로딩 플레이스홀더 — 홈페이지 .prose img 와 같은 값. 본문 이미지는 width/height 가 없어
+	   로드 전 박스가 0 이 된다. min-height 로 자리를 잡고 나비 마크로 "준비 중"을 알린다. */
+	min-height: 160px;
+	background:
+		var(--surface-subtle, #f4efe7) url("/brand/mark-square.png") center / 52px auto no-repeat;
+}
+.blog-preview figure {
+	margin: 2em 0;
+}
+.blog-preview figure img {
+	max-width: 86%;
+}
+.blog-preview > img {
+	max-width: 86%;
+	margin-block: 2em;
+}
+.rich-content figure {
+	margin: 2em 0;
+}
+/* 노드뷰(.manual-img-nv)를 거치지 않고 들어온 직계 이미지 — 발행본과 같은 폭·여백.
+   노드뷰 이미지는 직계가 아니므로 여백이 두 번 붙지 않는다. */
+.rich-content > img {
+	max-width: 86%;
+	margin-block: 2em;
 }
 .blog-preview img[data-align="left"] {
 	margin-left: 0;
