@@ -34,6 +34,7 @@ import {
 	ListChecks,
 	ListOrdered,
 	MapPin,
+	MessageSquareQuote,
 	Minus,
 	Paperclip,
 	Plus,
@@ -41,7 +42,6 @@ import {
 	Redo2,
 	RemoveFormatting,
 	Strikethrough,
-	TextQuote,
 	Trash2,
 	Type,
 	Underline as UnderlineIcon,
@@ -1068,7 +1068,7 @@ export const RichTextEditor = ({
 						aria-label="중앙 인용"
 						title="중앙 인용(후기·감사글)"
 					>
-						<TextQuote className="size-4" />
+						<MessageSquareQuote className="size-4" />
 					</Toggle>
 					<Toggle
 						size="sm"
