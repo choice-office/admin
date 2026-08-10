@@ -59,6 +59,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Toggle } from "@/components/ui/toggle";
+import { isImeComposing } from "@/lib/ime";
 import { FileEmbed } from "./FileEmbed";
 import { Indent } from "./Indent";
 import { LineHeight } from "./LineHeight";
@@ -589,6 +590,8 @@ export const RichTextEditor = ({
 						aria-label="글자 크기(px)"
 						title="글자 크기(px) — 입력 후 Enter"
 						onKeyDown={(e) => {
+							// 한글 조합 확정용 Enter 는 무시(조합 중 실행 방지)
+							if (isImeComposing(e)) return;
 							if (e.key === "Enter") {
 								e.preventDefault();
 								applySizeInput();
@@ -729,6 +732,8 @@ export const RichTextEditor = ({
 									defaultValue={(editor.getAttributes("link").href as string) ?? ""}
 									placeholder="naver.com 또는 https://..."
 									onKeyDown={(e) => {
+										// 한글 조합 확정용 Enter 는 무시(조합 중 실행 방지)
+										if (isImeComposing(e)) return;
 										if (e.key === "Enter") {
 											e.preventDefault();
 											applyLink();

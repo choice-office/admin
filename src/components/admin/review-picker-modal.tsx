@@ -2,6 +2,7 @@ import { ImageOff, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Badge, Button, Input } from "@/components/ui/ds";
 import { PaginationBar } from "@/components/ui/pagination-bar";
+import { isImeComposing } from "@/lib/ime";
 import { cn } from "@/lib/utils";
 import type { ReviewImage } from "@/types/database";
 
@@ -102,6 +103,8 @@ export const ReviewPickerModal = ({ candidates, current, max, onClose, onAdd }: 
 							value={searchInput}
 							onChange={(e) => setSearchInput(e.target.value)}
 							onKeyDown={(e) => {
+								// 한글 조합 중 Enter 는 "조합 확정"이라 무시한다(미완성 문자열로 실행되는 것 방지)
+								if (isImeComposing(e)) return;
 								if (e.key === "Enter") runSearch();
 							}}
 							placeholder="분류·내용 검색"

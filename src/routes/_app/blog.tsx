@@ -18,6 +18,7 @@ import {
 	purgeExpiredDrafts,
 } from "@/lib/blog";
 import { formatDateCompact } from "@/lib/format";
+import { isImeComposing } from "@/lib/ime";
 import { cn } from "@/lib/utils";
 import type { BlogCategory, BlogPost, PostStatus } from "@/types/database";
 
@@ -190,6 +191,8 @@ function BlogPage() {
 						value={searchInput}
 						onChange={(e) => setSearchInput(e.target.value)}
 						onKeyDown={(e) => {
+							// 한글 조합 중 Enter 는 "조합 확정"이라 무시한다(미완성 문자열로 실행되는 것 방지)
+							if (isImeComposing(e)) return;
 							if (e.key === "Enter") runSearch();
 						}}
 						placeholder="제목·카테고리 검색"

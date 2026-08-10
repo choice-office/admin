@@ -9,6 +9,7 @@ import {
 	thumbnailUrl,
 } from "@/hooks/use-home-shorts";
 import { formatDateOnly } from "@/lib/format";
+import { isImeComposing } from "@/lib/ime";
 import { cn } from "@/lib/utils";
 import type { YoutubeShort } from "@/types/database";
 
@@ -144,6 +145,8 @@ export const ShortPickerModal = ({
 							value={searchInput}
 							onChange={(e) => setSearchInput(e.target.value)}
 							onKeyDown={(e) => {
+								// 한글 조합 중 Enter 는 "조합 확정"이라 무시한다(미완성 문자열로 실행되는 것 방지)
+								if (isImeComposing(e)) return;
 								if (e.key === "Enter") runSearch();
 							}}
 							placeholder="제목 검색"
@@ -228,6 +231,8 @@ export const ShortPickerModal = ({
 							value={linkInput}
 							onChange={(e) => setLinkInput(e.target.value)}
 							onKeyDown={(e) => {
+								// 한글 조합 중 Enter 는 "조합 확정"이라 무시한다(미완성 문자열로 실행되는 것 방지)
+								if (isImeComposing(e)) return;
 								if (e.key === "Enter") handleAddByLink();
 							}}
 							placeholder="쇼츠 링크 붙여넣기"

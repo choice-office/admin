@@ -22,6 +22,7 @@ import {
 	uploadBlogFile,
 	uploadBlogImage,
 } from "@/lib/blog";
+import { isImeComposing } from "@/lib/ime";
 import type { BlogAuthor, BlogCategory, BlogPost } from "@/types/database";
 
 // 로컬 편집용(안정적 key 보장) — 저장 시 _id 제거
@@ -201,6 +202,10 @@ export const BlogEditor = ({ post, categories, authors, onClose, onOpenPost }: P
 		setTagInput("");
 	};
 	const handleTagKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+		// ★ 한글 조합 중 Enter/스페이스는 "조합 확정"이라 여기서 처리하면 안 된다.
+		//    처리해 버리면 태그가 등록되며 입력창을 비운 뒤 조합이 확정되어
+		//    **마지막 글자가 입력창에 한 번 더 남는다**(실제 신고된 증상).
+		if (isImeComposing(e)) return;
 		if (e.key === "Enter" || e.key === "," || e.key === " ") {
 			e.preventDefault();
 			addTag(tagInput);
