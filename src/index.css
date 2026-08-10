@@ -631,7 +631,9 @@ body {
 .rich-content img {
 	display: block;
 	margin: 0 auto;
-	max-width: 86%;
+	/* 86% 제한은 감싸는 상자(.manual-img-box)에 걸린다 — 이미지에 걸면 상자만 넓게 남아
+	   크기 조절 손잡이가 이미지에서 100px 가까이 떨어진다. */
+	max-width: 100%;
 	height: auto;
 	border-radius: 0;
 }
@@ -648,7 +650,8 @@ body {
 .manual-img-box {
 	position: relative;
 	display: inline-block;
-	max-width: 100%;
+	/* 발행 화면(.prose > img)과 같은 86% 상한 — 상자가 이미지에 딱 맞아야 손잡이가 모서리에 붙는다. */
+	max-width: 86%;
 	line-height: 0;
 }
 .manual-img-box img {
