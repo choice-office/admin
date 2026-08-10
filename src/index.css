@@ -634,11 +634,6 @@ body {
 	max-width: 86%;
 	height: auto;
 	border-radius: 0;
-	/* 로딩 플레이스홀더 — 홈페이지 .prose img 와 같은 값. 본문 이미지는 width/height 가 없어
-	   로드 전 박스가 0 이 된다. min-height 로 자리를 잡고 나비 마크로 "준비 중"을 알린다. */
-	min-height: 160px;
-	background:
-		var(--surface-subtle, #f4efe7) url("/brand/mark-square.png") center / 52px auto no-repeat;
 }
 .rich-content img.ProseMirror-selectednode,
 .rich-content img.is-selected {
@@ -809,11 +804,6 @@ body {
 	height: auto;
 	margin-inline: auto;
 	border-radius: 0;
-	/* 로딩 플레이스홀더 — 홈페이지 .prose img 와 같은 값. 본문 이미지는 width/height 가 없어
-	   로드 전 박스가 0 이 된다. min-height 로 자리를 잡고 나비 마크로 "준비 중"을 알린다. */
-	min-height: 160px;
-	background:
-		var(--surface-subtle, #f4efe7) url("/brand/mark-square.png") center / 52px auto no-repeat;
 }
 .blog-preview figure {
 	margin: 2em 0;
