@@ -509,6 +509,13 @@ body {
 	font-weight: 700;
 	color: var(--text-heading);
 }
+/* 글자색을 지정한 구간 안의 굵게·링크는 그 색을 지킨다(홈페이지 .prose 와 동일). */
+.rich-content [style^="color:"] strong,
+.rich-content [style^="color:"] a,
+.rich-content [style*=" color:"] strong,
+.rich-content [style*=" color:"] a {
+	color: inherit;
+}
 .rich-content > :first-child {
 	margin-top: 0;
 }
@@ -680,6 +687,13 @@ body {
 .blog-preview strong {
 	font-weight: 700;
 	color: var(--text-heading);
+}
+/* 글자색을 지정한 구간 안의 굵게·링크는 그 색을 지킨다(홈페이지 .prose 와 동일). */
+.blog-preview [style^="color:"] strong,
+.blog-preview [style^="color:"] a,
+.blog-preview [style*=" color:"] strong,
+.blog-preview [style*=" color:"] a {
+	color: inherit;
 }
 .blog-preview blockquote {
 	margin: 2.6em 0 1.4em;
