@@ -87,9 +87,16 @@ export const FileEmbed = Node.create({
 
 	// 직렬화 = 자체 완결형 앵커 카드(공개 홈페이지 .prose·미리보기가 JS 없이 렌더).
 	// 편집 중에는 addNodeView(FileEmbedView)가 대신 그려지고, 저장/재파싱은 data-* 속성으로 왕복.
+	//
+	// ★ 이미지는 카드 대신 <img> 로 내보낸다. 편집 화면(FileEmbedView)은 이미지를 그려 주는데
+	//    저장 HTML 에 "📎 파일명" 링크만 남으면 미리보기·공개 페이지에서 그림이 사라진다.
+	//    첨부 경로는 애초에 이미지를 image 노드로 넣지만(RichTextEditor), 붙여넣은 HTML 등으로
+	//    이미지 fileEmbed 가 들어오더라도 보이는 대로 저장되게 여기서도 맞춘다.
 	renderHTML({ node, HTMLAttributes }) {
 		const href = (node.attrs.href as string) || "";
 		const name = (node.attrs.name as string) || "첨부파일";
+		const mime = (node.attrs.mime as string) || "";
+		if (isImage(mime, name)) return ["img", { src: href, alt: name, loading: "lazy" }];
 		return [
 			"div",
 			mergeAttributes(HTMLAttributes, { "data-file-embed": "" }),

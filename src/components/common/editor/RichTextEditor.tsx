@@ -86,6 +86,11 @@ type RichTextEditorProps = {
 const imagesFromList = (files?: FileList | null): File[] =>
 	files ? Array.from(files).filter((f) => f.type.startsWith("image/")) : [];
 
+// 첨부(📎)로 들어온 파일이 이미지인지 — FileEmbed 가 미리보기를 그리는 기준과 같아야 한다.
+// 기준이 어긋나면 "편집 화면엔 보이는데 미리보기·공개 페이지엔 없는" 첨부가 다시 생긴다.
+const isImageFile = (f: File): boolean =>
+	f.type.startsWith("image/") || /\.(png|jpe?g|gif|webp|svg)$/i.test(f.name);
+
 const Divider = () => <span className="mx-1 h-5 w-px self-center bg-border" />;
 
 // 글자 색상 팔레트 (네이버식 확장 그리드 — grid-cols-6). Ban 버튼 = 색 해제
@@ -269,23 +274,39 @@ export const RichTextEditor = ({
 	const uploadFileRef = useRef(uploadFile);
 	uploadFileRef.current = uploadFile;
 
+	// 노드를 "현재 선택 뒤"에 넣는다.
+	//
+	// ★ 왜 selection 그대로 쓰지 않는가 — 이미지·첨부처럼 블록 노드를 넣으면 그 노드가 선택된
+	//    상태(NodeSelection)로 남는다. 그 상태로 다음 것을 넣으면 선택된 노드를 **덮어쓴다**.
+	//    사진 여러 장을 한 번에 고르면 마지막 1장만 남고, 이미지 뒤에 파일을 첨부하면 이미지가
+	//    사라지던 원인. selection.to(선택 끝 = 노드 바로 뒤)에 넣으면 순서대로 쌓인다.
+	const insertNodeAfterSelection = (node: { type: string; attrs: Record<string, unknown> }) => {
+		const ed = editorRef.current;
+		if (!ed) return;
+		ed.chain().focus().insertContentAt(ed.state.selection.to, node).run();
+	};
+
+	// 이미지 1장 업로드 → 본문에 <img> 로 삽입. 사진 버튼·붙여넣기·드롭·첨부(이미지)가 모두 이 경로를 쓴다.
+	const uploadAndInsertImage = async (file: File) => {
+		const up = uploadImageRef.current;
+		if (!up) return;
+		const url = await up(file);
+		// 이미지 설명(alt) — 검색·접근성용. 비워도 삽입은 하되 경고(작성자 판단).
+		const alt = (
+			window.prompt("이미지 설명(alt)을 입력하세요. 검색·접근성에 사용됩니다.", "") ?? ""
+		).trim();
+		if (!alt)
+			toast.warning("이미지 설명(alt)이 비어 있습니다. 검색·접근성을 위해 추가를 권장합니다.");
+		insertNodeAfterSelection({ type: "image", attrs: { src: url, alt } });
+	};
+
 	// 여러 장 업로드 — 선택/붙여넣기/드롭한 순서대로 차례로 올려 본문에 삽입
 	const uploadAndInsertMany = async (files: File[]) => {
-		const up = uploadImageRef.current;
-		if (!up || !files.length || uploadingRef.current) return;
+		if (!uploadImageRef.current || !files.length || uploadingRef.current) return;
 		uploadingRef.current = true;
 		setUploading(true);
 		try {
-			for (const file of files) {
-				const url = await up(file);
-				// 이미지 설명(alt) — 검색·접근성용. 비워도 삽입은 하되 경고(작성자 판단).
-				const alt = (
-					window.prompt("이미지 설명(alt)을 입력하세요. 검색·접근성에 사용됩니다.", "") ?? ""
-				).trim();
-				if (!alt)
-					toast.warning("이미지 설명(alt)이 비어 있습니다. 검색·접근성을 위해 추가를 권장합니다.");
-				editorRef.current?.chain().focus().setImage({ src: url, alt }).run();
-			}
+			for (const file of files) await uploadAndInsertImage(file);
 		} catch (e) {
 			// 형식·용량 차단 사유를 그대로 노출(그 외 예외는 일반 메시지)
 			toast.error(e instanceof Error && e.message ? e.message : "이미지 업로드에 실패했습니다.");
@@ -295,7 +316,11 @@ export const RichTextEditor = ({
 		}
 	};
 
-	// 여러 첨부파일 업로드 — 각 파일을 올리고 본문에 다운로드 링크(📎 파일명)로 삽입
+	// 여러 첨부파일 업로드 — 일반 파일은 다운로드 카드(📎 파일명)로 삽입한다.
+	//
+	// ★ 이미지는 첨부여도 <img> 로 넣는다. fileEmbed 는 편집 화면에서만 미리보기를 그리고
+	//    직렬화(renderHTML)는 "📎 파일명" 링크뿐이라, 이미지를 첨부하면 편집 중에는 보이다가
+	//    미리보기·공개 페이지에서 사라졌다. 붙여넣기와 결과가 같아야 혼란이 없다.
 	const attachAndInsertMany = async (files: File[]) => {
 		const up = uploadFileRef.current;
 		if (!up || !files.length || uploadingRef.current) return;
@@ -303,8 +328,12 @@ export const RichTextEditor = ({
 		setUploading(true);
 		try {
 			for (const file of files) {
+				if (uploadImageRef.current && isImageFile(file)) {
+					await uploadAndInsertImage(file);
+					continue;
+				}
 				const { url, name, mime } = await up(file);
-				editorRef.current?.chain().focus().setFileEmbed({ href: url, name, mime }).run();
+				insertNodeAfterSelection({ type: "fileEmbed", attrs: { href: url, name, mime } });
 			}
 		} catch (e) {
 			toast.error(e instanceof Error && e.message ? e.message : "파일 첨부에 실패했습니다.");
